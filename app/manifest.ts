@@ -1,14 +1,14 @@
 import type { MetadataRoute } from 'next'
+import { profile } from '@/shared/config/profile'
 
 export default function manifest(): MetadataRoute.Manifest {
 	return {
-		name: 'Frontend Template',
-		short_name: 'Frontend Template',
-		description:
-			'Next.js App Router template with Feature-Sliced Design and a typed OpenAPI client',
+		name: profile.name,
+		short_name: profile.handle,
+		description: profile.about,
 		start_url: '/',
 		display: 'standalone',
-		background_color: '#ffffff',
-		theme_color: '#ffffff',
+		background_color: '#120d16',
+		theme_color: '#120d16',
 	}
 }

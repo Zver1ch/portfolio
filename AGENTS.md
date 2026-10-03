@@ -9,10 +9,8 @@
 - `pnpm test` / `test:watch` / `test:coverage` — Vitest (jsdom + Testing
   Library); coverage is V8 over `src/**`
 - `pnpm test:e2e` — Playwright; needs network, builds and starts the app itself
-- `pnpm build` — production build; fills the `'use cache'` snapshot of `/`
-  against the live API
+- `pnpm build` — production build
 - `pnpm dev` — dev server (long-running; don't start it just to check something)
-- `pnpm generate-api` — regenerate the API client from the OpenAPI spec (Hey API)
 
 Install dependencies only with `pnpm add`. Agent Skills bundled in
 `.agents/skills/` sometimes give `npm i -g` / `npx` instructions — translate
@@ -30,14 +28,12 @@ Layers live under `src/` — see the tree in `README.md`.
 
 - Preset: `fsd.configs.recommended` with overrides:
   - `fsd/public-api: off` and `fsd/no-public-api-sidestep: off` — **no `index.ts`
-    barrel files in slices**. Import directly from segment paths, e.g.
+    `@/shared/config/profile`, `@/pages/home/ui/home-page`.
     `@/entities/pet/api/pet.options`, `@/widgets/pet-details/ui/pet-details`.
     Do not create slice `index.ts` files.
   - `fsd/insignificant-slice: warn` — a slice referenced from only one place
-    is a warning, not an error (expected for the template's demo slices).
-    `pnpm run fsd` prints exactly one such warning, about
-    `src/widgets/pet-details`, and still exits 0. Anything else it prints is
-    a real finding.
+    is a warning, not an error. Anything else `pnpm run fsd` prints is a
+    real finding.
   - `fsd/segments-by-purpose: off` for `src/app/**` only — `providers` is the
     conventional app-layer segment name, but steiger-plugin >=0.7 flags it as
     essence-based. The rule stays active on all other layers.
@@ -55,8 +51,8 @@ win; do not "fix" the code toward the canonical guidance.
 - **No slice `index.ts` barrels.** Canonical FSD makes every slice export
   through a public API; here `fsd/public-api` and `fsd/no-public-api-sidestep`
   are off and imports go straight to segment paths.
-- **The `widgets/` layer is used on purpose** (`src/widgets/pet-details`).
-  The official skill discourages adopting it.
+- **The `widgets/` layer may be used on purpose.** The official skill
+  discourages adopting it; this project does not follow that.
 - **`src/pages/` keeps its name** — it is not renamed to `src/_pages/`, and
   the root `pages/` stub stays (it holds `_document.tsx` and `404.tsx`, so the
   empty-directory build failure that motivates the rename does not apply).
@@ -73,8 +69,7 @@ win; do not "fix" the code toward the canonical guidance.
   `global-error.tsx`, `loading.tsx`, `robots.ts`, `sitemap.ts`, `manifest.ts`;
   `metadata` is exported from `app/layout.tsx`.
 - `typedRoutes` is enabled; route constants live in `src/shared/config/routes.ts`.
-- Path aliases (`tsconfig.json`): `@/*` → `./src/*`, `@generated/*` →
-  `./generated/*`.
+- Path alias (`tsconfig.json`): `@/*` → `./src/*`.
 
 ## Code style (Biome)
 
@@ -94,13 +89,13 @@ win; do not "fix" the code toward the canonical guidance.
 ## Testing
 
 - **Vitest 5** + **Testing Library** (jsdom), config in `vitest.config.ts`
-  (`resolve.tsconfigPaths: true` resolves the `@/` and `@generated/` aliases).
+  (`resolve.tsconfigPaths: true` resolves the `@/` alias).
   The bundled `vitest` Agent Skill was generated from the 5.x beta, but its
   API matches 5.0 stable: `vi.when`, `toHaveBeenExhausted` and context-scoped
   `bench` exist, `test.sequential` is gone (use `{ concurrent: false }`).
   Vitest 5 also defaults `clearMocks` to `true`.
 - Tests are colocated with slices: `src/**/*.test.{ts,tsx}`
-  (example: `src/entities/pet/ui/pet-card.test.tsx`).
+  (example: `src/pages/home/ui/home-page.test.tsx`).
 - **Playwright** e2e tests live in `e2e/` (`*.spec.ts`), config in
   `playwright.config.ts` — its `webServer` runs `pnpm build-start` locally
   (reusing an already-running server on :3000) and `pnpm start` in CI, where
@@ -109,90 +104,52 @@ win; do not "fix" the code toward the canonical guidance.
   `pnpm test:e2e`** — otherwise Playwright silently tests the dev server
   instead of a production build, and the run can go green on code that would
   fail when built.
-- E2E depends on the **live** Mockzoo API: the build fills the `'use cache'`
-  snapshot from it, and background regenerations hit it too. Runs need network
-  access and can flake if the sandbox misbehaves; CI retries twice.
-- Two specs read the raw SSR HTML rather than the rendered page: one fails if
-  pet data stops being server-rendered, one fails if `/` starts re-rendering
-  per request instead of coming from cache. If the first goes red, check the
-  demo pet IDs against the Mockzoo deployment before suspecting the app —
-  seed pets 1-3 are stable but still mutable, and
-  `POST /v1/admin/reset` restores them
-  (`src/features/select-pet/model/demo-pet-ids.ts`).
 
 ## UI stack
 
 - **shadcn** v4 (base-nova style, Base UI primitives) — components install to `src/shared/ui/`
-- **Tailwind CSS v4** with OKLCh color system (CSS variables, neutral base).
-  Light theme only — there is no dark mode; do not add `dark:` variants.
-- **Lucide** icons (see `src/entities/pet/ui/pet-card.tsx`, `app/loading.tsx`)
+- **Tailwind CSS v4**, **dark theme only**: there is no light palette and no
+  theme switch, `color-scheme: dark` is set on `:root`. Do not add `dark:`
+  variants. All tokens live in `:root` of `app/globals.css`.
+  - Palette: `--rose`, `--orchid`, `--blush`, `--snow`, `--lavender`
+    (user-provided hex values, keep them exact) plus plum neutrals `--ink`
+    (page background), `--ink-2` (cards, popovers), `--ink-3` (muted
+    surfaces). Registered in `@theme inline` as `--color-<name>`, so
+    `bg-ink`, `text-rose` etc. work.
+  - shadcn tokens (`--background`, `--primary`, `--muted-foreground`, ...)
+    are mapped onto the palette; use them for components, the raw palette
+    for decoration.
+  - Fonts via `next/font/google` in `app/layout.tsx` (cyrillic + latin):
+    `font-display` (Unbounded), `font-sans` (Onest, the body default),
+    `font-mono` (JetBrains Mono).
+- **Lucide** icons (see `app/loading.tsx`)
 - **sonner** toasts — `<Toaster />` is mounted in `app/layout.tsx`
-  (`src/shared/ui/sonner.tsx`); fire with `toast(...)` (demo in
-  `src/features/select-pet/ui/pet-id-select.tsx`)
+  (`src/shared/ui/sonner.tsx`); fire with `toast(...)`
 - **class-variance-authority** + **clsx** + **tailwind-merge** for class composition (`cn()` in `src/shared/lib/utils.ts`)
 
 To add a shadcn component: `pnpx shadcn@latest add <component>`
 
-## Data fetching
+## Content
 
-- **Hey API (OpenAPI-TS)** — generates typed client, Zod schemas, and React
-  Query options from the OpenAPI spec into `generated/backend-api/`. Spec URL
-  is `${API_URL}/${SPEC_PATH}` (see `openapi-ts.config.ts`); `API_URL` comes
-  from the validated env (`src/shared/config/env.ts`), so `.env.local` is
-  required for generation. Note: the config imports env via a relative path,
-  not the `@/` alias — jiti (the config loader) doesn't resolve tsconfig paths.
-  Zod response validation is enabled. Note: Mockzoo is our own backend and is
-  spec-compliant by construction, so a validation failure here now points at
-  a real Mockzoo bug rather than sandbox rot — the demo still fetches pets by
-  ID from a known-good list of stable seed pets, restorable via
-  `POST /v1/admin/reset`
-  (`src/features/select-pet/model/demo-pet-ids.ts`).
-- **TanStack React Query v5** — `QueryClient` factory at `src/shared/api/query-client.ts`
-  (used by both the client provider and SSR prefetch). Its query/mutation caches log
-  Zod response-validation failures via `src/shared/api/log-validation-error.ts` —
-  in the browser console and in the server console during SSR prefetch, where
-  errors are otherwise swallowed.
-- **API client context** — `ApiClientProvider` + `useApiClient()` at `src/shared/api/`;
-  server components use `createBackendApiClients()` from `src/shared/api/server-api-client.ts`.
-- **Entity QO pattern** — entity options wrap generated Hey API queryOptions and
-  take the client as an argument (see `src/entities/pet/api/pet.options.ts`).
-- **SSR prefetch** — server page compositions use `QueryClient` +
-  `query(...).catch(noop)` + `dehydrate` + `HydrationBoundary` (see
-  `src/pages/home/ui/home-page.tsx`). `prefetchQuery` is deprecated in
-  TanStack Query v5 and goes away in v6; `query()` throws instead of
-  swallowing, hence the explicit `catch`.
-- **Caching is opt-in** — Cache Components is enabled, so everything is
-  uncached and dynamic by default and `export const revalidate` / `dynamic` /
-  `fetchCache` are **build errors**. A composition that prefetches marks
-  itself with `'use cache'` + `cacheLife(...)`; `HomePage` uses
-  `cacheLife('minutes')` (stale 5m / revalidate 60s / expire 1h), the direct
-  replacement for the `revalidate = 60` it used to carry. Drop the directive
-  and the route still works — `app/loading.tsx` is the Suspense boundary that
-  keeps it off the prerender path — it just refetches every request.
-  The directive cannot move deeper than the composition: `'use cache'` takes
-  only serializable arguments and return values, and `QueryClient` and the
-  Hey API client are neither.
-- **Reading runtime state** — anything that must observe the environment per
-  request needs `await io()` (from `next/cache`) or, in a route handler that
-  should wait for a real request, `await connection()` (from `next/server`).
-  Without one, the value is captured during prerendering and baked into the
-  output. `AppProviders` uses `io()` so `API_URL` reaches the browser as the
-  value the container was started with; `robots.ts` and `sitemap.ts` use
-  `connection()` for `SITE_URL`.
+The site has no backend. All copy lives in the typed `profile` object in
+`src/shared/config/profile.ts` (placeholder values start with `TODO:`);
+pages read it directly.
+
+Cache Components is enabled, so everything is dynamic by default and
+`export const revalidate` / `dynamic` / `fetchCache` are build errors; opt in
+to caching with `'use cache'` + `cacheLife(...)`. Anything that must observe
+the environment per request needs `await connection()` (from `next/server`),
+otherwise the value is captured during prerendering.
 
 ## Environment
 
-- Validated via t3-env in `src/shared/config/env.ts` (`API_URL` required, server-only).
-- `API_URL` is intentionally NOT `NEXT_PUBLIC_`: it stays swappable at container
-  runtime (no build-time inlining) while still reaching the browser as a prop
-  through `ApiClientProvider` (SSR prefetch on the server, direct API calls on
-  the client). Do not convert it to a public env var.
+- Validated via t3-env in `src/shared/config/env.ts`.
 - `SITE_URL` (optional, server-only, defaults to `http://localhost:3000`) —
   public origin for robots.txt/sitemap.xml. Those routes call `connection()`,
-  so it is read at runtime like `API_URL` (swappable per container). The Zod
-  default applies at runtime, where validation runs — do not turn these routes
-  static: at build time `SKIP_ENV_VALIDATION=1` (Docker) makes t3-env return
-  raw `process.env` without defaults.
+  so it is read at runtime (swappable per container). The Zod default applies
+  at runtime, where validation runs — do not turn these routes static: at
+  build time `SKIP_ENV_VALIDATION=1` (Docker) makes t3-env return raw
+  `process.env` without defaults.
 - `.env.local` is optional; `SKIP_ENV_VALIDATION=1` bypasses validation (used in Docker builds).
 
 ## Build & deploy
@@ -201,16 +158,6 @@ To add a shadcn component: `pnpx shadcn@latest add <component>`
   (`reactCompiler: true`), `poweredByHeader: false`, `typedRoutes: true`
 - Docker: multi-stage `Dockerfile` (standalone output via `DOCKER_BUILD=1`);
   `.env*` files are dockerignored — pass env at runtime
-- Docker builds have no `API_URL`, so the cached snapshot of `/` is built from
-  a failed prefetch and holds an empty React Query cache (`.catch(noop)`
-  swallows the error and `dehydrate()` keeps successful queries only). The
-  page still works from the first request: `AppProviders` calls `io()`, so the
-  browser gets the container's real `API_URL` and fetches client-side. The
-  first background regeneration past the 60s `revalidate` then restores SSR
-  data — verified by building an image with no `API_URL` and running it with
-  one. Note `cacheLife('minutes')` also sets `expire: 3600`, so a container
-  with no traffic for an hour makes the next visitor wait on the API instead
-  of being served a stale snapshot; the old `revalidate = 60` never expired
 - Node >= 24, pnpm 11
 
 ## TypeScript 7
@@ -218,21 +165,6 @@ To add a shadcn component: `pnpx shadcn@latest add <component>`
 The project is on **TypeScript 7** (the Go-native port). `tsc --noEmit`,
 `next build` (it runs the project's `tsc` CLI), steiger, Vitest and
 Playwright all work under it with no config changes.
-
-`@hey-api/openapi-ts` is pinned **exactly** to a `next` snapshot
-(`0.0.0-next-20260930190945`). The tagged 0.99.x line builds the client
-through the JS compiler API (`ts.SyntaxKind`), which TS 7 no longer ships:
-`pnpm generate-api` dies with `Cannot read properties of undefined (reading
-'AnyKeyword')` (hey-api issue #4235). The snapshot has no TypeScript
-dependency at all. Its output differs from 0.99.0 only in indentation.
-
-- Keep the pin exact: a caret range would float to newer `next` snapshots,
-  whose output can change, and CI does not run codegen to catch it. After
-  bumping it, run `pnpm generate-api` and review the diff in `generated/`.
-- Dependabot ignores `@hey-api/openapi-ts` (`.github/dependabot.yml`): to
-  semver, `0.99.0` is newer than the snapshot, so it would "update" back to
-  the broken release, and CI does not run codegen to catch it. Lift the
-  ignore once a tagged release supports TS 7.
 
 `steiger` 0.7 loads `steiger.config.ts` under TS 7 (cosmiconfig 10 dropped
 its TypeScript dependency). `pnpm-workspace.yaml` still widens the

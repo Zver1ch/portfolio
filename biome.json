@@ -65,7 +65,6 @@
 	"files": {
 		"includes": [
 			"**/*.{js,jsx,cjs,mjs,ts,tsx,json,jsonc,css}",
-			"!generated",
 			"!public",
 			"!skills-lock.json"
 		],

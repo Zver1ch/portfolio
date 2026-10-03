@@ -1,15 +1,15 @@
-# Frontend Template
+# Portfolio
 
-Next.js 16 (App Router) starter with Feature-Sliced Design, a typed OpenAPI
-client, and strict tooling out of the box.
+Backend-less, dark-only personal portfolio ("сайт-визитка", in Russian) built
+on Next.js 16 (App Router) with Feature-Sliced Design and strict tooling. All
+content comes from a typed config in `src/shared/config/profile.ts`.
 
 ## Stack
 
 - **Next.js 16** — App Router, React 19, Cache Components and React Compiler enabled
 - **Feature-Sliced Design** — validated with [steiger](https://github.com/feature-sliced/steiger)
-- **Hey API (OpenAPI-TS)** — typed API client + Zod schemas + React Query options generated from an OpenAPI spec
-- **TanStack React Query v5** — with SSR prefetch/hydration wired up
-- **Tailwind CSS v4** + **shadcn** (base-nova, Base UI primitives)
+- **Tailwind CSS v4** + **shadcn** (base-nova, Base UI primitives), dark theme only, plum + pink palette tokens in `app/globals.css`
+- **next/font** — Unbounded (display), Onest (body), JetBrains Mono (mono)
 - **Biome** — lint + format (tabs, single quotes, no semicolons)
 - **Lefthook** — pre-commit lint, pre-push type-check + FSD validation
 - **Vitest** + **Testing Library** — colocated component tests
@@ -21,21 +21,10 @@ client, and strict tooling out of the box.
 
 ```bash
 pnpm install
-cp .env.example .env.local
 pnpm dev
 ```
 
-The template ships pointed at [Mockzoo](https://mockzoo.dealunloker.com), a
-self-hosted, stable mock pet-store API purpose-built for this template (spec
-at `/v1/openapi.json`, sandbox reset via `POST /v1/admin/reset`, seed pets at
-ids 1-3), so it works immediately after clone.
-
-### Connecting your own API
-
-1. Set `API_URL` in `.env.local` to your backend base URL.
-2. Adjust `SPEC_PATH` in `openapi-ts.config.ts` if your spec lives elsewhere than `${API_URL}/openapi.json`.
-3. Regenerate the client: `pnpm generate-api`.
-4. Replace the example `pet` slices (`src/entities/pet`, `src/features/select-pet`, `src/widgets/pet-details`, `src/pages/home`) with your own.
+Edit `src/shared/config/profile.ts` — placeholders start with `TODO:`.
 
 ## Scripts
 
@@ -51,27 +40,19 @@ ids 1-3), so it works immediately after clone.
 | `pnpm test:coverage` | Run Vitest tests with coverage report |
 | `pnpm test:e2e` | Run Playwright e2e tests |
 | `pnpm run fsd` | Validate FSD layer boundaries |
-| `pnpm generate-api` | Regenerate API client from OpenAPI spec |
 
 ## Project structure
 
 ```
 app/                  — Next.js App Router routes (thin, import from src/pages)
 pages/                — required stub, see pages/README.md
-generated/backend-api — generated API client (do not edit)
 src/
-  app/       — providers
-  pages/     — page compositions (SSR prefetch example: home)
-  widgets/   — composite UI blocks (pet-details)
-  features/  — user interactions (select-pet)
-  entities/  — business entities (pet)
-  shared/    — api, config, lib, ui
+  pages/     — page compositions (home)
+  widgets/   — composite UI blocks (add when needed)
+  features/  — user interactions (add when needed)
+  entities/  — business entities (add when needed)
+  shared/    — config (profile, env, routes), lib, ui
 ```
-
-Example data flow: `app/page.tsx` → `src/pages/home` (server component,
-prefetches via `createBackendApiClients()`) → `src/widgets/pet-details` (client
-component, `useApiClient()` + `useQuery`) → `src/entities/pet` (query options
-wrapping the generated client).
 
 ## E2E tests
 
@@ -80,23 +61,16 @@ app itself (`pnpm build-start`); locally it reuses a server already running on
 :3000, and in CI it runs `pnpm start` against the build produced earlier in the
 pipeline.
 
-Note: the demo home page caches its prefetched snapshot with `'use cache'` +
-`cacheLife('minutes')` and fills it from the **live** Mockzoo API at build
-time and on background regenerations, so e2e runs need network access and can
-occasionally flake if the sandbox misbehaves (CI retries failed tests twice).
-Two of the specs assert on the server-rendered HTML, so they also go red when
-a demo pet ID is missing on the sandbox — `POST /v1/admin/reset` restores the
-seed pets. Point `API_URL` at your own backend — or mock the network in
-Playwright — to make them hermetic.
+The site has no network dependencies, so the specs are hermetic.
 
 ## Docker
 
 ```bash
-docker build -t frontend-template .
-docker run -p 3000:3000 -e API_URL=https://mockzoo.dealunloker.com/v1 frontend-template
+docker build -t portfolio .
+docker run -p 3000:3000 -e SITE_URL=https://example.com portfolio
 ```
 
-Or with Compose (reads env from `.env.local`):
+Or with Compose (reads env from `.env.local` if present):
 
 ```bash
 docker compose up --build
