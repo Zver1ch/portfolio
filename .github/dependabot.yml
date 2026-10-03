@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      # Non-major bumps land as a single weekly PR; majors get their own.
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # Pinned to a `next` snapshot: 0.99.x still needs the TS compiler API
+      # that TS 7 dropped, and semver ranks 0.99.0 above the snapshot.
+      # See the TypeScript 7 note in AGENTS.md before lifting this.
+      - dependency-name: '@hey-api/openapi-ts'
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
