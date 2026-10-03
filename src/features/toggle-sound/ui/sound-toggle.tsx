@@ -16,7 +16,7 @@ export function SoundToggle({ className }: { className?: string }) {
 			size='icon'
 			className={className}
 			aria-pressed={enabled}
-			aria-label={enabled ? 'Выключить звук' : 'Включить звук'}
+			aria-label='Звук'
 			onClick={() => setSoundEnabled(!enabled)}
 		>
 			{enabled ? <Volume2 aria-hidden /> : <VolumeX aria-hidden />}

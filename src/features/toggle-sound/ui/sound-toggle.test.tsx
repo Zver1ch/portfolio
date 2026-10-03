@@ -8,17 +8,15 @@ describe('SoundToggle', () => {
 		setSoundEnabled(true)
 	})
 
-	it('flips aria-pressed and the label', () => {
+	it('keeps a stable label and flips aria-pressed', () => {
 		render(<SoundToggle />)
 
-		const button = screen.getByRole('button', { name: 'Выключить звук' })
+		const button = screen.getByRole('button', { name: 'Звук' })
 		expect(button).toHaveAttribute('aria-pressed', 'true')
 
 		fireEvent.click(button)
 
-		expect(
-			screen.getByRole('button', { name: 'Включить звук' }),
-		).toHaveAttribute('aria-pressed', 'false')
+		expect(button).toHaveAttribute('aria-pressed', 'false')
 		expect(window.localStorage.getItem('sound-enabled')).toBe('false')
 	})
 })

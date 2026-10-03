@@ -28,8 +28,8 @@ Layers live under `src/` — see the tree in `README.md`.
 
 - Preset: `fsd.configs.recommended` with overrides:
   - `fsd/public-api: off` and `fsd/no-public-api-sidestep: off` — **no `index.ts`
+    barrel files in slices**. Import directly from segment paths, e.g.
     `@/shared/config/profile`, `@/pages/home/ui/home-page`.
-    `@/entities/pet/api/pet.options`, `@/widgets/pet-details/ui/pet-details`.
     Do not create slice `index.ts` files.
   - `fsd/insignificant-slice: warn` — a slice referenced from only one place
     is a warning, not an error. Anything else `pnpm run fsd` prints is a
