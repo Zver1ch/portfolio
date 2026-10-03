@@ -115,3 +115,40 @@
 	background: color-mix(in oklch, var(--rose) 40%, transparent);
 	color: var(--snow);
 }
+
+@custom-variant story (
+	@media (min-width: 64rem) and (prefers-reduced-motion: no-preference)
+);
+
+/* Hidden only while scripts have not split the text yet; the delay is a no-JS escape hatch. */
+@media (prefers-reduced-motion: no-preference) {
+	.story-pending {
+		visibility: hidden;
+		animation: story-unhide 0s 2.5s forwards;
+	}
+}
+
+@keyframes story-unhide {
+	to {
+		visibility: visible;
+	}
+}
+
+@keyframes story-float {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-8px);
+	}
+}
+
+html.lenis,
+html.lenis body {
+	height: auto;
+}
+
+.lenis.lenis-stopped {
+	overflow: clip;
+}

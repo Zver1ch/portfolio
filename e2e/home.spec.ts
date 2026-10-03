@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test'
 
-test('home page shows the profile heading without console errors', async ({
-	page,
-}) => {
+test('home page tells the story without console errors', async ({ page }) => {
 	const errors: string[] = []
 	page.on('console', (message) => {
+		// The meow file is supplied separately; its 404 is expected until then.
+		if (message.location().url.endsWith('/sounds/cat-click.mp3')) return
 		if (message.type() === 'error') errors.push(message.text())
 	})
 	page.on('pageerror', (error) => errors.push(error.message))
@@ -12,6 +12,25 @@ test('home page shows the profile heading without console errors', async ({
 	await page.goto('/')
 
 	await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+
+	const counter = page.getByTestId('boop-count')
+	await expect(counter).toHaveText('0')
+	await page.getByRole('button', { name: 'Погладить кота' }).first().click()
+	await expect(counter).toHaveText('1')
+
+	const sound = page.getByRole('button', { name: 'Звук' })
+	await expect(sound).toHaveAttribute('aria-pressed', 'true')
+	await sound.click()
+	await expect(sound).toHaveAttribute('aria-pressed', 'false')
+
+	await page
+		.getByRole('navigation', { name: 'Главы' })
+		.getByRole('link', { name: 'Связаться' })
+		.click()
+	await expect(
+		page.getByRole('heading', { name: /Помахать лапой/ }),
+	).toBeInViewport()
+
 	expect(errors).toEqual([])
 })
 

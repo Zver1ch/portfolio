@@ -1,13 +1,25 @@
-import { profile } from '@/shared/config/profile'
+import { SmoothScroll } from '@/shared/lib/gsap/smooth-scroll'
+import { StoryAbout } from '@/widgets/about/ui/about'
+import { StoryContact } from '@/widgets/contact/ui/contact'
+import { StoryFooter } from '@/widgets/footer/ui/footer'
+import { StoryHeader } from '@/widgets/header/ui/header'
+import { StoryProjects } from '@/widgets/projects/ui/projects'
+import { StoryPrologue } from '@/widgets/prologue/ui/prologue'
+import { StoryStack } from '@/widgets/stack/ui/stack'
 
 export function HomePage() {
 	return (
-		<main className='mx-auto flex min-h-dvh max-w-2xl flex-col justify-center gap-4 px-4 py-16'>
-			<h1 className='font-display text-4xl font-semibold'>
-				{profile.name}
-			</h1>
-			<p className='text-lg text-primary'>{profile.role}</p>
-			<p className='text-muted-foreground'>{profile.about}</p>
-		</main>
+		<>
+			<SmoothScroll />
+			<StoryHeader />
+			<main>
+				<StoryPrologue />
+				<StoryAbout />
+				<StoryStack />
+				<StoryProjects />
+				<StoryContact />
+			</main>
+			<StoryFooter />
+		</>
 	)
 }
