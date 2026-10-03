@@ -16,30 +16,32 @@ export type Profile = {
 	role: string
 	about: string
 	location: string
+	languages: string[]
+	/** Used in real work today. */
 	skills: string[]
+	/** In progress: moves to `skills` once there is a live demo. */
+	learning: string[]
+	lookingFor: string[]
+	now: string
+	/** Only projects that exist and have a live demo. */
 	projects: ProfileProject[]
 	links: ProfileLink[]
 }
 
 export const profile: Profile = {
-	name: 'TODO: имя',
+	name: 'Dmitriy Gorbunov',
 	handle: 'Zver1ch',
-	role: 'TODO: роль',
-	about: 'TODO: коротко о себе',
-	location: 'TODO: город',
-	skills: ['TODO: навык 1', 'TODO: навык 2', 'TODO: навык 3'],
-	projects: [
-		{
-			title: 'TODO: проект 1',
-			description: 'TODO: описание проекта',
-			href: 'TODO: ссылка на проект',
-			tags: ['TODO: тег'],
-		},
-		{
-			title: 'TODO: проект 2',
-			description: 'TODO: описание проекта',
-			tags: ['TODO: тег', 'TODO: тег'],
-		},
+	role: 'Frontend developer · in progress',
+	about: 'Верстаю на HTML и CSS, сейчас прокачиваю JavaScript, React, Next.js и TypeScript. Дерзкий, командный, в стрессе не теряюсь.',
+	location: 'Удалённо',
+	languages: ['RU', 'EN'],
+	skills: ['HTML', 'CSS', 'SCSS', 'CSS Modules'],
+	learning: ['JavaScript', 'React', 'Next.js', 'TypeScript'],
+	lookingFor: ['Стажировки', 'Junior-роли', 'Заказы на вёрстку (HTML/CSS)'],
+	now: 'Личный сайт: в работе',
+	projects: [],
+	links: [
+		{ label: 'GitHub', href: 'https://github.com/Zver1ch' },
+		{ label: 'Telegram', href: 'https://t.me/Zver1ch' },
 	],
-	links: [{ label: 'GitHub', href: 'https://github.com/Zver1ch' }],
 }
