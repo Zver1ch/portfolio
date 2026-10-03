@@ -132,8 +132,12 @@ To add a shadcn component: `pnpx shadcn@latest add <component>`
 ## Content
 
 The site has no backend. All copy lives in the typed `profile` object in
-`src/shared/config/profile.ts` (placeholder values start with `TODO:`);
-pages read it directly.
+`src/shared/config/profile.ts`; pages read it directly. Publish only facts
+the owner can confirm: no years of experience or employers, a skill moves
+from `learning` to `skills` once it has a live demo, projects appear only
+with a live demo, no e-mail (the domain has no MX).
+
+The cat click sound is `public/sounds/cat-click.mp3` (supplied by the owner).
 
 Cache Components is enabled, so everything is dynamic by default and
 `export const revalidate` / `dynamic` / `fetchCache` are build errors; opt in
