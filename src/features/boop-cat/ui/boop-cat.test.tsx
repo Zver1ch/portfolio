@@ -26,4 +26,22 @@ describe('BoopCat', () => {
 			'love',
 		)
 	})
+
+	it('takes a chapter-specific name', () => {
+		render(<BoopCat label='Погладить кота на прощание' />)
+		expect(
+			screen.getByRole('button', { name: 'Погладить кота на прощание' }),
+		).toBeInTheDocument()
+	})
+
+	it('stays clickable but leaves the tab order when decorative', () => {
+		const { container } = render(<BoopCat decorative />)
+		expect(screen.queryByRole('button')).not.toBeInTheDocument()
+		const button = container.querySelector('button')
+		expect(button).toHaveAttribute('tabindex', '-1')
+		expect(button).toHaveAttribute('aria-hidden', 'true')
+
+		fireEvent.click(button as HTMLButtonElement)
+		expect(boop).toHaveBeenCalledTimes(1)
+	})
 })

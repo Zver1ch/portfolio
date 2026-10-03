@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
+import { profile } from '@/shared/config/profile'
 import { StoryProjects } from './projects'
 
 describe('StoryProjects', () => {
@@ -14,7 +15,7 @@ describe('StoryProjects', () => {
 				name: 'Проекты появятся здесь вместе с живыми демо',
 			}),
 		).toBeInTheDocument()
-		expect(screen.getByText('этот сайт в работе')).toBeInTheDocument()
+		expect(screen.getByText(profile.now)).toBeInTheDocument()
 		expect(screen.queryAllByRole('article')).toHaveLength(0)
 	})
 

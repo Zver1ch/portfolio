@@ -58,4 +58,28 @@ describe('boop-store', () => {
 		})
 		expect(result.current).toBe(1)
 	})
+
+	it('follows another tab and never overwrites its count', async () => {
+		const { useBoopCount, incrementBoops } = await load()
+		const { result } = renderHook(() => useBoopCount())
+		expect(result.current).toBe(0)
+
+		window.localStorage.setItem('boop-count', '5')
+		act(() => {
+			window.dispatchEvent(
+				new StorageEvent('storage', {
+					key: 'boop-count',
+					newValue: '5',
+				}),
+			)
+		})
+		expect(result.current).toBe(5)
+
+		window.localStorage.setItem('boop-count', '7')
+		act(() => {
+			incrementBoops()
+		})
+		expect(result.current).toBe(8)
+		expect(window.localStorage.getItem('boop-count')).toBe('8')
+	})
 })

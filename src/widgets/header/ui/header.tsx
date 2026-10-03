@@ -91,7 +91,7 @@ export function StoryHeader() {
 				</nav>
 				<div className='flex items-center gap-1 sm:gap-2'>
 					<p
-						className='flex items-center gap-1.5 rounded-full bg-ink-3 px-3 py-1.5 font-mono text-xs text-orchid'
+						className='flex items-center gap-1.5 rounded-full bg-ink-3 px-3 py-1.5 font-mono text-xs whitespace-nowrap text-orchid'
 						aria-live='polite'
 					>
 						<Heart
@@ -99,7 +99,9 @@ export function StoryHeader() {
 							className='size-3.5 fill-rose text-rose'
 						/>
 						<span>
-							чмоков:{' '}
+							<span className='sr-only sm:not-sr-only'>
+								чмоков:{' '}
+							</span>
 							<span data-testid='boop-count'>{boops}</span>
 						</span>
 					</p>

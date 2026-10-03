@@ -1,4 +1,5 @@
 import { SmoothScroll } from '@/shared/lib/gsap/smooth-scroll'
+import { ChapterTrail } from '@/shared/ui/chapter-trail'
 import { StoryAbout } from '@/widgets/about/ui/about'
 import { StoryContact } from '@/widgets/contact/ui/contact'
 import { StoryFooter } from '@/widgets/footer/ui/footer'
@@ -14,9 +15,13 @@ export function HomePage() {
 			<StoryHeader />
 			<main>
 				<StoryPrologue />
+				<ChapterTrail />
 				<StoryAbout />
+				<ChapterTrail />
 				<StoryStack />
+				<ChapterTrail />
 				<StoryProjects />
+				<ChapterTrail />
 				<StoryContact />
 			</main>
 			<StoryFooter />

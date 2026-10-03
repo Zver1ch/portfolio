@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { gsap, useGSAP } from '@/shared/lib/gsap/register'
+import { gsap, ScrollTrigger, useGSAP } from '@/shared/lib/gsap/register'
 import { cn } from '@/shared/lib/utils'
 import {
 	BoykisserCat,
@@ -11,6 +11,8 @@ import { prefersReducedMotion, stampHearts } from '../lib/stamp-hearts'
 import { boop } from '../model/boop'
 
 const LOVE_MS = 1100
+/** How far the pupils may travel inside the eye, in viewBox units. */
+const GAZE_RANGE = 2.5
 
 export function BoopCat({
 	className,
@@ -18,6 +20,8 @@ export function BoopCat({
 	expression = 'idle',
 	idle = true,
 	trackPointer = false,
+	label = 'Погладить кота',
+	decorative = false,
 }: {
 	className?: string
 	catClassName?: string
@@ -25,36 +29,63 @@ export function BoopCat({
 	/** Pass false when the parent animates the cat's parts with GSAP. */
 	idle?: boolean
 	trackPointer?: boolean
+	label?: string
+	/**
+	 * Pointer-only clickable, skipped by keyboard and screen readers.
+	 * One labelled cat per page is enough in the tab order.
+	 */
+	decorative?: boolean
 }) {
 	const buttonRef = useRef<HTMLButtonElement>(null)
 	const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
 	const [loving, setLoving] = useState(false)
-	const [look, setLook] = useState({ x: 0, y: 0 })
 
 	const { contextSafe } = useGSAP(
 		() => {
 			const clearTimer = () => clearTimeout(timer.current)
-			if (!trackPointer) return clearTimer
+			const button = buttonRef.current
+			if (!trackPointer || !button) return clearTimer
 			const fine = window.matchMedia('(hover: hover) and (pointer: fine)')
 			if (!fine.matches || prefersReducedMotion()) return clearTimer
-			let frame = 0
+
+			// Pupils move through GSAP, so a pointer move never re-renders the cat.
+			const pupils = button.querySelectorAll('[data-part^="pupil-"]')
+			const toX = gsap.quickTo(pupils, 'x', { duration: 0.3 })
+			const toY = gsap.quickTo(pupils, 'y', { duration: 0.3 })
+			let onScreen = false
+			ScrollTrigger.create({
+				trigger: button,
+				start: 'top bottom',
+				end: 'bottom top',
+				onToggle: ({ isActive }) => {
+					onScreen = isActive
+					if (!isActive) {
+						toX(0)
+						toY(0)
+					}
+				},
+			})
 			const onMove = (event: PointerEvent) => {
-				cancelAnimationFrame(frame)
-				frame = requestAnimationFrame(() => {
-					const rect = buttonRef.current?.getBoundingClientRect()
-					if (!rect) return
-					const dx = event.clientX - (rect.left + rect.width / 2)
-					const dy = event.clientY - (rect.top + rect.height * 0.4)
-					setLook({
-						x: Math.max(-1, Math.min(1, dx / 400)),
-						y: Math.max(-1, Math.min(1, dy / 300)),
-					})
-				})
+				if (!onScreen) return
+				const rect = button.getBoundingClientRect()
+				const x = gsap.utils.clamp(
+					-1,
+					1,
+					(event.clientX - (rect.left + rect.width / 2)) / 400,
+				)
+				const y = gsap.utils.clamp(
+					-1,
+					1,
+					(event.clientY - (rect.top + rect.height * 0.4)) / 300,
+				)
+				const length = Math.hypot(x, y)
+				const unit = length > 1 ? 1 / length : 1
+				toX(x * unit * GAZE_RANGE)
+				toY(y * unit * GAZE_RANGE)
 			}
-			window.addEventListener('pointermove', onMove)
+			window.addEventListener('pointermove', onMove, { passive: true })
 			return () => {
 				clearTimer()
-				cancelAnimationFrame(frame)
 				window.removeEventListener('pointermove', onMove)
 			}
 		},
@@ -94,7 +125,9 @@ export function BoopCat({
 		<button
 			ref={buttonRef}
 			type='button'
-			aria-label='Погладить кота'
+			aria-label={decorative ? undefined : label}
+			aria-hidden={decorative || undefined}
+			tabIndex={decorative ? -1 : undefined}
 			onClick={onClick}
 			className={cn(
 				'relative block cursor-pointer rounded-[2rem] outline-none focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background',
@@ -103,7 +136,6 @@ export function BoopCat({
 		>
 			<BoykisserCat
 				expression={loving ? 'love' : expression}
-				look={look}
 				idle={idle}
 				className={cn('h-auto w-full overflow-visible', catClassName)}
 			/>

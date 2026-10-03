@@ -3,8 +3,6 @@ import { expect, test } from '@playwright/test'
 test('home page tells the story without console errors', async ({ page }) => {
 	const errors: string[] = []
 	page.on('console', (message) => {
-		// The meow file is supplied separately; its 404 is expected until then.
-		if (message.location().url.endsWith('/sounds/cat-click.mp3')) return
 		if (message.type() === 'error') errors.push(message.text())
 	})
 	page.on('pageerror', (error) => errors.push(error.message))
@@ -15,13 +13,17 @@ test('home page tells the story without console errors', async ({ page }) => {
 
 	const counter = page.getByTestId('boop-count')
 	await expect(counter).toHaveText('0')
+	const sound = page.waitForResponse((response) =>
+		response.url().endsWith('/sounds/cat-click.mp3'),
+	)
 	await page.getByRole('button', { name: 'Погладить кота' }).first().click()
 	await expect(counter).toHaveText('1')
+	expect((await sound).status()).toBe(200)
 
-	const sound = page.getByRole('button', { name: 'Звук' })
-	await expect(sound).toHaveAttribute('aria-pressed', 'true')
-	await sound.click()
-	await expect(sound).toHaveAttribute('aria-pressed', 'false')
+	const soundToggle = page.getByRole('button', { name: 'Звук' })
+	await expect(soundToggle).toHaveAttribute('aria-pressed', 'true')
+	await soundToggle.click()
+	await expect(soundToggle).toHaveAttribute('aria-pressed', 'false')
 
 	await page
 		.getByRole('navigation', { name: 'Главы' })

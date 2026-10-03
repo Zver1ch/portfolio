@@ -4,10 +4,13 @@ import { ArrowUpRight } from 'lucide-react'
 import { useRef } from 'react'
 import { spawnHeart } from '@/features/boop-cat/lib/stamp-hearts'
 import { BoopCat } from '@/features/boop-cat/ui/boop-cat'
-import { FINE_POINTER_QUERY, STORY_REDUCED_QUERY } from '@/shared/config/motion'
+import { FINE_POINTER_QUERY } from '@/shared/config/motion'
 import { profile } from '@/shared/config/profile'
 import { gsap, ScrollTrigger, useGSAP } from '@/shared/lib/gsap/register'
+import { drift, playWhileOnScreen } from '@/shared/lib/gsap/scene'
 import { ChapterLabel } from '@/shared/ui/chapter-label'
+import { ChapterNumeral } from '@/shared/ui/chapter-numeral'
+import { Sun, Sunset } from './sunset'
 
 const TRAIL_STEP = 64
 
@@ -20,7 +23,9 @@ export function StoryContact() {
 			const mm = gsap.matchMedia(scope.current ?? undefined)
 
 			mm.add('(prefers-reduced-motion: no-preference)', () => {
-				gsap.timeline({ repeat: -1 })
+				const section = scope.current as Element
+				const wave = gsap
+					.timeline({ repeat: -1 })
 					.to('[data-part="paw-right"]', {
 						y: -66,
 						x: 16,
@@ -43,13 +48,16 @@ export function StoryContact() {
 						ease: 'power2.in',
 					})
 					.to({}, { duration: 1.2 })
-				gsap.to('[data-part="tail"]', {
+				const tail = gsap.to('[data-part="tail"]', {
 					rotation: 10,
 					duration: 1.4,
 					ease: 'sine.inOut',
 					yoyo: true,
 					repeat: -1,
 				})
+				playWhileOnScreen(section, [wave, tail])
+				drift('[data-numeral]', section, 12)
+				drift('[data-sun]', section, 14)
 
 				const ambient = gsap
 					.timeline({ repeat: -1, paused: true })
@@ -65,7 +73,7 @@ export function StoryContact() {
 					})
 					.to({}, { duration: 0.9 })
 				ScrollTrigger.create({
-					trigger: scope.current,
+					trigger: section,
 					start: 'top 60%',
 					onToggle: (self) =>
 						self.isActive ? ambient.play() : ambient.pause(),
@@ -95,15 +103,6 @@ export function StoryContact() {
 				return () => section.removeEventListener('pointermove', onMove)
 			})
 
-			mm.add(STORY_REDUCED_QUERY, () => {
-				gsap.from('[data-fade]', {
-					autoAlpha: 0,
-					duration: 0.6,
-					stagger: 0.1,
-					scrollTrigger: { trigger: scope.current, start: 'top 75%' },
-				})
-			})
-
 			return () => mm.revert()
 		},
 		{ scope },
@@ -113,33 +112,53 @@ export function StoryContact() {
 		<section
 			id='contact'
 			ref={scope}
-			className='relative isolate flex min-h-[90dvh] items-center overflow-hidden px-4 py-28 sm:px-6'
+			className='relative isolate flex min-h-[90dvh] items-center overflow-hidden px-4 pt-20 pb-32 sm:px-6 sm:pt-28'
 		>
-			<div
-				aria-hidden
-				className='pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(48rem_30rem_at_20%_70%,color-mix(in_oklch,var(--rose)_16%,transparent),transparent_70%)]'
-			/>
-			<div className='mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[1fr_minmax(0,20rem)] lg:gap-20'>
+			<Sunset />
+			<ChapterNumeral className='top-[-0.1em] left-[-0.04em]'>
+				V
+			</ChapterNumeral>
+			<div className='mx-auto grid w-full max-w-6xl items-end gap-12 lg:grid-cols-[1fr_minmax(0,22rem)] lg:gap-20'>
 				<div>
-					<div data-fade>
-						<ChapterLabel number='V' title='Связаться' />
-					</div>
-					<h2
-						data-fade
-						className='mt-5 font-display text-[clamp(1.75rem,5vw,3.75rem)] leading-tight font-semibold text-balance'
-					>
-						Помахать лапой в ответ?
+					<ChapterLabel number='V' title='Связаться' />
+					<h2 className='mt-5 font-display text-[clamp(1.75rem,5vw,3.75rem)] leading-tight font-semibold text-balance'>
+						Помахать <span className='text-orchid'>лапой</span> в
+						ответ?
 					</h2>
-					<p
-						data-fade
-						className='mt-5 max-w-lg text-lg text-muted-foreground'
-					>
+					<p className='mt-5 max-w-lg text-lg text-muted-foreground'>
 						Напишите мне, расскажите про задачу или просто погладьте
 						кота.
 					</p>
+					<dl className='mt-8 grid max-w-xl gap-x-8 gap-y-4 sm:grid-cols-[auto_1fr] sm:items-baseline'>
+						<dt className='font-mono text-xs tracking-[0.25em] text-orchid uppercase'>
+							Ищу
+						</dt>
+						<dd>
+							<ul className='flex flex-wrap gap-2'>
+								{profile.lookingFor.map((item) => (
+									<li
+										key={item}
+										className='rounded-full border border-rose/40 bg-rose/10 px-3 py-1 text-sm text-snow'
+									>
+										{item}
+									</li>
+								))}
+							</ul>
+						</dd>
+						<dt className='font-mono text-xs tracking-[0.25em] text-orchid uppercase'>
+							Сейчас
+						</dt>
+						<dd className='flex items-center gap-2.5 text-base text-blush'>
+							<span
+								aria-hidden
+								className='size-2 rounded-full bg-rose shadow-[0_0_10px_var(--rose)]'
+							/>
+							{profile.now}
+						</dd>
+					</dl>
 					<ul className='mt-10 max-w-lg divide-y divide-border border-y border-border'>
 						{profile.links.map((link) => (
-							<li key={link.href} data-fade>
+							<li key={link.href}>
 								<a
 									href={link.href}
 									target='_blank'
@@ -156,8 +175,9 @@ export function StoryContact() {
 						))}
 					</ul>
 				</div>
-				<div ref={cat} className='mx-auto w-52 lg:w-full'>
-					<BoopCat idle={false} />
+				<div ref={cat} className='relative mx-auto w-56 lg:w-full'>
+					<Sun />
+					<BoopCat idle={false} label='Погладить кота на прощание' />
 				</div>
 			</div>
 		</section>
