@@ -66,7 +66,7 @@ win; do not "fix" the code toward the canonical guidance.
 - Route files in `app/` are thin: they import a page composition from
   `@/pages/*` (e.g. `app/page.tsx` → `HomePage`).
 - Root-level route conventions live in `app/`: `not-found.tsx`, `error.tsx`,
-  `global-error.tsx`, `loading.tsx`, `robots.ts`, `sitemap.ts`, `manifest.ts`;
+  `global-error.tsx`, `robots.ts`, `sitemap.ts`, `manifest.ts`;
   `metadata` is exported from `app/layout.tsx`.
 - `typedRoutes` is enabled; route constants live in `src/shared/config/routes.ts`.
 - Path alias (`tsconfig.json`): `@/*` → `./src/*`.
@@ -122,7 +122,10 @@ win; do not "fix" the code toward the canonical guidance.
   - Fonts via `next/font/google` in `app/layout.tsx` (cyrillic + latin):
     `font-display` (Unbounded), `font-sans` (Onest, the body default),
     `font-mono` (JetBrains Mono).
-- **Lucide** icons (see `app/loading.tsx`)
+- **Lucide** icons (see `src/features/toggle-sound/ui/sound-toggle.tsx`)
+- No `app/loading.tsx`: the site is fully static, and a root Suspense
+  fallback would make the prerendered HTML show only the fallback until JS
+  runs (the content arrives hidden and is swapped in by a script).
 - **sonner** toasts — `<Toaster />` is mounted in `app/layout.tsx`
   (`src/shared/ui/sonner.tsx`); fire with `toast(...)`
 - **class-variance-authority** + **clsx** + **tailwind-merge** for class composition (`cn()` in `src/shared/lib/utils.ts`)
