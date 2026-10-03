@@ -59,6 +59,32 @@ describe('boop-store', () => {
 		expect(result.current).toBe(1)
 	})
 
+	it('drops to zero when another tab clears storage', async () => {
+		window.localStorage.setItem('boop-count', '3')
+		const { useBoopCount } = await load()
+		const { result } = renderHook(() => useBoopCount())
+		expect(result.current).toBe(3)
+
+		window.localStorage.clear()
+		act(() => {
+			window.dispatchEvent(new StorageEvent('storage', { key: null }))
+		})
+		expect(result.current).toBe(0)
+	})
+
+	it('ignores storage events for other keys', async () => {
+		const { useBoopCount } = await load()
+		const { result } = renderHook(() => useBoopCount())
+
+		window.localStorage.setItem('boop-count', '9')
+		act(() => {
+			window.dispatchEvent(
+				new StorageEvent('storage', { key: 'sound-enabled' }),
+			)
+		})
+		expect(result.current).toBe(0)
+	})
+
 	it('follows another tab and never overwrites its count', async () => {
 		const { useBoopCount, incrementBoops } = await load()
 		const { result } = renderHook(() => useBoopCount())

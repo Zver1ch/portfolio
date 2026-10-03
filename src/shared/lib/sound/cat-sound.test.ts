@@ -101,6 +101,34 @@ describe('playCatSound', () => {
 		expect(audio.sources).toHaveLength(5)
 	})
 
+	it('stays silent when muted while the file is still loading', async () => {
+		const { playCatSound, setSoundEnabled } = await load()
+
+		const pending = playCatSound()
+		setSoundEnabled(false)
+		await pending
+
+		expect(okFetch).toHaveBeenCalledTimes(1)
+		expect(audio.sources).toHaveLength(0)
+	})
+
+	it('resumes a context the browser started suspended', async () => {
+		const resume = vi.fn(async () => {})
+		vi.stubGlobal(
+			'AudioContext',
+			class extends audio.FakeAudioContext {
+				state = 'suspended'
+				resume = resume
+			},
+		)
+		const { playCatSound } = await load()
+
+		await playCatSound()
+
+		expect(resume).toHaveBeenCalledTimes(1)
+		expect(audio.sources[0]?.start).toHaveBeenCalled()
+	})
+
 	it('warns exactly once when the file is missing and never throws', async () => {
 		const missing = vi.fn(async () => ({ ok: false, status: 404 }))
 		vi.stubGlobal('fetch', missing)
