@@ -29,12 +29,14 @@ export const MEOW = { jawDeg: 18, durationMs: 350 } as const
  * stretches slower and yawns later.
  */
 export const PET = {
+	/** Seated: only the face reacts (Gate 2, round 2), the paws and the tail stay put. */
 	awake: {
-		pose: 'stretch',
-		fadeIn: 0.25,
-		hold: 0.8,
-		fadeOut: 0.6,
-		jawDelay: 0.15,
+		pose: 'sit-boop',
+		fadeIn: 0.18,
+		hold: 0.55,
+		fadeOut: 0.45,
+		jawDelay: 0.08,
+		bones: ['neck', 'head', 'ear_l', 'ear_r'],
 	},
 	asleep: {
 		pose: 'sleep-stretch',

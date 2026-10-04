@@ -47,6 +47,7 @@ export type Pose = {
 export type PoseName =
 	| 'rest'
 	| 'sit'
+	| 'sit-boop'
 	| 'stretch'
 	| 'sleep'
 	| 'sleep-stretch'
@@ -134,7 +135,23 @@ export const POSES: Record<PoseName, Pose> = {
 		},
 	},
 
-	/** The click reaction, seated: paws thrown up and out, back arched, legs kicking forward, tail up, mouth open through the jaw layer. */
+	/**
+	 * The click reaction, seated (Gate 2, round 2): face only. Masked to neck,
+	 * head and ears: the head tips to the side and down a little towards the
+	 * visitor, the ears flatten; the jaw layer opens the mouth. Paws and tail
+	 * stay where the sitting pose has them.
+	 */
+	'sit-boop': {
+		root: SIT_ROOT,
+		bones: {
+			neck: { aim: [0.12, 0.93, 0.34] },
+			head: { aim: [0.3, 0.88, 0.36], twist: 14 },
+			ear_l: { rot: [0, 0, -26] },
+			ear_r: { rot: [0, 0, 26] },
+		},
+	},
+
+	/** A full-body stretch, seated: paws up and out, back arched, legs kicking forward, tail up. Kept for the lab; the click reaction is `sit-boop`. */
 	stretch: {
 		root: SIT_ROOT,
 		bones: {
@@ -186,12 +203,14 @@ export const POSES: Record<PoseName, Pose> = {
 			// Upper arms along the chest towards the chin, forearms folded in
 			// front of it, paws tucked under the chin (the `post` raise is what
 			// the lab's sliders found): the lower (left) arm on the desk, the
-			// right one over it.
+			// right one over it. The forearm twists turn the palms towards each
+			// other, the lower one up and the upper one down (measured from the
+			// pad vertices in the lab, Gate 2 round 2).
 			arm_l: { aim: [0.5, 0.75, 0.45], post: [40, 0, 0] },
-			elbow_l: { aim: [0.2, 0.3, 0.93] },
+			elbow_l: { aim: [0.2, 0.3, 0.93], twist: -85 },
 			wrist_l: { aim: [0, 0.5, 0.86] },
 			arm_r: { aim: [-0.1, 0.8, 0.6], post: [40, 0, 0] },
-			elbow_r: { aim: [0.1, 0.2, 0.97] },
+			elbow_r: { aim: [0.1, 0.2, 0.97], twist: 100 },
 			wrist_r: { aim: [0, 0.4, 0.9] },
 			// Thighs up towards the belly, shins folded back, the right leg lying
 			// on the left one.

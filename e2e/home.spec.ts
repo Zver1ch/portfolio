@@ -232,8 +232,22 @@ test.describe('sections', () => {
 		const problems = collectProblems(page)
 		await gotoHydrated(page)
 		const nav = page.getByRole('navigation', { name: 'Sections' })
+		// Every scroll position on the way down, to prove the page never turns
+		// back: the browser's own fragment jump racing the smooth scroll did.
+		await page.evaluate(() => {
+			const log: number[] = []
+			Object.assign(window, { __scrollLog: log })
+			window.addEventListener('scroll', () => log.push(window.scrollY), {
+				passive: true,
+			})
+		})
 
 		for (const section of SECTIONS) {
+			await page.evaluate(() => {
+				;(
+					window as unknown as { __scrollLog: number[] }
+				).__scrollLog.length = 0
+			})
 			await nav.getByRole('link', { name: section.link }).click()
 			await waitForScrollToSettle(page)
 			const heading = page.getByRole('heading', {
@@ -244,6 +258,24 @@ test.describe('sections', () => {
 			await expect(heading).toBeInViewport()
 			const box = await heading.boundingBox()
 			expect(box?.y).toBeGreaterThanOrEqual(HEADER_HEIGHT)
+			const log = await page.evaluate(
+				() =>
+					(window as unknown as { __scrollLog: number[] })
+						.__scrollLog,
+			)
+			const turnedBack = log.some(
+				(y, i) => i > 0 && y < (log[i - 1] as number) - 1,
+			)
+			expect(turnedBack, `${section.link}: ${log.join(' ')}`).toBe(false)
+			// The hash lands when the smooth scroll completes, a few sub-pixel
+			// frames after the position looks settled.
+			await expect
+				.poll(() => new URL(page.url()).hash, { timeout: 5000 })
+				.toBe(
+					(await nav
+						.getByRole('link', { name: section.link })
+						.getAttribute('href')) as string,
+				)
 		}
 
 		await nav.getByRole('link', { name: 'Top' }).click()

@@ -251,6 +251,14 @@ otherwise the value is captured during prerendering.
   mood in the finale. `features/toggle-sound/ui/sound-prompt.tsx` is the
   "Enable sound" chip, mounted by `widgets/cat-stage` once the room runs and
   gone once any choice is stored; the toggle mutes everything.
+- Smooth scrolling (`src/shared/lib/gsap/smooth-scroll.tsx`): Lenis runs on
+  fine pointers only and is ticked from the GSAP ticker ahead of
+  ScrollTrigger. In-page links are scrolled by Lenis alone: the component
+  prevents the click's default and calls `scrollTo` (Lenis honours the
+  target's `scroll-margin`), setting the hash once it arrives. Left to the
+  browser as well, the instant fragment jump raced the smooth scroll and
+  the page jumped back and forth; the nav e2e asserts the scroll never
+  turns back.
 - Posters (`public/posters/room-{night,dawn}{,-portrait}.jpg`) and
   `app/apple-icon.png` are rendered from the lab with `pnpm assets:posters`;
   re-run it after any change to the room, the poses or the palette.
