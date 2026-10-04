@@ -40,6 +40,10 @@ docker-compose.yml
 README.md
 .git
 
+# source models and docs (never part of the image)
+/assets
+/docs
+
 # env (never bake env files into the image)
 .env*
 !.env.example

@@ -52,6 +52,8 @@ src/
   features/  — user interactions (add when needed)
   entities/  — business entities (add when needed)
   shared/    — config (profile, env, routes), lib, ui
+assets/               — source 3D models and their licences (never served, see assets/models/README.md)
+docs/                 — implementation plans (docs/cat-room-plan.md)
 ```
 
 ## E2E tests
