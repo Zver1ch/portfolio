@@ -85,26 +85,26 @@ export const POSES: Record<PoseName, Pose> = {
 
 	/**
 	 * Sitting on the front edge of the desk next to the mouse, facing the
-	 * visitor: thighs on the desk, shins dangling over the edge, the left paw
-	 * propped beside the hip, the right paw resting on the mouse, tail curled
-	 * on the desk round the left side. The root drops the standing origin by
-	 * the hip height so the seat lands on the desk top.
+	 * visitor: thighs on the desk, shins dangling over the edge, leaning back
+	 * a little on both paws planted behind the hips, tail curled on the desk
+	 * round the left side. The root drops the standing origin by the seat
+	 * height so the seat lands on the desk top.
 	 */
 	sit: {
 		root: SIT_ROOT,
 		bones: {
-			hips: { aim: [0, 1, -0.08] },
-			chest: { aim: [0, 1, 0.06] },
-			neck: { aim: [0, 0.98, 0.15] },
+			hips: { aim: [0, 1, -0.18] },
+			chest: { aim: [0, 1, -0.08] },
+			neck: { aim: [0, 0.97, 0.22] },
 			head: { aim: [0, 0.98, 0.2] },
-			// Left paw on the desk beside the hip.
-			arm_l: { aim: [0.3, -0.95, 0.05] },
-			elbow_l: { aim: [0.1, -0.97, 0.2] },
-			wrist_l: { aim: [0.05, -0.15, 1] },
-			// Right paw over to the mouse.
-			arm_r: { aim: [-0.5, -0.88, 0.22] },
-			elbow_r: { aim: [-0.4, -0.88, 0.35] },
-			wrist_r: { aim: [-0.2, -0.3, 0.93] },
+			// Leaning back on both paws, planted on the desk behind the hips and
+			// hidden by the body from the front.
+			arm_l: { aim: [0.3, -0.72, -0.62] },
+			elbow_l: { aim: [0.05, -0.85, -0.52] },
+			wrist_l: { aim: [-0.25, -0.25, -0.93] },
+			arm_r: { aim: [-0.3, -0.72, -0.62] },
+			elbow_r: { aim: [-0.05, -0.85, -0.52] },
+			wrist_r: { aim: [0.25, -0.25, -0.93] },
 			// Thighs forward on the desk, shins hanging past the edge, toes down.
 			leg_l: { aim: [0.2, 0.02, 0.98] },
 			knee_l: { aim: [0.05, -0.95, 0.32] },
@@ -112,12 +112,15 @@ export const POSES: Record<PoseName, Pose> = {
 			leg_r: { aim: [-0.2, 0.02, 0.98] },
 			knee_r: { aim: [-0.05, -0.95, 0.3] },
 			foot_r: { aim: [0, -0.5, 0.85] },
-			// Tail along the desk behind, curling round the left hip.
-			tailroot: { aim: [0.3, -0.5, -0.8] },
-			tail: { aim: [0.8, -0.1, -0.6] },
-			tail001: { aim: [1, 0, 0.1] },
-			tail002: { aim: [0.7, 0, 0.7] },
-			tail003: { aim: [0.2, 0.05, 1] },
+			// Tail along the desk behind, a gentle arc round the left hip: about
+			// 30° per joint over the seven tail bones.
+			tailroot: { aim: [0.1, -0.45, -0.88] },
+			tail: { aim: [0.45, -0.25, -0.86] },
+			tail001: { aim: [0.8, -0.08, -0.6] },
+			tail002: { aim: [0.98, 0, -0.2] },
+			tail003: { aim: [0.92, 0.02, 0.38] },
+			tail004: { aim: [0.65, 0.02, 0.76] },
+			tail005: { aim: [0.25, 0.02, 0.97] },
 			ear_l: { rot: [0, 0, 6] },
 			ear_r: { rot: [0, 0, -6] },
 		},
@@ -148,6 +151,8 @@ export const POSES: Record<PoseName, Pose> = {
 			tail001: { aim: [0.2, 1, 0.1] },
 			tail002: { aim: [0.1, 0.9, 0.45] },
 			tail003: { aim: [0, 0.6, 0.8] },
+			tail004: { aim: [0, 0.4, 0.92] },
+			tail005: { aim: [0, 0.2, 0.98] },
 			ear_l: { rot: [0, 0, -14] },
 			ear_r: { rot: [0, 0, 14] },
 		},
@@ -182,6 +187,8 @@ export const POSES: Record<PoseName, Pose> = {
 			tail001: { aimWorld: [-0.95, 0.05, -0.1] },
 			tail002: { aimWorld: [-0.95, 0, -0.3] },
 			tail003: { aimWorld: [-0.9, 0, -0.45] },
+			tail004: { aimWorld: [-0.85, 0, -0.5] },
+			tail005: { aimWorld: [-0.8, 0, -0.55] },
 			ear_l: { rot: [0, 0, 20] },
 			ear_r: { rot: [0, 0, -20] },
 			lefteye: { rot: [180, 0, 0] },
@@ -221,6 +228,8 @@ export const POSES: Record<PoseName, Pose> = {
 			tail001: { aim: [0, 1, -0.1] },
 			tail002: { aim: [0.1, 0.9, 0.4] },
 			tail003: { aim: [0.2, 0.6, 0.75] },
+			tail004: { aim: [0.25, 0.4, 0.88] },
+			tail005: { aim: [0.25, 0.25, 0.94] },
 		},
 	},
 }

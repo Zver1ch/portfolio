@@ -90,8 +90,11 @@ export function applyLookAt(
 		const toTarget = target.clone().sub(headPosition)
 		if (toTarget.lengthSq() > 1e-6) {
 			toTarget.normalize()
-			// Split the needed turn into yaw about the body's up axis and pitch
-			// about the head's lateral axis, so each can be limited separately.
+			// Split the needed turn into yaw about the head's up axis and pitch
+			// about its lateral axis, so each can be limited separately.
+			// `right` = forward × up points to the cat's right (-X at rest);
+			// a positive rotation about it lifts the face, so a target above
+			// the current gaze (positive `pitch`) turns the head up.
 			const up = new Vector3(0, 1, 0).applyQuaternion(headQuaternion)
 			const yawTarget = toTarget.clone().projectOnPlane(up)
 			const yawForward = forward.clone().projectOnPlane(up)
@@ -116,7 +119,7 @@ export function applyLookAt(
 				.multiply(
 					new Quaternion().setFromAxisAngle(
 						right,
-						-clamp(
+						clamp(
 							pitch,
 							-LOOK_AT.pitchDeg * DEG,
 							LOOK_AT.pitchDeg * DEG,

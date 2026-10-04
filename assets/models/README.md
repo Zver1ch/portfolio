@@ -35,28 +35,49 @@ it; ship only the render.
 `public/models/cat.glb`, the only model file the site serves:
 
 ```
-dedup → prune → fix-model-space → tuck-stockings → meshopt --level medium --quantization-volume scene --quantize-position 16
+dedup → prune → fix-model-space → tuck-stockings → smooth-tail → meshopt --level medium --quantization-volume scene --quantize-position 16
 ```
 
 - `dedup`, `prune` and `meshopt` are one-off runs of
   `pnpm dlx @gltf-transform/cli@4.5.1`. Never `optimize`, `join`, `flatten`,
   `simplify`, `palette` or `weld`: they can alter the rig or the authored look.
-- `tuck-stockings` (`scripts/tuck-stockings.mjs`) pulls the body vertices
-  under the stockings 50% towards each leg's axis. The stockings are a
-  separate skinned mesh with rings 5–6 cm apart; on a bent knee they cut the
-  corner with a straight chord while the denser white leg follows the arc,
-  and a white kneecap pokes through. The covered leg is never visible, so
-  thinning it changes nothing at rest and keeps it inside the stocking when
-  bent. The band is the stocking's vertical extent minus 2 cm at each edge,
-  within 12 cm of the hip-to-ankle axis; 1,000 of the 9,249 body vertices
-  move. Bind-space units come from the hip-to-ankle distance measured in
-  both spaces (13,572 per metre): the bind matrices carry a non-uniform
-  scale, so their columns cannot be used for that.
+- `tuck-stockings` (`scripts/tuck-stockings.mjs`) hides the leg under the
+  stockings. The stockings are a separate skinned mesh laid over the white
+  leg with nearly the same ring layout, but the two were weighted
+  separately: both are rigid to one bone almost everywhere, and the
+  thigh/shin boundary sits at different heights on each, so on a bent knee
+  a band of the leg turns with the thigh while the stocking around it turns
+  with the shin, and a white kneecap pokes through. Thinning the leg does
+  not help (the offset is along the bone, not radial), and on the inside of
+  the bend the stocking pinches towards the joint, where any leg with a
+  radius shows. The covered leg is never visible, so for every body vertex
+  skinned to a leg and lying between the ankle and 2 cm below the
+  stocking's top, the script copies the skin weights of the nearest stocking
+  vertex on that side (its twin) and moves the vertex onto the leg's bones
+  (the hip–knee–ankle polyline): a line has no face to show, whatever the
+  stocking does around it. 800 of the 9,249 body vertices change; the feet
+  keep their shape. Bind-space units come from the hip-to-ankle distance
+  measured in both spaces (13,572 per metre): the bind matrices carry a
+  non-uniform scale, so their columns cannot be used for that.
+  `pnpm assets:shots --clip` does not see this (it tests the cat against the
+  room); the check was a lab trace from the hero camera to every white leg
+  vertex, which after this step reaches nothing but the paws.
+- `smooth-tail` (`scripts/smooth-tail.mjs`) re-rigs the tail. The source
+  skeleton ends at `Tail.003` while the pink tuft reaches 0.4 m further,
+  rigid, and almost every tail vertex follows a single bone, so any bend
+  kinked at the joints. The script adds three joints (`Tail.004`,
+  `Tail.005`, `Tail.005_end`) as a chain under `Tail.003`, spaced like the
+  old leaf, with inverse bind matrices derived from the parent's, and
+  re-skins the 428 tail vertices by projecting each onto the polyline of
+  joint bind positions: two joints per vertex with linear weights along the
+  segment. The shipped skin therefore has 137 joints; the extra ones are
+  posed like the rest (`tail004`, `tail005`) and `tail005_end` is the tip
+  the spring chain measures.
 - `prune` drops `NORMAL` and `TEXCOORD_0`: every material is unlit and
   untextured, so neither is read. Shading variants that want normals derive
   flat ones from screen-space derivatives in the fragment shader.
 - `--quantization-volume scene` matters: with the default per-mesh volumes
-  `quantize` clones the skin once per mesh (7 skins × 134 joints) because
+  `quantize` clones the skin once per mesh (7 skins × 137 joints) because
   each mesh needs its own dequantisation baked into the inverse bind
   matrices. One shared volume keeps the single authored skin.
 - `scripts/fix-model-space.mjs` is ours; see the next section.
@@ -99,7 +120,8 @@ common factor, 26.76.
 Measured by `pnpm assets:inspect` (`scripts/inspect-model.mjs`), which reads
 the glTF JSON chunk and the uncompressed vertex data without three.js or the
 glTF Transform SDK. The output below is pasted as printed; the shipped
-model's skin table is identical to the source's and omitted.
+model's skin table is the source's plus the three tail joints that
+`smooth-tail` adds, and is omitted.
 
 Compared with the plan (`docs/cat-room-plan.md` §1.3):
 

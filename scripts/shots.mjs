@@ -149,7 +149,7 @@ async function clipCheck(
 					'knee_r',
 					'foot_r_end',
 					'tailroot',
-					'tail003_end',
+					'tail005_end',
 					'ear_l002_end',
 					'ear_r002_end',
 				]

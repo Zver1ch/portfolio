@@ -72,6 +72,7 @@ Model A:
 - 24,742 triangles, 16,134 vertices, 7 skinned meshes: `Bow_Scifi Metal Plate_0`, `Bow_Glossy Black Plastic_0`, `Stockings_Glossy Black Plastic_0`, `Stockings_Material_0`, `boykisser_Material_0` (white body, 13,994 triangles), `boykisser_fur 2_0` (pink, 5,606), `boykisser_Glossy Black Plastic_0` (black, 1,254).
 - 4 materials, all `KHR_materials_unlit`, double-sided, no textures. Linear base colours: `Material` 0.8 (white), `fur_2` (0.45, 0.16, 0.15) (dusty pink), `Glossy_Black_Plastic` 0, `Scifi_Metal_Plate` 0.37.
 - One skin with 134 joints (including `_end` leaves). No animations, no morph targets.
+  The shipped `cat.glb` adds three tail joints (`smooth-tail`, see `assets/models/README.md`), 137 in all.
 - Node chain: `Sketchfab_model` (−90° about X) → fbx node (scale 0.01) → `RootNode` → `Armature` (scale ≈ 39.05 with an axis swap) → `Object_4` → `_rootJoint`. Node names carry numeric suffixes (`Head_017`, `Tail.001_05`).
 - Skin weights:
   - Pupils: 64 black vertices on each of `LeftEye` and `RightEye`. The eye bones move the pupils only; there are no eyelids.

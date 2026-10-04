@@ -6,14 +6,12 @@ export const CAT_REST_HEIGHT = 0.62
 export const BREATHING = { hz: 0.28, pitchDeg: 1 } as const
 
 export const LOOK_AT = {
-	yawDeg: 50,
-	pitchDeg: 25,
+	yawDeg: 60,
+	pitchDeg: 40,
 	neckShare: 0.35,
 	headShare: 0.65,
 	/** Exponential damping rate, 1/s. */
 	lambda: 6,
-	eyeYawDeg: 14,
-	eyePitchDeg: 10,
 } as const
 
 export const EAR_TWITCH = {

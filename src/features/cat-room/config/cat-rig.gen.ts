@@ -4,8 +4,8 @@
 /** The shipped model: byte size for load progress, digest for the cache-busting URL. */
 export const CAT_GLB = {
 	url: '/models/cat.glb',
-	bytes: 190744,
-	sha256: 'e763d1a852180c8d',
+	bytes: 191044,
+	sha256: 'f57dc6d5a3165ac3',
 } as const
 
 /** Bones in skin order: `skeleton.bones[i]` is `CAT_RIG_BONES[i]`. */
@@ -144,6 +144,9 @@ export const CAT_RIG_BONES = [
 	{ key: 'popka_end', parent: 'popka' },
 	{ key: 'popka001', parent: 'spine' },
 	{ key: 'popka001_end', parent: 'popka001' },
+	{ key: 'tail004', parent: 'tail003' },
+	{ key: 'tail005', parent: 'tail004' },
+	{ key: 'tail005_end', parent: 'tail005' },
 ] as const
 
 export type CatBoneKey = (typeof CAT_RIG_BONES)[number]['key']

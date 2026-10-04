@@ -92,7 +92,7 @@ const MEASURE_KEYS = [
 	'foot_r_end',
 	'ear_l002_end',
 	'ear_r002_end',
-	'tail003_end',
+	'tail005_end',
 	'jaw_end',
 ]
 const HEAD_KEYS = [
@@ -126,8 +126,16 @@ export async function createCat({
 	// The tail may droop, but not through the desk.
 	chains.add(
 		'tail',
-		['tailroot', 'tail', 'tail001', 'tail002', 'tail003'],
-		'tail003_end',
+		[
+			'tailroot',
+			'tail',
+			'tail001',
+			'tail002',
+			'tail003',
+			'tail004',
+			'tail005',
+		],
+		'tail005_end',
 		CHAINS.tail,
 		spot[1] + CHAINS.tailRadius,
 	)

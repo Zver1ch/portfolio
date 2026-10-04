@@ -550,3 +550,94 @@ export function invertMatrix4(m) {
 		(a20 * b03 - a21 * b01 + a22 * b00) * d,
 	]
 }
+
+/**
+ * Writes one element of an uncompressed accessor in place (any component
+ * type, interleaved or not). Normalized integer accessors take 0..1 floats.
+ * @param {Glb} glb
+ * @param {number} accessorIndex
+ * @param {number} index Element index.
+ * @param {ArrayLike<number>} components
+ */
+export function writeAccessorElement(glb, accessorIndex, index, components) {
+	const { json, bin } = glb
+	const accessor = json.accessors[accessorIndex]
+	const ArrayType = COMPONENT_ARRAYS[accessor.componentType]
+	const count = COMPONENT_COUNTS[accessor.type]
+	if (
+		!ArrayType ||
+		!count ||
+		isCompressedAccessor(json, accessorIndex) ||
+		!bin
+	)
+		throw new Error(`Accessor ${accessorIndex} cannot be written in place`)
+	const bufferView = json.bufferViews[accessor.bufferView]
+	const elementBytes = count * ArrayType.BYTES_PER_ELEMENT
+	const stride = bufferView.byteStride ?? elementBytes
+	const start =
+		bin.byteOffset +
+		(bufferView.byteOffset ?? 0) +
+		(accessor.byteOffset ?? 0) +
+		index * stride
+	const view = new DataView(bin.buffer)
+	const divisor = accessor.normalized
+		? NORMALIZED_DIVISORS[accessor.componentType]
+		: 1
+	for (let c = 0; c < count; c++) {
+		const offset = start + c * ArrayType.BYTES_PER_ELEMENT
+		const value = components[c] * divisor
+		switch (accessor.componentType) {
+			case 5120:
+				view.setInt8(offset, Math.round(value))
+				break
+			case 5121:
+				view.setUint8(offset, Math.round(value))
+				break
+			case 5122:
+				view.setInt16(offset, Math.round(value), true)
+				break
+			case 5123:
+				view.setUint16(offset, Math.round(value), true)
+				break
+			case 5125:
+				view.setUint32(offset, Math.round(value), true)
+				break
+			default:
+				view.setFloat32(offset, value, true)
+		}
+	}
+}
+
+/**
+ * Appends float data as a new buffer view and accessor; returns the new
+ * accessor index. The caller must keep using the returned `bin`.
+ * @param {Glb} glb
+ * @param {Float32Array} data
+ * @param {string} type Accessor type such as `MAT4`.
+ * @returns {number}
+ */
+export function appendFloatAccessor(glb, data, type) {
+	const { json } = glb
+	const bin = glb.bin ?? new Uint8Array(0)
+	const aligned = (bin.byteLength + 3) & ~3
+	const next = new Uint8Array(aligned + data.byteLength)
+	next.set(bin)
+	next.set(
+		new Uint8Array(data.buffer, data.byteOffset, data.byteLength),
+		aligned,
+	)
+	glb.bin = next
+	json.buffers[0].byteLength = next.byteLength
+	json.bufferViews.push({
+		buffer: 0,
+		byteOffset: aligned,
+		byteLength: data.byteLength,
+	})
+	json.accessors.push({
+		bufferView: json.bufferViews.length - 1,
+		componentType: 5126,
+		count: data.length / COMPONENT_COUNTS[type],
+		type,
+	})
+	return json.accessors.length - 1
+}
