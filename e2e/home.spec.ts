@@ -385,11 +385,15 @@ test.describe('narrow viewports', () => {
 	})
 })
 
-test('unknown route renders the 404 page', async ({ page }) => {
-	await page.goto('/definitely-not-a-page')
-
-	await expect(
-		page.getByRole('heading', { name: 'Page not found' }),
-	).toBeVisible()
-	await expect(page.getByRole('link', { name: 'Go home' })).toBeVisible()
+test('unknown routes and the dev-only lab render the 404 page', async ({
+	page,
+}) => {
+	for (const path of ['/definitely-not-a-page', '/lab']) {
+		const response = await page.goto(path)
+		expect(response?.status(), path).toBe(404)
+		await expect(
+			page.getByRole('heading', { name: 'Page not found' }),
+		).toBeVisible()
+		await expect(page.getByRole('link', { name: 'Go home' })).toBeVisible()
+	}
 })

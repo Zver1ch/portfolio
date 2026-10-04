@@ -23,7 +23,8 @@
 		"assets:shots": "node scripts/shots.mjs",
 		"generate-api": "openapi-ts",
 		"postinstall": "lefthook install",
-		"assets:posters": "node scripts/capture-posters.mjs"
+		"assets:posters": "node scripts/capture-posters.mjs",
+		"assets:page-shots": "node scripts/page-shots.mjs"
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.8.0",

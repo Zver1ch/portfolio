@@ -1,6 +1,6 @@
 # Cat Room: implementation plan
 
-Status: approved by the owner on 2026-10-04. Gate 1 passed the same day after seven feedback rounds (see `docs/lookdev/gate-1/README.md`); M2–M8 run to Gate 2.
+Status: approved by the owner on 2026-10-04. Gate 1 passed the same day after seven feedback rounds (see `docs/lookdev/gate-1/README.md`). M2–M8 are built; the Gate 2 package is in `docs/lookdev/gate-2/README.md` and waits for the owner's review on real GPUs, a phone and with sound.
 
 Audience: the implementer, working only from this repository. All paths are repo-relative. Follow `AGENTS.md`: pnpm only, Biome style, FSD without barrels, React Compiler on (no hand-written `useMemo`/`useCallback`/`memo`), dark theme only.
 
@@ -437,7 +437,7 @@ M6 notes: the scheduler counts "entry" per IntersectionObserver event of a secti
 
 - `sfx.ts`: key tick (the typing line), plop (the fish drop), chomp (the catch). Only the plop, always a gesture, may create the context; the others play on an existing one.
 - The sandbox has no audio output: loudness is asserted by rendering 10 s through `OfflineAudioContext` (RMS between −34 and −26 dBFS, peak at most −9 dBFS) in `e2e/sound.spec.ts`, which strips the module's types with `node:module` and imports it from a blob URL. Measured: −27.6 dBFS RMS / −14.0 peak at night, −28.8 / −14.5 at dawn. The owner listens at Gate 2.
-- The prompt is a fixed chip at the bottom centre (z 50), mounted by `widgets/cat-stage` once the room is ready, rather than a header item: the header has no room for it at 320 px.
+- The prompt is a fixed chip in the bottom-right corner (z 50), mounted by `widgets/cat-stage` once the room is ready, rather than a header item: the header has no room for it at 320 px, and the corner stays clear of the peeks and the copy.
 
 ### 3.13 Performance budget
 

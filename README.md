@@ -13,6 +13,8 @@ third-party credits are in `CREDITS.md`.
 - **Tailwind CSS v4** + **shadcn** (base-nova, Base UI primitives), dark theme only, plum + pink palette tokens in `app/globals.css`
 - **next/font** — Unbounded (display), Onest (body), JetBrains Mono (mono), latin subsets
 - **three.js** — the cat room (`src/features/cat-room`), loaded lazily, never in the initial chunks
+- **GSAP** (ScrollTrigger) + **Lenis** — the pinned dive and finale, smooth scrolling
+- **Web Audio** — code-generated ambient and effects, no audio files besides the meow
 - **Biome** — lint + format (tabs, single quotes, no semicolons)
 - **Lefthook** — pre-commit lint, pre-push type-check + FSD validation
 - **Vitest** + **Testing Library** — colocated component tests
@@ -47,8 +49,32 @@ confirm (no years, employers or e-mail).
 | `pnpm assets:model` | Rebuild `public/models/cat.glb` from the source avatar |
 | `pnpm assets:inspect` | Print the model facts; `--write-rig` regenerates `cat-rig.gen.ts` |
 | `pnpm assets:check` | Asset guard: no source models or stray model files under `public/`, rig in sync |
-| `pnpm assets:shots` | Lab screenshots through headless Chromium (`--gate` builds the Gate 1 package) |
+| `pnpm assets:shots` | Lab screenshots through headless Chromium: `--view`, `--pose`, `--probe`, `--sequence dive\|finale`, `--clip` (cat versus furniture), `--gate` (the Gate 1 package) |
 | `pnpm assets:posters` | Renders the hero and finale posters and the touch icon from the lab |
+| `pnpm assets:page-shots` | Stills of the production page at the moments the owner reviews (the Gate 2 package in `docs/lookdev/gate-2/`); needs a running `pnpm start` |
+
+## The cat room
+
+The home page is a 3D developer room with a cat on the desk, drawn on one
+fixed transparent canvas above the page. It runs in one of three modes,
+decided on the client (the server always renders the static page):
+
+- **full** (wide landscape viewports with motion allowed and real WebGL): the
+  hero pins and the camera dives into the monitor, where the page itself shows
+  through a hole in the canvas; between the stages the cat peeks from the
+  bottom edge, a tap on an empty spot (or "Feed the cat" in the header) drops
+  a fish, Escape stops the gags; the finale pulls back out of the monitor into
+  the dawn room with the cat asleep and the credits rolling in.
+- **lite** (phones, narrow viewports): the same room with a painted screen,
+  no pins, no gags; the canvas fades over the hero and the finale.
+- **static** (reduced motion, no WebGL, Save-Data, or any failure while
+  loading): posters and a 2D face button; nothing moves.
+
+Sound is opt-in: the "Enable sound" chip starts a generated ambient (room
+tone, the PC's hum, sparse plucks, chirps at dawn); the meow and the small
+effects play unless muted. Details, budgets and the test matrix are in
+`AGENTS.md` and `docs/cat-room-plan.md`; the owner's review packages are in
+`docs/lookdev/`.
 
 ## Project structure
 
@@ -73,7 +99,18 @@ app itself (`pnpm build-start`); locally it reuses a server already running on
 :3000, and in CI it runs `pnpm start` against the build produced earlier in the
 pipeline.
 
-The site has no network dependencies, so the specs are hermetic.
+- `home.spec.ts` — the page without JavaScript, the hero, the face buttons,
+  the sections, reduced motion, narrow viewports, the 404 page.
+- `room.spec.ts` — the live room in full and lite mode, the lazy scene chunk,
+  every fallback to static.
+- `dive.spec.ts`, `finale.spec.ts`, `gags.spec.ts`, `sound.spec.ts` — the
+  pinned dive and its pixel alignment, the finale, the edge intrusions, the
+  sound opt-in and the offline loudness of the ambient.
+
+The 3D specs run serially under software WebGL (SwiftShader) with long
+timeouts. Where Playwright cannot download Chromium, point `CHROME_PATH` at a
+Chromium binary. The site has no network dependencies, so the specs are
+hermetic.
 
 ## Docker
 

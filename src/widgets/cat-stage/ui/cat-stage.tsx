@@ -28,7 +28,7 @@ export function CatStage() {
 			/>
 			<AmbientSound />
 			{status === 'ready' ? (
-				<SoundPrompt className='fixed bottom-5 left-1/2 z-50 -translate-x-1/2' />
+				<SoundPrompt className='fixed right-4 bottom-4 z-50 sm:right-6 sm:bottom-6' />
 			) : null}
 		</SceneErrorBoundary>
 	)

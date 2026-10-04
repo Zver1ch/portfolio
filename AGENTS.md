@@ -255,8 +255,11 @@ otherwise the value is captured during prerendering.
   (`--view`, `--probe <bone>`, `--pose <name>`, `--sequence`,
   `--compare-source`, `--clip`, `--gate`); set `CHROME_PATH` where Playwright
   cannot download Chromium. Screenshots go to `artifacts/` (git-ignored); the
-  Gate 1 package lives in `docs/lookdev/gate-1/`, its README is in Russian
-  (the owner's language), code and the other docs stay English.
+  Gate 1 package lives in `docs/lookdev/gate-1/`, the Gate 2 package (stills
+  of the production page from `pnpm assets:page-shots` against a running
+  `pnpm start`, plus the measured budgets of plan §3.13) in
+  `docs/lookdev/gate-2/`. Their READMEs are in Russian (the owner's
+  language), code and the other docs stay English.
 - The cat must not enter the furniture. `src/features/cat-room/config/colliders.ts`
   describes the room's solids; `scene.penetration()` runs every skinned vertex
   of the posed cat through them, and `pnpm assets:shots --clip` (also part of
