@@ -101,15 +101,25 @@ export const WINDOW = {
 } as const
 
 /**
- * A pair of socks on the floor in front of the desk, paw prints up. The
- * portrait hero camera sees only a 12 cm strip of floor between the desk's
- * front edge and the bottom of the frame, so they lie along that strip.
+ * The cat's spare stockings dropped on the floor in front of the desk (the
+ * strip the portrait camera sees): black thigh-highs with the white double
+ * stripe, proportioned like the pair on its legs (Gate 1, round 6). Metres;
+ * widths are those of the empty stocking lying flat.
  */
 export const SOCKS = {
 	center: [0.5, ROOM.floorY, -0.7] as Vec3,
-	size: [0.09, 0.05, 0.2] as Vec3,
-	gap: 0.05,
-	yawDeg: 78,
+	/** Cuff to ankle, then the foot. */
+	length: 0.23,
+	foot: 0.055,
+	cuffWidth: 0.11,
+	ankleWidth: 0.06,
+	thickness: 0.014,
+	/** Stripe bands below the cuff edge, metres from it. */
+	stripes: [
+		[0.01, 0.015],
+		[0.023, 0.028],
+	] as const,
+	yawDeg: 80,
 } as const
 
 /**

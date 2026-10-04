@@ -159,7 +159,7 @@ export const CAM_PRESETS: Record<Exclude<CamPreset, 'hero'>, Orbit> = {
 	sticker: { yaw: 4, pitch: 6, dist: 0.5, fov: 30, focus: 'sticker' },
 	lamp: { yaw: -30, pitch: 12, dist: 0.9, fov: 30, focus: 'lamp' },
 	desk: { yaw: -15, pitch: 40, dist: 0.8, fov: 30, focus: 'desk' },
-	socks: { yaw: 25, pitch: 50, dist: 0.7, fov: 30, focus: 'socks' },
+	socks: { yaw: 25, pitch: 50, dist: 1.0, fov: 30, focus: 'socks' },
 }
 
 /** Centre of interest for a focus; `head` is refined by the lab from the live bone position. */

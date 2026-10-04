@@ -1,4 +1,5 @@
 import type { BufferGeometry } from 'three'
+import { DEG } from '@/shared/lib/math/ease'
 import type { Vec3 } from '@/shared/lib/math/vec3'
 import {
 	DESK,
@@ -73,8 +74,11 @@ export const PAINTS = {
 		mixHex(P.rose, P.blush, 0.25),
 	),
 	moon: paint(P.snow, mixHex(P.lavender, P.orchid, 0.35)),
-	sock: paint(P.lavender, mixHex(P.lavender, P.blush, 0.5)),
-	pawPrint: paint(P.rose, P.rose),
+	// The floor stockings are the cat's own, so they take its authored colours
+	// rather than palette mixes: black, and the body's white (linear 0.8),
+	// warmed at dawn the way the cat's shader warms it.
+	stocking: paint(0x000000),
+	stockingStripe: paint(0xe6e6e6, 0xe6dbcf),
 	screenGlow: paint(P.orchid, P.blush),
 	moonlight: paint(P.lavender, P.lavender),
 	lampPool: paint(P.rose, mixHex(P.rose, P.blush, 0.5)),
@@ -432,6 +436,10 @@ function buildLamp(kit: Kit) {
 	kit.fan(bulbCentre, bulbRing, LAMP.head, PAINTS.bulb, 1)
 }
 
+function add3(a: Vec3, b: Vec3): Vec3 {
+	return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+}
+
 function sub3(a: Vec3, b: Vec3): Vec3 {
 	return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 }
@@ -465,81 +473,116 @@ function frameOf3(axis: Vec3): [Vec3, Vec3] {
 
 function buildSocks(kit: Kit) {
 	const [cx, cy, cz] = SOCKS.center
-	const [w] = SOCKS.size
-	for (const [index, side] of [-1, 1].entries()) {
-		buildSock(
-			kit,
-			[cx + side * (SOCKS.gap + w / 2), cy, cz + index * 0.03],
-			SOCKS.yawDeg + index * 22,
-			side,
-		)
-	}
+	// One nearly straight, foot towards the viewer; one bent at the knee,
+	// foot back towards the desk. Neither crosses the other.
+	buildStocking(kit, [cx - 0.24, cy, cz - 0.04], SOCKS.yawDeg, -1, 14)
+	buildStocking(kit, [cx + 0.04, cy, cz + 0.04], SOCKS.yawDeg - 20, 1, 36)
 }
 
 /**
- * One sock lying flat: a lofted tube that runs down the leg, turns at the
- * heel and tapers to a rounded toe, with a cuff lip at the open end and a
- * paw print on the top of the foot. `mirror` flips which way the leg bends.
+ * One of the cat's stockings dropped on the floor: an empty thigh-high lying
+ * flat, lofted along a path that kinks at the knee and folds at the heel,
+ * tapering from the cuff to the ankle and on to a rounded toe, with the two
+ * white stripes below the cuff. `mirror` flips the bends, `kneeDeg` is the
+ * kink at the knee; the stocking starts at `origin` with its cuff and runs
+ * along local +Z turned by `yawDeg`.
  */
-function buildSock(kit: Kit, origin: Vec3, yawDeg: number, mirror: number) {
-	const [w, h, l] = SOCKS.size
+function buildStocking(
+	kit: Kit,
+	origin: Vec3,
+	yawDeg: number,
+	mirror: number,
+	kneeDeg: number,
+) {
+	const { length, foot, cuffWidth, ankleWidth, thickness } = SOCKS
 	const up: Vec3 = [0, 1, 0]
-	const foot: Vec3 = [0, 0, 1]
-	const leg = unit3([-0.6 * mirror, 0, -0.8])
+	const knee = length / 2
+	const heelDeg = kneeDeg + 75
+	const heading = (deg: number): Vec3 => [
+		mirror * Math.sin(deg * DEG),
+		0,
+		Math.cos(deg * DEG),
+	]
+	// Local position and tangent at distance `s` along cuff → knee → heel → toe.
+	const along = (s: number): { x: number; z: number; tangent: Vec3 } => {
+		const legs: [number, Vec3][] = [
+			[knee, heading(0)],
+			[length - knee, heading(kneeDeg)],
+			[foot, heading(heelDeg)],
+		]
+		let x = 0
+		let z = 0
+		let left = s
+		for (const [span, dir] of legs) {
+			const step = Math.min(left, span)
+			x += dir[0] * step
+			z += dir[2] * step
+			left -= step
+			if (left <= 1e-9) return { x, z, tangent: dir }
+		}
+		return { x, z, tangent: legs[legs.length - 1][1] }
+	}
 	const at = (x: number, z: number, y = 0): Vec3 =>
 		yawAround([origin[0] + x, origin[1] + y, origin[2] + z], yawDeg, origin)
-	// A flattened ellipse resting on the floor, across `tangent`.
+	// The empty stocking's flat width, cuff to ankle, then the foot.
+	const widthAt = (s: number) =>
+		s <= length
+			? cuffWidth + (ankleWidth - cuffWidth) * (s / length)
+			: ankleWidth * 0.95
+	// A flattened ellipse resting on the floor across `tangent`; a fold
+	// station takes the bisector and widens by the mitre of its turn.
 	const station = (
-		x: number,
-		z: number,
-		tangent: Vec3,
-		scaleW: number,
-		scaleH: number,
+		s: number,
+		{
+			tangent = along(s).tangent,
+			width = 1,
+			height = 1,
+			turnDeg = 0,
+		}: {
+			tangent?: Vec3
+			width?: number
+			height?: number
+			turnDeg?: number
+		} = {},
 	) => {
+		const { x, z } = along(s)
 		const across = unit3(cross3(tangent, up))
 		const yawed = unit3(sub3(at(x + across[0], z + across[2]), at(x, z)))
-		return ring(
-			at(x, z, (h / 2) * scaleH),
-			yawed,
-			up,
-			(w / 2) * scaleW,
-			(h / 2) * scaleH,
-			12,
-		)
+		const w = (widthAt(s) * width) / Math.cos((turnDeg / 2) * DEG)
+		const h = thickness * height
+		return ring(at(x, z, h / 2), yawed, up, w / 2, h / 2, 14)
 	}
-	const alongLeg = (distance: number) =>
-		[leg[0] * distance, leg[2] * distance] as const
+	const fold = (s: number, fromDeg: number, toDeg: number) =>
+		station(s, {
+			tangent: unit3(add3(heading(fromDeg), heading(toDeg))),
+			turnDeg: toDeg - fromDeg,
+		})
+	const [[a0, a1], [b0, b1]] = SOCKS.stripes
 	const rings = [
-		station(...alongLeg(0.13), leg, 0.9, 1.1),
-		station(...alongLeg(0.115), leg, 1.05, 1.15),
-		station(...alongLeg(0.1), leg, 0.95, 1),
-		station(...alongLeg(0.05), leg, 1, 1),
-		station(
-			0,
-			0,
-			unit3([leg[0] * -0.5 + 0, 0, leg[2] * -0.5 + 1]),
-			1.12,
-			1.05,
-		),
-		station(0, l * 0.3, foot, 1, 1),
-		station(0, l * 0.6, foot, 0.95, 0.95),
-		station(0, l * 0.82, foot, 0.78, 0.8),
-		station(0, l * 0.95, foot, 0.45, 0.55),
-		station(0, l, foot, 0.18, 0.25),
+		station(0, { height: 1.3 }),
+		station(a0, { height: 1.2 }),
+		station(a1, { height: 1.1 }),
+		station(b0),
+		station(b1),
+		station(0.06),
+		station(0.09),
+		fold(knee, 0, kneeDeg),
+		station(0.16),
+		station(0.2),
+		fold(length, kneeDeg, heelDeg),
+		station(length + foot * 0.4),
+		station(length + foot * 0.75, { width: 0.85 }),
+		station(length + foot * 0.92, { width: 0.55, height: 0.7 }),
+		station(length + foot, { width: 0.2, height: 0.4 }),
 	]
-	kit.loft(rings, PAINTS.sock, { closeStart: true, closeEnd: true })
-	// Paw print on top of the foot, each disc on the ellipse's surface.
-	const print = (x: number, z: number, radius: number) => {
-		const top = h * Math.sqrt(Math.max(0, 1 - (x / (w / 2)) ** 2))
-		kit.disc(at(x, z, top + 0.0015), radius, 12, PAINTS.pawPrint)
-	}
-	print(0, l * 0.5, 0.017)
-	for (const [tx, tz] of [
-		[-0.022, 0.09],
-		[0, 0.1],
-		[0.022, 0.09],
-	] as const)
-		print(tx, l * 0.5 + tz - 0.03, 0.0075)
+	const paints = rings.map((_, segment) =>
+		segment === 1 || segment === 3 ? PAINTS.stockingStripe : undefined,
+	)
+	kit.loft(rings, PAINTS.stocking, {
+		closeStart: true,
+		closeEnd: true,
+		paints,
+	})
 }
 
 function buildPaintedLight(glow: Kit) {

@@ -301,35 +301,6 @@ export class Kit {
 			this.tri([center, point(i), point(i + 1)], paint, { tone })
 	}
 
-	/**
-	 * A triangular prism lying along Z: a wedge with a sloping top, used for
-	 * the socks. `size` is width, height, length; the ridge sits at `ridge`
-	 * (0..1 across the width).
-	 */
-	prism(
-		center: Vec3,
-		size: Vec3,
-		paint: Paint,
-		{ yaw = 0, ridge = 0.5 }: { yaw?: number; ridge?: number } = {},
-	) {
-		const [cx, cy, cz] = center
-		const [w, h, l] = size
-		const p = (x: number, y: number, z: number): Vec3 =>
-			rotateY([cx + x, cy + y, cz + z], yaw, center)
-		const rx = -w / 2 + w * ridge
-		const bl0 = p(-w / 2, 0, -l / 2)
-		const br0 = p(w / 2, 0, -l / 2)
-		const bl1 = p(-w / 2, 0, l / 2)
-		const br1 = p(w / 2, 0, l / 2)
-		const t0 = p(rx, h, -l / 2)
-		const t1 = p(rx, h, l / 2)
-		this.quad([bl1, t1, t0, bl0], paint) // left slope
-		this.quad([br0, t0, t1, br1], paint) // right slope
-		this.tri([bl0, t0, br0], paint) // back end
-		this.tri([br1, t1, bl1], paint) // front end
-		this.quad([bl0, br0, br1, bl1], paint, { tone: ROOM_TONES.away }) // bottom
-	}
-
 	/** A quad whose normal points away from `inside` (winding fixed up for the tone). */
 	outwardQuad(
 		corners: readonly [Vec3, Vec3, Vec3, Vec3],
@@ -377,15 +348,28 @@ export class Kit {
 			closeStart = false,
 			closeEnd = true,
 			tone,
-		}: { closeStart?: boolean; closeEnd?: boolean; tone?: number } = {},
+			paints,
+		}: {
+			closeStart?: boolean
+			closeEnd?: boolean
+			tone?: number
+			/** Per-segment overrides of `paint`; segment `r` spans rings `r` and `r + 1`. */
+			paints?: readonly (Paint | undefined)[]
+		} = {},
 	) {
 		for (let r = 0; r < rings.length - 1; r++) {
 			const a = rings[r]
 			const b = rings[r + 1]
 			const inside = centroid([...a, ...b])
+			const segmentPaint = paints?.[r] ?? paint
 			for (let i = 0; i < a.length; i++) {
 				const j = (i + 1) % a.length
-				this.outwardQuad([a[i], a[j], b[j], b[i]], inside, paint, tone)
+				this.outwardQuad(
+					[a[i], a[j], b[j], b[i]],
+					inside,
+					segmentPaint,
+					tone,
+				)
 			}
 		}
 		const first = rings[0]

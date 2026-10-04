@@ -339,6 +339,7 @@ async function gatePackage() {
 			1000,
 		],
 		['lamp.png', 'view=turntable&cam=lamp', 1600, 1000],
+		['socks.png', 'view=turntable&cam=socks', 1600, 1000],
 		['dive-tunnel-p095.png', 'view=dive&p=0.95', 1440, 900],
 		['dive-mid-p065.png', 'view=dive&p=0.65', 1440, 900],
 		['probe-head.png', 'view=probe&bone=head&t=1', 1800, 1000],

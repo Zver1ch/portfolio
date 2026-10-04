@@ -27,7 +27,7 @@ Working agreement:
 
 | # | Decision |
 |---|---|
-| 1 | World: cozy developer room at night. Base set only: desk, modern flat monitor (no CRT or retro devices), PC tower, keyboard, mouse, window with the moon, lamp, plus one pair of socks with a paw print (an object in the room). Anything else needs owner approval at Gate 1. |
+| 1 | World: cozy developer room at night. Base set only: desk, modern flat monitor (no CRT or retro devices), PC tower, keyboard, mouse, window with the moon, lamp, plus the cat's spare pair of stockings dropped on the floor (black, white double stripe, like the pair on its legs; Gate 1 round 6 replaced the paw-print socks). Anything else needs owner approval at Gate 1. |
 | 2 | Structure: 3D hero with a scroll-driven camera, 2D sections with huge type, a second 3D moment at the end, credits. |
 | 3 | Dark only, existing palette tokens, no `dark:` variants. |
 | 4 | The cat gets in the way of work: sitting on the front edge of the desk next to the mouse, legs dangling over the edge, one paw on the mouse, facing the visitor (Gate 1 decision: the side-lying pose of the first drafts was rejected); gibberish (`asdfghjkl`) gets typed; on click he stretches and meows. Wholesome, lazy, cat-like, no pin-up staging. The pose render is approved by the owner before anything is built on it. |
