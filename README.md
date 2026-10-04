@@ -1,15 +1,18 @@
 # Portfolio
 
-Backend-less, dark-only personal portfolio ("сайт-визитка", in Russian) built
-on Next.js 16 (App Router) with Feature-Sliced Design and strict tooling. All
-content comes from a typed config in `src/shared/config/profile.ts`.
+Backend-less, dark-only, English personal portfolio built on Next.js 16 (App
+Router) with Feature-Sliced Design and strict tooling: a 3D developer room with
+a cat on the desk, a scroll dive into the monitor, flat 2D sections with huge
+type. All copy comes from a typed config in `src/shared/config/profile.ts`;
+third-party credits are in `CREDITS.md`.
 
 ## Stack
 
 - **Next.js 16** — App Router, React 19, Cache Components and React Compiler enabled
 - **Feature-Sliced Design** — validated with [steiger](https://github.com/feature-sliced/steiger)
 - **Tailwind CSS v4** + **shadcn** (base-nova, Base UI primitives), dark theme only, plum + pink palette tokens in `app/globals.css`
-- **next/font** — Unbounded (display), Onest (body), JetBrains Mono (mono)
+- **next/font** — Unbounded (display), Onest (body), JetBrains Mono (mono), latin subsets
+- **three.js** — the cat room (`src/features/cat-room`), loaded lazily, never in the initial chunks
 - **Biome** — lint + format (tabs, single quotes, no semicolons)
 - **Lefthook** — pre-commit lint, pre-push type-check + FSD validation
 - **Vitest** + **Testing Library** — colocated component tests
@@ -24,7 +27,8 @@ pnpm install
 pnpm dev
 ```
 
-Edit `src/shared/config/profile.ts` — placeholders start with `TODO:`.
+Edit `src/shared/config/profile.ts`; the site publishes only what the owner can
+confirm (no years, employers or e-mail).
 
 ## Scripts
 
@@ -44,6 +48,7 @@ Edit `src/shared/config/profile.ts` — placeholders start with `TODO:`.
 | `pnpm assets:inspect` | Print the model facts; `--write-rig` regenerates `cat-rig.gen.ts` |
 | `pnpm assets:check` | Asset guard: no source models or stray model files under `public/`, rig in sync |
 | `pnpm assets:shots` | Lab screenshots through headless Chromium (`--gate` builds the Gate 1 package) |
+| `pnpm assets:posters` | Renders the hero and finale posters and the touch icon from the lab |
 
 ## Project structure
 
@@ -52,8 +57,8 @@ app/                  — Next.js App Router routes (thin, import from src/pages
 pages/                — required stub, see pages/README.md
 src/
   pages/     — page compositions (home)
-  widgets/   — composite UI blocks (add when needed)
-  features/  — user interactions (add when needed)
+  widgets/   — site-header, hero, manifesto, about, stack, contact, finale
+  features/  — boop-cat, toggle-sound, cat-room (the 3D scene)
   entities/  — business entities (add when needed)
   shared/    — config (profile, env, routes), lib, ui
 assets/               — source 3D models and their licences (never served, see assets/models/README.md)

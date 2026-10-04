@@ -1,6 +1,6 @@
 # Cat Room: implementation plan
 
-Status: approved by the owner on 2026-10-04. Start with M0 and M1, then stop at Gate 1.
+Status: approved by the owner on 2026-10-04. Gate 1 passed the same day after seven feedback rounds (see `docs/lookdev/gate-1/README.md`); M2–M8 run to Gate 2.
 
 Audience: the implementer, working only from this repository. All paths are repo-relative. Follow `AGENTS.md`: pnpm only, Biome style, FSD without barrels, React Compiler on (no hand-written `useMemo`/`useCallback`/`memo`), dark theme only.
 

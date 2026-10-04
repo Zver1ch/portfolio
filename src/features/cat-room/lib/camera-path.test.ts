@@ -4,7 +4,13 @@ import {
 	HERO_CAMERA,
 	LITE_PULLBACK,
 } from '../config/camera-tracks'
-import { cameraAt, dawnFactor, endCamera, liteHeroCamera } from './camera-path'
+import {
+	cameraAt,
+	dawnFactor,
+	endCamera,
+	liteFinaleCamera,
+	liteHeroCamera,
+} from './camera-path'
 import { projectScreen } from './screen-quad'
 
 const WIDTH = 1600
@@ -80,5 +86,21 @@ describe('dawnFactor', () => {
 		expect(dawnFactor(0)).toBeCloseTo(0.55)
 		expect(dawnFactor(0.5)).toBeCloseTo(0.775)
 		expect(dawnFactor(1)).toBeCloseTo(1)
+	})
+})
+
+describe('liteFinaleCamera', () => {
+	it('keeps wide viewports and pulls narrow ones back from the dawn target', () => {
+		expect(liteFinaleCamera(1.6)).toEqual(DAWN_CAMERA)
+		const narrow = liteFinaleCamera(0.5625)
+		expect(narrow.target).toEqual(DAWN_CAMERA.target)
+		expect(narrow.fov).toBe(DAWN_CAMERA.fov)
+		const far = Math.hypot(
+			...narrow.position.map((v, i) => v - DAWN_CAMERA.target[i]),
+		)
+		const near = Math.hypot(
+			...DAWN_CAMERA.position.map((v, i) => v - DAWN_CAMERA.target[i]),
+		)
+		expect(far / near).toBeCloseTo(LITE_PULLBACK / 0.5625)
 	})
 })

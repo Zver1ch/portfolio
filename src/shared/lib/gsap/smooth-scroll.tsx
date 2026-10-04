@@ -24,7 +24,8 @@ export function SmoothScroll() {
 			const instance = new Lenis({ anchors: true, syncTouch: false })
 			instance.on('scroll', ScrollTrigger.update)
 			const raf = (time: number) => instance.raf(time * 1000)
-			gsap.ticker.add(raf)
+			// Lenis moves the page before anything else reads scroll in the tick.
+			gsap.ticker.add(raf, false, true)
 			gsap.ticker.lagSmoothing(0)
 			lenis = instance
 			tick = raf

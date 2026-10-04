@@ -22,7 +22,8 @@
 		"assets:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-assets.mjs",
 		"assets:shots": "node scripts/shots.mjs",
 		"generate-api": "openapi-ts",
-		"postinstall": "lefthook install"
+		"postinstall": "lefthook install",
+		"assets:posters": "node scripts/capture-posters.mjs"
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.8.0",

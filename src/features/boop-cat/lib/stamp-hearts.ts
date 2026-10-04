@@ -6,7 +6,6 @@ const SVG_NS = 'http://www.w3.org/2000/svg'
 
 export type HeartOptions = {
 	size?: number
-	label?: string
 	/** Rise distance in px; heart stamps barely move, trail hearts float. */
 	rise?: number
 	reduced?: boolean
@@ -36,18 +35,11 @@ function createHeart(size: number): HTMLSpanElement {
 export function spawnHeart(
 	x: number,
 	y: number,
-	{ size = 22, label, rise = 60, reduced }: HeartOptions = {},
+	{ size = 22, rise = 60, reduced }: HeartOptions = {},
 ) {
 	const still = reduced ?? prefersReducedMotion()
 	const el = createHeart(size)
 	if (gsap.utils.random(0, 1) > 0.5) el.style.color = 'var(--orchid)'
-	if (label) {
-		const text = document.createElement('span')
-		text.textContent = label
-		text.style.cssText =
-			'position:absolute;left:100%;top:-4px;margin-left:4px;font:600 12px var(--font-jetbrains-mono),monospace;color:var(--snow);white-space:nowrap;'
-		el.append(text)
-	}
 	document.body.append(el)
 	const done = () => el.remove()
 
@@ -84,7 +76,7 @@ export function spawnHeart(
 		)
 }
 
-/** The "чмок" burst: a handful of hearts scattered around the cat. */
+/** The boop burst: a handful of hearts scattered around the cat. */
 export function stampHearts(origin: { x: number; y: number }) {
 	const reduced = prefersReducedMotion()
 	const count = reduced ? 2 : 7
@@ -95,11 +87,7 @@ export function stampHearts(origin: { x: number; y: number }) {
 			spawnHeart(
 				origin.x + Math.cos(angle) * radius,
 				origin.y + Math.sin(angle) * radius * 0.8 - 30,
-				{
-					size: gsap.utils.random(18, 34),
-					label: i === 0 ? 'чмок' : undefined,
-					reduced,
-				},
+				{ size: gsap.utils.random(18, 34), reduced },
 			),
 		)
 	}

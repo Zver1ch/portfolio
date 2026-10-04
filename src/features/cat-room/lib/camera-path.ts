@@ -41,16 +41,23 @@ export function endCamera(overshoot = END_OVERSHOOT): CameraPose {
 	return { position: [x, y, z + distance], target: SCREEN.center, fov }
 }
 
-/** Lite mode: the hero camera pushed away from its target on narrow viewports. */
-export function liteHeroCamera(aspect: number): CameraPose {
+/** A camera pushed away from its target by `max(1, LITE_PULLBACK / aspect)`: narrow viewports see the whole room. */
+function pulledBack(camera: CameraPose, aspect: number): CameraPose {
 	const factor = Math.max(1, LITE_PULLBACK / aspect)
-	// Wide viewports keep the hero camera as is (no rounding through the maths).
-	if (factor === 1) return HERO_CAMERA
-	const offset = sub(HERO_CAMERA.position, HERO_CAMERA.target)
-	return {
-		...HERO_CAMERA,
-		position: add(HERO_CAMERA.target, scale(offset, factor)),
-	}
+	// Wide viewports keep the camera as is (no rounding through the maths).
+	if (factor === 1) return camera
+	const offset = sub(camera.position, camera.target)
+	return { ...camera, position: add(camera.target, scale(offset, factor)) }
+}
+
+/** Lite mode: the hero camera on narrow viewports. */
+export function liteHeroCamera(aspect: number): CameraPose {
+	return pulledBack(HERO_CAMERA, aspect)
+}
+
+/** Lite mode and the portrait dawn poster: the dawn camera on narrow viewports. */
+export function liteFinaleCamera(aspect: number): CameraPose {
+	return pulledBack(DAWN_CAMERA, aspect)
 }
 
 /** Camera pose for a scroll progress on a track. The aspect is kept for symmetry with the DOM warp. */

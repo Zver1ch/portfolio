@@ -1,30 +1,36 @@
+import { profile } from '@/shared/config/profile'
 import { SmoothScroll } from '@/shared/lib/gsap/smooth-scroll'
-import { ChapterTrail } from '@/shared/ui/chapter-trail'
-import { StoryAbout } from '@/widgets/about/ui/about'
-import { StoryContact } from '@/widgets/contact/ui/contact'
-import { StoryFooter } from '@/widgets/footer/ui/footer'
-import { StoryHeader } from '@/widgets/header/ui/header'
-import { StoryProjects } from '@/widgets/projects/ui/projects'
-import { StoryPrologue } from '@/widgets/prologue/ui/prologue'
-import { StoryStack } from '@/widgets/stack/ui/stack'
+import { Statement } from '@/shared/ui/statement'
+import { About } from '@/widgets/about/ui/about'
+import { Contact } from '@/widgets/contact/ui/contact'
+import { Finale } from '@/widgets/finale/ui/finale'
+import { Hero } from '@/widgets/hero/ui/hero'
+import { Manifesto } from '@/widgets/manifesto/ui/manifesto'
+import { SiteHeader } from '@/widgets/site-header/ui/site-header'
+import { Stack } from '@/widgets/stack/ui/stack'
 
 export function HomePage() {
 	return (
 		<>
+			<a
+				href='#about'
+				className='sr-only z-50 rounded-md bg-ink-2 px-4 py-2 text-sm text-snow focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:outline-none focus-visible:ring-3 focus-visible:ring-ring'
+			>
+				Skip to content
+			</a>
 			<SmoothScroll />
-			<StoryHeader />
+			<SiteHeader />
 			<main>
-				<StoryPrologue />
-				<ChapterTrail />
-				<StoryAbout />
-				<ChapterTrail />
-				<StoryStack />
-				<ChapterTrail />
-				<StoryProjects />
-				<ChapterTrail />
-				<StoryContact />
+				<Hero>
+					<Manifesto />
+				</Hero>
+				<About />
+				<Stack />
+				<Contact />
 			</main>
-			<StoryFooter />
+			<Finale>
+				<Statement>{profile.footerStatement}</Statement>
+			</Finale>
 		</>
 	)
 }

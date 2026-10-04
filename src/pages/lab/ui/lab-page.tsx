@@ -5,6 +5,7 @@ import type { PoseName } from '@/features/cat-room/config/poses'
 import {
 	cameraAt,
 	dawnFactor,
+	liteFinaleCamera,
 	liteHeroCamera,
 } from '@/features/cat-room/lib/camera-path'
 import type { CatActor } from '@/features/cat-room/lib/scene/cat/cat'
@@ -62,7 +63,10 @@ function frameFor(
 			: cameraAt('dive', params.p, aspect)
 		dive = view === 'dive' ? params.p : 0
 	} else if (view === 'finale') {
-		camera = cameraAt('finale', params.p, aspect)
+		camera =
+			params.lite && params.p >= 1
+				? liteFinaleCamera(aspect)
+				: cameraAt('finale', params.p, aspect)
 		dawn = params.dawn ?? dawnFactor(params.p)
 	} else if (params.cam === 'hero') {
 		camera = cameraAt('dive', 0, aspect)

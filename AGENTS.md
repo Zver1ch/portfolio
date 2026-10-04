@@ -119,7 +119,8 @@ win; do not "fix" the code toward the canonical guidance.
   - shadcn tokens (`--background`, `--primary`, `--muted-foreground`, ...)
     are mapped onto the palette; use them for components, the raw palette
     for decoration.
-  - Fonts via `next/font/google` in `app/layout.tsx` (cyrillic + latin):
+  - Fonts via `next/font/google` in `app/layout.tsx` (latin subsets, the site
+    is English only):
     `font-display` (Unbounded), `font-sans` (Onest, the body default),
     `font-mono` (JetBrains Mono).
 - **Lucide** icons (see `src/features/toggle-sound/ui/sound-toggle.tsx`)
@@ -134,11 +135,17 @@ To add a shadcn component: `pnpx shadcn@latest add <component>`
 
 ## Content
 
-The site has no backend. All copy lives in the typed `profile` object in
-`src/shared/config/profile.ts`; pages read it directly. Publish only facts
-the owner can confirm: no years of experience or employers, a skill moves
-from `learning` to `skills` once it has a live demo, projects appear only
-with a live demo, no e-mail (the domain has no MX).
+The site is English only and has no backend. All copy lives in the typed
+`profile` object in `src/shared/config/profile.ts`; pages read it directly.
+Publish only facts the owner can confirm: no years of experience or
+employers, never "junior" as a self-title, a skill moves from `learning` to
+`skills` once it has a live demo, projects appear only with a live demo, no
+e-mail (the domain has no MX). The three statements (hero tagline, dive
+statement, footer statement) are owner-approved texts: change them only
+with the owner. Third-party credits are typed in
+`src/shared/config/credits.ts` and repeated word for word in `CREDITS.md`.
+The 2D face everywhere is `public/stickers/cat-sticker.png`
+(`CatFaceButton`); no SVG cat exists any more.
 
 The cat click sound is `public/sounds/cat-click.mp3` (supplied by the owner).
 
@@ -172,6 +179,9 @@ otherwise the value is captured during prerendering.
   attribute on the black mesh) and grows a stroke over each eye. Measured
   from the loaded model, not hand-placed: keep the eye outline pieces within
   one pupil-size of the pupils if the model is ever re-exported.
+- Posters (`public/posters/room-{night,dawn}{,-portrait}.jpg`) and
+  `app/apple-icon.png` are rendered from the lab with `pnpm assets:posters`;
+  re-run it after any change to the room, the poses or the palette.
 - Look-dev happens on the dev-only `/lab` route (`app/lab/page.lab.tsx`,
   enabled through `pageExtensions` in `PHASE_DEVELOPMENT_SERVER` only).
   `pnpm assets:shots` drives it headlessly with software WebGL

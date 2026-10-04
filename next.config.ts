@@ -8,6 +8,23 @@ const nextConfig: NextConfig = {
 	poweredByHeader: false,
 	typedRoutes: true,
 	output: process.env.DOCKER_BUILD ? 'standalone' : undefined,
+	images: {
+		formats: ['image/avif', 'image/webp'],
+	},
+	async headers() {
+		return [
+			{
+				// The model URL carries the file's hash (`?v=`), so it can be cached forever.
+				source: '/models/:path*',
+				headers: [
+					{
+						key: 'Cache-Control',
+						value: 'public, max-age=31536000, immutable',
+					},
+				],
+			},
+		]
+	},
 }
 
 export default function config(phase: string): NextConfig {

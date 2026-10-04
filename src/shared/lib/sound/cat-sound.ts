@@ -33,7 +33,7 @@ function loadBuffer(audio: AudioContext): Promise<AudioBuffer | null> {
 		.then((data) => audio.decodeAudioData(data))
 		.catch((error: unknown) => {
 			console.warn(
-				`[звук] Не удалось загрузить звук кота (${CAT_SOUND_SRC}). Положите файл в public${CAT_SOUND_SRC} — до тех пор клики будут без звука.`,
+				`[sound] Could not load the cat sound (${CAT_SOUND_SRC}). Put the file at public${CAT_SOUND_SRC}; until then clicks stay silent.`,
 				error,
 			)
 			return null

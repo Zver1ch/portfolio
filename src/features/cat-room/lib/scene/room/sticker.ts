@@ -6,9 +6,10 @@ import {
 	type Texture,
 	TextureLoader,
 } from 'three'
+import { CAT_STICKER_SRC } from '@/shared/config/stickers'
 import { STICKER } from '../../../config/room-layout'
 
-export const STICKER_URL = '/stickers/cat-sticker.png'
+export const STICKER_URL = CAT_STICKER_SRC
 
 export type Sticker = { mesh: Mesh; dispose(): void }
 
