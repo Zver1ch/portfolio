@@ -206,7 +206,7 @@ ScrollTrigger.create({
 - Set `history.scrollRestoration = 'manual'`. After the first refresh, scroll to `location.hash` if present.
 
 Lite mode has no pins:
-- Hero: trigger `top top` to `bottom top` writes `timeline.dive = 0.35 * progress` and `layerOpacity = 1 - smoothstep(0.15, 0.75, progress)`.
+- Hero slot (the poster box, one viewport tall; the section itself is twice that with the first section under it): trigger `top top` to `bottom top` writes `timeline.dive = 0.35 * progress` and `layerOpacity = 1 - smoothstep(0.15, 0.75, progress)`.
 - Finale spacer: `top bottom` to `bottom bottom` writes `layerOpacity = smoothstep(0.25, 0.85, progress)`.
 - Add `ScrollTrigger.config({ ignoreMobileResize: true })` in `src/shared/lib/gsap/register.ts`.
 

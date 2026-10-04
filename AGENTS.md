@@ -192,6 +192,18 @@ otherwise the value is captured during prerendering.
   15 s timeout, renderer error, context loss) latches `static` for the visit
   in `model/room-store.ts`; the loader veil (`ui/loader-veil.tsx`) and the
   static face button swap by CSS on those attributes.
+- The dive (`features/cat-room/ui/portal-stage.tsx`, `lib/portal.ts`,
+  `@/shared/lib/math/homography`): in full mode the hero and finale stages
+  pin for 2.2 and 1.8 viewport heights and write their progress to the
+  timeline; the first 2D section is the `[data-portal]` inside the hero
+  stage and is warped with a `matrix3d` onto the projected screen quad every
+  frame, docked to the viewport over the last 10 % and left with no
+  transform at the end (`data-room-phase='inside'`). The monitor in full mode
+  is a hole in the canvas, so what shows on it is the real page. Zero-size
+  `[data-portal-corner]` markers at the portal's corners exist for the e2e
+  alignment check (`e2e/dive.spec.ts`), which reads screenshot pixels with
+  the tiny PNG reader in `e2e/png.ts`. Lite mode never pins: the hero
+  trigger pushes the camera a third of the way in and fades the layer.
 - Posters (`public/posters/room-{night,dawn}{,-portrait}.jpg`) and
   `app/apple-icon.png` are rendered from the lab with `pnpm assets:posters`;
   re-run it after any change to the room, the poses or the palette.

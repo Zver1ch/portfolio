@@ -107,7 +107,7 @@ describe('RoomLayer', () => {
 		await flush()
 		expect(document.documentElement.dataset.roomMode).toBe('full')
 		expect(createRoomScene).toHaveBeenCalledWith(
-			expect.objectContaining({ fakeScreen: true }),
+			expect.objectContaining({ fakeScreen: false }),
 		)
 		expect(
 			document.querySelector('[data-room-layer] canvas'),

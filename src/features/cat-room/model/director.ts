@@ -5,8 +5,10 @@ import { cameraAt, liteHeroCamera } from '../lib/camera-path'
 import type { DprGovernor } from '../lib/dpr-governor'
 import type { RoomScene } from '../lib/scene/create-room-scene'
 import { advance } from '../lib/scene-time'
+import { projectScreen } from '../lib/screen-quad'
 import type { DirectorFrame, Phase } from './frame'
 import { resolvePhase } from './phase'
+import { getPortal } from './portals'
 import type { RoomMode } from './room-mode'
 import type { Timeline } from './timeline'
 
@@ -69,25 +71,35 @@ export function createDirector(deps: DirectorDeps): Director {
 			? cameraAt('dive', timeline.dive, aspect)
 			: liteHeroCamera(aspect)
 
+	const setPhase = (next: Phase) => {
+		if (phase === next) return
+		phase = next
+		document.documentElement.dataset.roomPhase = next
+	}
+
 	const idle = () => {
 		if (shown) {
 			// One cleared frame, so the canvas is empty when it is shown again.
 			scene.renderer.clear()
 			showLayer(false)
 		}
+		// Inside the monitor the page is the page: the portal sits at identity.
+		if (phase === 'inside') getPortal('dive')?.dock()
 		placeProxy()
 		stop()
 	}
 
 	const tick = (_time: number, deltaMs: number) => {
 		if (disposed) return
-		phase = resolvePhase({
-			mode,
-			dive: timeline.dive,
-			finale: timeline.finale,
-			heroInView: timeline.heroInView,
-			finaleInView: timeline.finaleInView,
-		})
+		setPhase(
+			resolvePhase({
+				mode,
+				dive: timeline.dive,
+				finale: timeline.finale,
+				heroInView: timeline.heroInView,
+				finaleInView: timeline.finaleInView,
+			}),
+		)
 		if (phase !== 'room') {
 			idle()
 			return
@@ -117,6 +129,14 @@ export function createDirector(deps: DirectorDeps): Director {
 			stepped: false,
 		}
 		scene.render(frame, dt)
+		// The page on the monitor: the portal follows the projected screen.
+		if (mode === 'full')
+			getPortal('dive')?.apply(
+				projectScreen(camera, width, height),
+				timeline.dive,
+				width,
+				height,
+			)
 		layer.style.opacity = String(timeline.layerOpacity)
 		showLayer(true)
 		placeProxy()
@@ -152,6 +172,7 @@ export function createDirector(deps: DirectorDeps): Director {
 			disposed = true
 			stop()
 			if (proxy) proxy.style.display = 'none'
+			delete document.documentElement.dataset.roomPhase
 		},
 	}
 }

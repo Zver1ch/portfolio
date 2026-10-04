@@ -1,3 +1,4 @@
+import { TypingLine } from '@/features/cat-room/ui/typing-line'
 import { profile } from '@/shared/config/profile'
 import { Statement } from '@/shared/ui/statement'
 
@@ -21,13 +22,7 @@ export function Manifesto() {
 			</div>
 			<div className='mx-auto flex w-full max-w-7xl items-end justify-between gap-6 font-mono text-xs tracking-[0.25em] text-muted-foreground uppercase'>
 				<span>{profile.languages.join(' · ')}</span>
-				<span
-					data-typing-line
-					aria-hidden
-					className='min-w-[10ch] text-right tracking-normal normal-case'
-				>
-					asdfghjkl
-				</span>
+				<TypingLine />
 			</div>
 		</div>
 	)

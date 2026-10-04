@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { CatFaceButton } from '@/features/boop-cat/ui/cat-face-button'
 import { LoaderVeil } from '@/features/cat-room/ui/loader-veil'
+import { PortalStage } from '@/features/cat-room/ui/portal-stage'
 import { RoomPoster } from '@/shared/ui/room-poster'
 import { HeroCopy } from './hero-copy'
 
@@ -12,14 +13,23 @@ import { HeroCopy } from './hero-copy'
  * canvas. The slot holds the loader veil (the face button until the first
  * frame) and the static face button; CSS decides which one shows.
  */
+/** Zero-size markers at the portal's corners: where the DOM warp lands (e2e, plan §8). */
+const CORNERS = ['tl', 'tr', 'br', 'bl'] as const
+const CORNER_CLASS: Record<(typeof CORNERS)[number], string> = {
+	tl: 'top-0 left-0',
+	tr: 'top-0 right-0',
+	br: 'right-0 bottom-0',
+	bl: 'bottom-0 left-0',
+}
+
 export function Hero({ children }: { children: ReactNode }) {
 	return (
 		<section id='top' className='relative'>
 			<noscript>
 				<style>{`[data-loader-veil]{display:none}[data-static-face]{display:block}`}</style>
 			</noscript>
-			<div
-				data-stage='hero'
+			<PortalStage
+				track='dive'
 				className='grid room-full:h-lvh room-full:overflow-clip'
 			>
 				<div
@@ -46,8 +56,16 @@ export function Hero({ children }: { children: ReactNode }) {
 					className='relative z-10 room-full:col-start-1 room-full:row-start-1 room-full:h-lvh'
 				>
 					{children}
+					{CORNERS.map((corner) => (
+						<span
+							key={corner}
+							data-portal-corner={corner}
+							aria-hidden
+							className={`pointer-events-none absolute size-0 ${CORNER_CLASS[corner]}`}
+						/>
+					))}
 				</div>
-			</div>
+			</PortalStage>
 			<HeroCopy />
 		</section>
 	)

@@ -123,9 +123,7 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 				width,
 				height,
 				dpr: governor.dpr,
-				// The DOM hole arrives with the portal warp (M4); until then every
-				// mode shows the painted screen.
-				fakeScreen: true,
+				fakeScreen: mode === 'lite',
 				modelUrl: `${CAT_GLB.url}?v=${CAT_GLB.sha256}`,
 				onProgress: (fraction) => setRoomProgress(0.3 + fraction * 0.6),
 			})

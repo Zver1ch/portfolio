@@ -1,0 +1,150 @@
+import { expect, type Page, test } from '@playwright/test'
+import { profile } from '../src/shared/config/profile'
+import { collectProblems, DESKTOP, gotoHydrated } from './helpers'
+import { decodePng } from './png'
+
+const READY_TIMEOUT = 80_000
+/** The hero stage pins for this many viewport heights (plan §3.4). */
+const DIVE_HEIGHTS = 2.2
+
+test.describe.configure({ mode: 'serial', timeout: 90_000 })
+test.use({ viewport: DESKTOP })
+
+const html = (page: Page) => page.locator('html')
+
+async function waitForRoom(page: Page) {
+	await gotoHydrated(page)
+	await expect(html(page)).toHaveAttribute('data-room-mode', 'full')
+	await expect(html(page)).toHaveAttribute('data-scene-ready', 'true', {
+		timeout: READY_TIMEOUT,
+	})
+}
+
+/** Scrolls so the dive is at `p` and lets the trigger and the director catch up. */
+async function diveTo(page: Page, p: number) {
+	await page.evaluate(
+		([progress, heights]) =>
+			window.scrollTo(
+				0,
+				Math.round(progress * heights * window.innerHeight),
+			),
+		[p, DIVE_HEIGHTS] as const,
+	)
+	await page.waitForTimeout(600)
+}
+
+const isGreen = ([r, g, b]: number[]) => g > 140 && r < 120 && b < 120
+const isMagenta = ([r, g, b]: number[]) => r > 140 && b > 140 && g < 120
+
+test('the dive ends inside the monitor with the page at identity', async ({
+	page,
+}) => {
+	const problems = collectProblems(page)
+	await waitForRoom(page)
+	await expect(page.locator('.pin-spacer')).toHaveCount(1)
+	const portal = page.locator('[data-stage="hero"] [data-portal]')
+	// At rest the page already sits on the monitor.
+	await expect(portal).toHaveCSS('transform', /^matrix3d\(/)
+
+	await diveTo(page, 1.02)
+	await expect(html(page)).toHaveAttribute('data-room-phase', 'inside')
+	await expect(portal).toHaveCSS('transform', 'none')
+	await expect(page.getByText(profile.statement)).toBeInViewport()
+	await expect(page.locator('[data-room-layer]')).toBeHidden()
+	expect(problems).toEqual([])
+})
+
+test('mid-dive the warped page and the hole in the monitor coincide within 2 px', async ({
+	page,
+}) => {
+	await waitForRoom(page)
+	await diveTo(page, 0.5)
+	// Paint the page green and the slot behind it magenta: through the hole,
+	// green is the portal, magenta would be hole beyond the portal, and the
+	// room's own pixels are neither.
+	await page.addStyleTag({
+		content:
+			'[data-manifesto]{background:#00ff00!important}[data-manifesto] *{visibility:hidden}[data-stage="hero"] [data-slot]{background:#ff00ff!important}[data-poster],[data-loader-veil]{display:none!important}',
+	})
+	await page.waitForTimeout(300)
+	const corners = await page
+		.locator('[data-portal-corner]')
+		.evaluateAll((nodes) =>
+			nodes.map((node) => {
+				const rect = node.getBoundingClientRect()
+				return {
+					name: node.getAttribute('data-portal-corner') as string,
+					x: rect.left,
+					y: rect.top,
+				}
+			}),
+		)
+	expect(corners).toHaveLength(4)
+	const REACH = 24
+	for (const corner of corners) {
+		// Walk from outside the corner inwards along the diagonal.
+		const dx = corner.name.endsWith('l') ? 1 : -1
+		const dy = corner.name.startsWith('t') ? 1 : -1
+		const startX = Math.round(corner.x) - dx * REACH
+		const startY = Math.round(corner.y) - dy * REACH
+		// The clip holds every step of the walk: 2 * REACH pixels from the start.
+		const clip = {
+			x: dx > 0 ? startX : startX - (2 * REACH - 1),
+			y: dy > 0 ? startY : startY - (2 * REACH - 1),
+			width: 2 * REACH,
+			height: 2 * REACH,
+		}
+		const png = decodePng(await page.screenshot({ clip }))
+		let holeEdge: number | null = null
+		let portalEdge: number | null = null
+		for (let step = 0; step < 2 * REACH; step++) {
+			const x = startX + dx * step - clip.x
+			const y = startY + dy * step - clip.y
+			const pixel = png.at(x, y)
+			if (holeEdge === null && (isGreen(pixel) || isMagenta(pixel)))
+				holeEdge = step
+			if (isGreen(pixel)) {
+				portalEdge = step
+				break
+			}
+		}
+		expect(
+			portalEdge,
+			`${corner.name}: no portal pixels found`,
+		).not.toBeNull()
+		expect(holeEdge, `${corner.name}: no hole pixels found`).not.toBeNull()
+		// The marker sits REACH steps along the walk.
+		expect(
+			Math.abs((portalEdge as number) - REACH),
+			corner.name,
+		).toBeLessThanOrEqual(2)
+		expect(
+			Math.abs((holeEdge as number) - REACH),
+			corner.name,
+		).toBeLessThanOrEqual(2)
+	}
+})
+
+test.describe('lite mode', () => {
+	test.use({ viewport: { width: 390, height: 844 } })
+
+	test('nothing pins and the canvas fades out as the hero scrolls away', async ({
+		page,
+	}) => {
+		await gotoHydrated(page)
+		await expect(html(page)).toHaveAttribute('data-room-mode', 'lite')
+		await expect(html(page)).toHaveAttribute('data-scene-ready', 'true', {
+			timeout: READY_TIMEOUT,
+		})
+		await expect(page.locator('.pin-spacer')).toHaveCount(0)
+		await expect(
+			page.locator('[data-stage="hero"] [data-portal]'),
+		).toHaveCSS('transform', 'none')
+		await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.9))
+		await page.waitForTimeout(600)
+		const opacity = await page
+			.locator('[data-room-layer]')
+			.evaluate((node) => Number((node as HTMLElement).style.opacity))
+		expect(opacity).toBeLessThan(0.1)
+	})
+})
