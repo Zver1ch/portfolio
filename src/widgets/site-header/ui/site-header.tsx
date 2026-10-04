@@ -1,10 +1,13 @@
 'use client'
 
-import { Heart } from 'lucide-react'
+import { Fish, Heart } from 'lucide-react'
 import {
 	useBoopCount,
 	useBoopedThisVisit,
 } from '@/features/boop-cat/model/boop-store'
+import { requestFeed } from '@/features/cat-room/model/feed-bus'
+import { useRoomMode } from '@/features/cat-room/model/room-mode'
+import { useRoomState } from '@/features/cat-room/model/room-store'
 import { SoundToggle } from '@/features/toggle-sound/ui/sound-toggle'
 import { profile } from '@/shared/config/profile'
 
@@ -22,6 +25,10 @@ export function SiteHeader() {
 	const boops = useBoopCount()
 	// A polite live region only once this visit has petted the cat (plan §3.14).
 	const announce = useBoopedThisVisit()
+	// The keyboard way to drop a fish (plan §3.10): full mode only, once the room runs.
+	const mode = useRoomMode()
+	const { status } = useRoomState()
+	const canFeed = mode === 'full' && status === 'ready'
 
 	return (
 		<header className='fixed inset-x-0 top-0 z-50 border-b border-border bg-ink/75 backdrop-blur-md'>
@@ -68,6 +75,16 @@ export function SiteHeader() {
 					>
 						Contact
 					</a>
+					{canFeed ? (
+						<button
+							type='button'
+							onClick={() => requestFeed()}
+							className={`${LINK} flex items-center gap-1.5 px-2 py-2 text-muted-foreground hover:text-foreground`}
+						>
+							<Fish aria-hidden className='size-4 text-orchid' />
+							Feed the cat
+						</button>
+					) : null}
 					<SoundToggle />
 				</div>
 			</div>

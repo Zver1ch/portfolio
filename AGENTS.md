@@ -217,6 +217,21 @@ otherwise the value is captured during prerendering.
   label follows the phase from `model/room-store.ts` ("Pet the sleeping
   cat"); the 2D face button in the finale slot is `[data-static-face]`,
   shown only when no room will come.
+- Inside the monitor (`data-room-phase='inside'`, full mode only) the cat
+  intrudes from the bottom edge through an orthographic overlay laid out in
+  CSS px (`lib/overlay.ts`; the cat keeps its world spot, the room meshes are
+  hidden). `lib/gags.ts` is the pure, seeded scheduler (one gag at a time,
+  4 s cap, 6 s gap, the first section entry always peeks, Escape silences
+  for 60 s); the director runs it on wall time, draws only while a gag runs
+  and writes `data-room-gag` and `data-fish-count` on `<html>`. Section
+  entries come from an IntersectionObserver on `main section[id]` and the
+  manifesto; a clean tap on `main` (travel ≤ 6 px, nothing interactive or
+  `[data-no-fish]` under it, no selection) or the header's "Feed the cat"
+  (`model/feed-bus.ts`) drops a fish (`lib/fish.ts`, the mesh in
+  `lib/scene/overlay/fish.ts`) that the left paw reaches for with the
+  two-bone IK. The peeking head gets `[data-gag-proxy]`, pointer-only
+  (`tabindex=-1`, `aria-hidden`); clicking it meows. The nice-to-have gags of
+  plan §3.10 (tail sweep, swat, glass) are not built.
 - Posters (`public/posters/room-{night,dawn}{,-portrait}.jpg`) and
   `app/apple-icon.png` are rendered from the lab with `pnpm assets:posters`;
   re-run it after any change to the room, the poses or the palette.

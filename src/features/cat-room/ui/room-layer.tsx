@@ -6,7 +6,9 @@ import { DPR_CAP, ROOM_LOAD } from '../config/tuning'
 import { createDprGovernor } from '../lib/dpr-governor'
 import { loadRoomScene } from '../lib/load-room-scene'
 import type { RoomScene } from '../lib/scene/create-room-scene'
+import { isBoopClick } from '../lib/tap-gesture'
 import { createDirector, type Director } from '../model/director'
+import { onFeedRequest } from '../model/feed-bus'
 import { useRoomMode } from '../model/room-mode'
 import {
 	failRoom,
@@ -16,7 +18,14 @@ import {
 	useRoomState,
 } from '../model/room-store'
 import { onTimelineTouch, timeline } from '../model/timeline'
+import { GagProxy } from './gag-proxy'
 import { type PetOrigin, PetProxy } from './pet-proxy'
+
+/** A tap on any of these is not a request for a fish (plan §3.10). */
+const NO_FISH =
+	'a, button, input, select, textarea, label, summary, [data-no-fish], [data-pet-proxy], [data-gag-proxy]'
+/** Sections whose arrival in the middle of the viewport may start a gag. */
+const SECTIONS = 'main section[id], [data-manifesto]'
 
 /**
  * The fixed transparent canvas above the page (plan §3.2, §3.11). Decides
@@ -30,6 +39,7 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 	const { status, phase } = useRoomState()
 	const layerRef = useRef<HTMLDivElement>(null)
 	const proxyRef = useRef<HTMLButtonElement>(null)
+	const gagProxyRef = useRef<HTMLButtonElement>(null)
 	const sceneRef = useRef<RoomScene | null>(null)
 
 	useEffect(() => {
@@ -85,6 +95,55 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 
 		// A stage's scroll handler wrote the timeline: the director may be idle.
 		const untouch = onTimelineTouch(() => director?.wake())
+
+		// Gags (plan §3.10): a section crossing the middle of the viewport may
+		// start one; a tap on an empty area of the page or the header button
+		// drops a fish; Escape stops them.
+		const sections = document.querySelectorAll(SECTIONS)
+		const entries = new IntersectionObserver(
+			(list) => {
+				if (list.some((entry) => entry.isIntersecting))
+					director?.enterSection()
+			},
+			{ rootMargin: '-40% 0px -40% 0px' },
+		)
+		for (const section of sections) entries.observe(section)
+		const main = document.querySelector('main')
+		let press: { x: number; y: number } | null = null
+		const onPointerDown = (event: PointerEvent) => {
+			press =
+				event.button === 0
+					? { x: event.clientX, y: event.clientY }
+					: null
+		}
+		const onPointerUp = (event: PointerEvent) => {
+			const start = press
+			press = null
+			if (!start) return
+			const travel = Math.hypot(
+				event.clientX - start.x,
+				event.clientY - start.y,
+			)
+			if (!isBoopClick(travel)) return
+			const target = event.target instanceof Element ? event.target : null
+			if (target?.closest(NO_FISH)) return
+			if (window.getSelection()?.isCollapsed === false) return
+			director?.feed({ x: event.clientX, y: event.clientY })
+		}
+		main?.addEventListener('pointerdown', onPointerDown)
+		main?.addEventListener('pointerup', onPointerUp)
+		const unfeed = onFeedRequest((drop) =>
+			director?.feed(
+				drop ?? {
+					x: timeline.viewport.width * 0.72,
+					y: timeline.viewport.height * 0.35,
+				},
+			),
+		)
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (event.key === 'Escape') director?.cancelGags()
+		}
+		window.addEventListener('keydown', onKeyDown)
 
 		const resize = new ResizeObserver(() => {
 			timeline.viewport = size()
@@ -142,6 +201,7 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 				mode,
 				layer,
 				proxy: proxyRef.current,
+				gagProxy: gagProxyRef.current,
 				governor,
 				onFirstFrame: () => {
 					window.clearTimeout(timeout)
@@ -193,6 +253,11 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 			canvas.removeEventListener('webglcontextlost', onContextLost)
 			inView.disconnect()
 			untouch()
+			entries.disconnect()
+			main?.removeEventListener('pointerdown', onPointerDown)
+			main?.removeEventListener('pointerup', onPointerUp)
+			unfeed()
+			window.removeEventListener('keydown', onKeyDown)
 			resize.disconnect()
 			window.removeEventListener('pointermove', onPointerMove)
 			window.removeEventListener('pointerout', onPointerOut)
@@ -216,19 +281,28 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 				style={{ visibility: 'hidden' }}
 			/>
 			{mode !== 'static' ? (
-				<PetProxy
-					ref={proxyRef}
-					label={
-						phase === 'finale'
-							? 'Pet the sleeping cat'
-							: 'Pet the cat'
-					}
-					disabled={status !== 'ready'}
-					onPet={(origin) => {
-						onPet(origin)
-						sceneRef.current?.trigger({ type: 'pet' })
-					}}
-				/>
+				<>
+					<PetProxy
+						ref={proxyRef}
+						label={
+							phase === 'finale'
+								? 'Pet the sleeping cat'
+								: 'Pet the cat'
+						}
+						disabled={status !== 'ready'}
+						onPet={(origin) => {
+							onPet(origin)
+							sceneRef.current?.trigger({ type: 'pet' })
+						}}
+					/>
+					<GagProxy
+						ref={gagProxyRef}
+						onPet={(origin) => {
+							onPet(origin)
+							sceneRef.current?.trigger({ type: 'pet' })
+						}}
+					/>
+				</>
 			) : null}
 		</>
 	)

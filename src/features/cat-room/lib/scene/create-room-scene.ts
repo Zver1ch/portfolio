@@ -1,8 +1,21 @@
-import { Mesh, PerspectiveCamera, Scene, type WebGLRenderer } from 'three'
+import {
+	type Camera,
+	Mesh,
+	OrthographicCamera,
+	PerspectiveCamera,
+	Scene,
+	Vector3,
+	type WebGLRenderer,
+} from 'three'
 import type { CameraPose } from '@/shared/lib/math/projection'
 import { CAMERA_FAR, CAMERA_NEAR } from '../../config/camera-tracks'
 import { roomColliders } from '../../config/colliders'
 import type { DirectorFrame } from '../../model/frame'
+import {
+	type OverlayPlacement,
+	overlayCameraPosition,
+	overlayFrustum,
+} from '../overlay'
 import { screenWidth } from '../screen-quad'
 import {
 	type CatActor,
@@ -16,6 +29,7 @@ import {
 	createRoomMaterial,
 	createSceneUniforms,
 } from './materials'
+import { createFishMesh } from './overlay/fish'
 import { createRenderer, resizeRenderer } from './renderer'
 import { buildRoom } from './room/build-room'
 import { createMonitor } from './room/monitor'
@@ -92,6 +106,17 @@ export async function createRoomScene(
 	scene.add(sticker.mesh)
 	onProgress?.(0.15)
 
+	// The overlay of the `inside` phase (plan §3.10): the cat alone through an
+	// orthographic camera laid out in CSS px; the room stays where it is, hidden.
+	const overlayCamera = new OrthographicCamera(-1, 1, 1, -1, 0.1, 20)
+	const [ox, oy, oz] = overlayCameraPosition()
+	overlayCamera.position.set(ox, oy, oz)
+	overlayCamera.lookAt(ox, oy, oz - 1)
+	let activeCamera: Camera = camera
+	const roomParts = [roomMesh, glowMesh, monitor.group, sticker.mesh]
+	const fish = createFishMesh(roomMaterial)
+	scene.add(fish.mesh)
+
 	let cat: CatActor | null = null
 	if (options.cat !== false) {
 		cat = await createCat({
@@ -115,17 +140,52 @@ export async function createRoomScene(
 		camera.updateProjectionMatrix()
 	}
 
+	const setOverlay = (placement: OverlayPlacement) => {
+		const frustum = overlayFrustum(placement, { width, height })
+		overlayCamera.left = frustum.left
+		overlayCamera.right = frustum.right
+		overlayCamera.top = frustum.top
+		overlayCamera.bottom = frustum.bottom
+		overlayCamera.updateProjectionMatrix()
+	}
+
+	const placeFish = (frame: DirectorFrame) => {
+		const state = frame.fish
+		fish.mesh.visible = state !== null
+		if (!state) return
+		if (state.held && cat) {
+			// Snatched: it rides in the left paw, nose up.
+			fish.mesh.position
+				.copy(cat.bonePosition('wrist_l'))
+				.add(new Vector3(0, 0.01, 0.035))
+			fish.mesh.rotation.set(0, 0, 0.9)
+			return
+		}
+		fish.mesh.position.set(...state.position)
+		// Falling nose first, wobbling on the way down.
+		fish.mesh.rotation.set(0, 0, -1.3 + Math.sin(frame.time * 9) * 0.3)
+	}
+
 	const update = (frame: DirectorFrame, dt: number) => {
 		lastFrame = frame
-		setCamera(frame.camera, width / height)
+		const overlay = frame.overlay
+		for (const part of roomParts) part.visible = overlay === null
+		if (overlay) {
+			setOverlay(overlay)
+			activeCamera = overlayCamera
+		} else {
+			setCamera(frame.camera, width / height)
+			activeCamera = camera
+		}
 		uniforms.uDawn.value = frame.dawn
-		cat?.update(frame, dt, camera)
+		cat?.update(frame, dt, activeCamera)
+		placeFish(frame)
 	}
 
 	const draw = () => {
 		renderer.setScissorTest(false)
 		renderer.setViewport(0, 0, width, height)
-		renderer.render(scene, camera)
+		renderer.render(scene, activeCamera)
 	}
 
 	return {
@@ -146,9 +206,12 @@ export async function createRoomScene(
 			renderer.setScissorTest(true)
 			for (const { frame, rect } of panes) {
 				lastFrame = frame
+				for (const part of roomParts) part.visible = true
+				activeCamera = camera
 				setCamera(frame.camera, rect.width / rect.height)
 				uniforms.uDawn.value = frame.dawn
 				cat?.update(frame, dt, camera)
+				placeFish(frame)
 				const y = height - rect.y - rect.height
 				renderer.setViewport(rect.x, y, rect.width, rect.height)
 				renderer.setScissor(rect.x, y, rect.width, rect.height)
@@ -161,14 +224,15 @@ export async function createRoomScene(
 			height = nextHeight
 			resizeRenderer(renderer, { width, height, dpr })
 			monitor.resize(width / height)
-			if (lastFrame) setCamera(lastFrame.camera, width / height)
+			if (lastFrame?.overlay) setOverlay(lastFrame.overlay)
+			else if (lastFrame) setCamera(lastFrame.camera, width / height)
 		},
 		trigger(event) {
 			cat?.trigger(event)
 		},
 		measure() {
 			return cat
-				? cat.measure(camera, { width, height })
+				? cat.measure(activeCamera, { width, height })
 				: { cat: null, head: null }
 		},
 		penetration() {
@@ -178,6 +242,7 @@ export async function createRoomScene(
 		},
 		dispose() {
 			cat?.dispose()
+			fish.dispose()
 			sticker.dispose()
 			monitor.dispose()
 			room.opaque.dispose()

@@ -402,9 +402,11 @@ Overlay camera: orthographic in CSS px (`left 0, right W, top H, bottom 0`); the
 | `peek` | Section entry | Body below the bottom edge, ears and eyes rise, look-at follows the cursor; pointer-only proxy button over the head | Must |
 | `fish` | Tap on an empty area of `main` (travel ≤ 6 px, not on `a, button, input, [data-no-fish]`, no selection) or header "Feed the cat" | Low-poly fish falls with gravity 2400 px/s²; an IK paw reaches, attaches, retracts; chomp SFX | Must |
 | `typing` | After a peek, at random | `ui/typing-line.tsx` types and erases `asdfgh` in a fixed mono line (`aria-hidden`) | Must |
-| `tail-sweep` | Section change while scrolling | `tail-up` pose plus spring, moves across 35% of the width | Nice |
-| `swat` | Pointer idle 600 ms within 220 px of an edge | The IK target is the cursor, three quick swats | Nice |
-| `glass` | Once per visit | Head close to the camera at a bottom corner, tilted, paw pads visible | Nice |
+| `tail-sweep` | Section change while scrolling | `tail-up` pose plus spring, moves across 35% of the width | Nice (not built in M6; for after Gate 2) |
+| `swat` | Pointer idle 600 ms within 220 px of an edge | The IK target is the cursor, three quick swats | Nice (not built in M6) |
+| `glass` | Once per visit | Head close to the camera at a bottom corner, tilted, paw pads visible | Nice (not built in M6) |
+
+M6 notes: the scheduler counts "entry" per IntersectionObserver event of a section crossing the middle 20% of the viewport, so a section re-entered later may gag again, subject to the gap; the first entry inside the monitor always peeks, so the e2e is deterministic. The fish falls and the paw reaches with the two-bone IK; the fish waits on the catch line (0.3 m above the edge) until the paw is up, then rides in the paw while the cat sinks. Gag timing runs on wall time, so idle stretches do not stall the gaps.
 
 ### 3.11 Loader, stand-in, fallbacks
 

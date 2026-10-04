@@ -43,6 +43,15 @@ export const PET = {
 		fadeOut: 0.9,
 		jawDelay: 0.45,
 	},
+	/** Peeking from the edge: only neck, head and ears react. */
+	peeking: {
+		pose: 'peek-boop',
+		fadeIn: 0.15,
+		hold: 0.45,
+		fadeOut: 0.4,
+		jawDelay: 0.05,
+		bones: ['neck', 'head', 'ear_l', 'ear_r'],
+	},
 } as const
 
 /**
@@ -115,3 +124,46 @@ export const ROOM_LOAD = {
 
 /** The cat looks at the cursor as a point this far in front of the camera, metres. */
 export const POINTER_LOOK_DEPTH = 0.8
+
+/** The orthographic overlay of the `inside` phase (plan §3.10): the cat alone, in CSS px. */
+export const OVERLAY = {
+	/** CSS px per metre: `clamp(0.9 * H, minScale, maxScale)`. */
+	minScale: 520,
+	maxScale: 900,
+	/** The camera sits this far in front of the cat's origin plane, metres. */
+	cameraDistance: 3,
+	/** Depth in front of the cat's origin plane where pointer and fish live, metres. */
+	depth: 0.15,
+	/** The cat looks at the pointer as a point this far in front of it, metres. */
+	lookDepth: 0.8,
+} as const
+
+/** Edge intrusions (plan §3.10): budgets, odds and the shape of each gag. Seconds and metres. */
+export const GAGS = {
+	maxDuration: 4,
+	minGap: 6,
+	/** Escape silences automatic gags for this long. */
+	silence: 60,
+	peek: {
+		duration: 3.2,
+		/** Rise and sink take this long each. */
+		rise: 0.5,
+		/** Metres of the cat above the bottom edge at full rise: ears and eyes. */
+		show: 0.2,
+		xRange: [0.18, 0.82] as const,
+		/** Odds of a peek on a section entry, after the first one. */
+		chance: 0.75,
+	},
+	typing: { duration: 2.4, chance: 0.5 },
+	fish: {
+		/** CSS px per second². */
+		gravity: 2400,
+		/** The paw catches the fish this far above the bottom edge, metres. */
+		catchAbove: 0.3,
+		rise: 0.4,
+		hold: 0.25,
+		sink: 0.5,
+		show: 0.2,
+		xRange: [0.12, 0.88] as const,
+	},
+} as const

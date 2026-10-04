@@ -1,10 +1,4 @@
-import {
-	Euler,
-	type Group,
-	type PerspectiveCamera,
-	Quaternion,
-	Vector3,
-} from 'three'
+import { type Camera, Euler, type Group, Quaternion, Vector3 } from 'three'
 import { DEG, smoothstep } from '@/shared/lib/math/ease'
 import type { Vec3 } from '@/shared/lib/math/vec3'
 import type { Collider } from '../../../config/colliders'
@@ -24,6 +18,7 @@ import {
 	createLayerState,
 	openJaw,
 } from './layers'
+import { applyArmIk } from './limb-ik'
 import { type CatModel, loadCat } from './load-cat'
 import { PoseMixer } from './pose-mixer'
 import { AXES, CatRig } from './rig'
@@ -50,10 +45,10 @@ export type CatActor = {
 	mixer: PoseMixer
 	model: CatModel
 	/** Advances the animation and writes the bones; no drawing. */
-	update(frame: DirectorFrame, dt: number, camera: PerspectiveCamera): void
+	update(frame: DirectorFrame, dt: number, camera: Camera): void
 	trigger(event: SceneEvent): void
 	measure(
-		camera: PerspectiveCamera,
+		camera: Camera,
 		viewport: { width: number; height: number },
 	): { cat: Rect | null; head: Rect | null }
 	/** Extra local Euler offsets (degrees) per bone key, for the lab's probe and sliders. */
@@ -162,11 +157,7 @@ export async function createCat({
 		rig.indexOf(key),
 	)
 
-	const update = (
-		frame: DirectorFrame,
-		dt: number,
-		camera: PerspectiveCamera,
-	) => {
+	const update = (frame: DirectorFrame, dt: number, camera: Camera) => {
 		const time = frame.stepped
 			? Math.floor(frame.time * 12) / 12
 			: frame.time
@@ -228,6 +219,22 @@ export async function createCat({
 		applyEarTwitch(rig, local, layers, time)
 		applyJaw(rig, local, layers, time)
 
+		// The left paw reaches for the fish: a world target brought into
+		// character space, the elbow bending up and towards the visitor.
+		if (frame.reach) {
+			const target = new Vector3(...frame.reach)
+				.sub(root.position)
+				.applyQuaternion(root.quaternion.clone().invert())
+			applyArmIk(
+				rig,
+				local,
+				'l',
+				[target.x, target.y, target.z],
+				[0, 0.4, 1],
+				model.scale,
+			)
+		}
+
 		const flick = tailFlick(frame.dive)
 		if (flick > 0) {
 			const share = [0.6, 0.25, 0.15]
@@ -249,7 +256,7 @@ export async function createCat({
 
 	const project = (
 		keys: string[],
-		camera: PerspectiveCamera,
+		camera: Camera,
 		viewport: { width: number; height: number },
 	): Rect | null => {
 		let minX = Infinity
@@ -287,12 +294,19 @@ export async function createCat({
 		update,
 		trigger(event) {
 			if (event.type === 'pet') {
+				const base = mixer.basePose
 				const reaction =
-					mixer.basePose === 'sleep' ? PET.asleep : PET.awake
+					base === 'sleep'
+						? PET.asleep
+						: base === 'peek' || base === 'reach'
+							? PET.peeking
+							: PET.awake
 				mixer.play(reaction.pose, lastTime, {
 					fadeIn: reaction.fadeIn,
 					hold: reaction.hold,
 					fadeOut: reaction.fadeOut,
+					bones:
+						'bones' in reaction ? [...reaction.bones] : undefined,
 				})
 				openJaw(layers, lastTime + reaction.jawDelay)
 			}

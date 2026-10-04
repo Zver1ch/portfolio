@@ -45,6 +45,7 @@ export type PoseName =
 	| 'sleep'
 	| 'sleep-stretch'
 	| 'peek'
+	| 'peek-boop'
 	| 'reach'
 	| 'tail-up'
 
@@ -245,6 +246,16 @@ export const POSES: Record<PoseName, Pose> = {
 			elbow_l: { aim: [0.1, -0.6, 0.8] },
 			arm_r: { aim: [-0.3, -0.9, 0.3] },
 			elbow_r: { aim: [-0.1, -0.6, 0.8] },
+		},
+	},
+
+	/** The pet reaction while peeking, masked to neck, head and ears: a tilt and flat ears. */
+	'peek-boop': {
+		bones: {
+			neck: { aim: [0.1, 0.85, 0.5] },
+			head: { aim: [0.3, 0.7, 0.65], twist: 18 },
+			ear_l: { rot: [0, 0, -24] },
+			ear_r: { rot: [0, 0, 24] },
 		},
 	},
 

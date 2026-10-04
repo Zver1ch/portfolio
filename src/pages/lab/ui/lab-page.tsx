@@ -2,12 +2,18 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { PoseName } from '@/features/cat-room/config/poses'
+import { GAGS, OVERLAY } from '@/features/cat-room/config/tuning'
 import {
 	cameraAt,
 	dawnFactor,
 	liteFinaleCamera,
 	liteHeroCamera,
 } from '@/features/cat-room/lib/camera-path'
+import {
+	type OverlayPlacement,
+	overlayToWorld,
+	risingPlacement,
+} from '@/features/cat-room/lib/overlay'
 import type { CatActor } from '@/features/cat-room/lib/scene/cat/cat'
 import {
 	createRoomScene,
@@ -57,7 +63,24 @@ function frameFor(
 	let camera = orbitCamera(params, headWorld, basePose(params))
 	let dawn = params.dawn ?? 0
 	let dive = 0
-	if (view === 'hero' || view === 'dive') {
+	let overlay: OverlayPlacement | null = null
+	let reach: Vec3 | null = null
+	let fish: DirectorFrame['fish'] = null
+	if (view === 'overlay') {
+		// `p` is the rise (1 when absent); the reach pose gets a fish to grab.
+		overlay = risingPlacement(0.5, params.p || 1, GAGS.peek.show, {
+			width,
+			height,
+		})
+		if (basePose(params) === 'reach') {
+			reach = overlayToWorld(
+				{ x: width * 0.5 + 60, y: height - 230 },
+				overlay,
+				OVERLAY.depth,
+			)
+			fish = { position: reach, held: false }
+		}
+	} else if (view === 'hero' || view === 'dive') {
 		camera = params.lite
 			? liteHeroCamera(aspect)
 			: cameraAt('dive', params.p, aspect)
@@ -85,6 +108,9 @@ function frameFor(
 				? [camera.target[0], camera.target[1], camera.target[2] + 4]
 				: null,
 		cut: false,
+		overlay,
+		reach,
+		fish,
 		stepped: params.stepped,
 	}
 }

@@ -38,6 +38,9 @@ const director = vi.hoisted(() => ({
 	dispose: vi.fn(),
 	wake: vi.fn(),
 	stop: vi.fn(),
+	enterSection: vi.fn(),
+	feed: vi.fn(() => true),
+	cancelGags: vi.fn(),
 }))
 vi.mock('../model/director', () => ({
 	createDirector: vi.fn((deps: { onFirstFrame: () => void }) => {
@@ -46,6 +49,7 @@ vi.mock('../model/director', () => ({
 	}),
 }))
 
+import { requestFeed } from '../model/feed-bus'
 import { getRoomState, resetRoomStore, setRoomPhase } from '../model/room-store'
 import { resetTimeline, touchTimeline } from '../model/timeline'
 import { RoomLayer } from './room-layer'
@@ -137,6 +141,54 @@ describe('RoomLayer', () => {
 		director.wake.mockClear()
 		touchTimeline()
 		expect(director.wake).toHaveBeenCalledTimes(1)
+	})
+
+	it('drops a fish on a clean tap in main, never on a link or a drag, and on request; Escape cancels', async () => {
+		render(
+			<>
+				<main>
+					<p data-testid='empty'>empty</p>
+					<a href='#top' data-testid='link'>
+						Back to top
+					</a>
+				</main>
+				<RoomLayer onPet={() => {}} />
+			</>,
+		)
+		await flush()
+		const empty = screen.getByTestId('empty')
+		const link = screen.getByTestId('link')
+		const tap = (
+			target: Element,
+			from: [number, number],
+			to: [number, number],
+		) => {
+			fireEvent.pointerDown(target, {
+				button: 0,
+				clientX: from[0],
+				clientY: from[1],
+			})
+			fireEvent.pointerUp(target, {
+				button: 0,
+				clientX: to[0],
+				clientY: to[1],
+			})
+		}
+		tap(empty, [100, 200], [102, 201])
+		expect(director.feed).toHaveBeenCalledWith({ x: 102, y: 201 })
+		director.feed.mockClear()
+		tap(link, [100, 200], [100, 200])
+		tap(empty, [100, 200], [140, 200])
+		expect(director.feed).not.toHaveBeenCalled()
+		requestFeed()
+		expect(director.feed).toHaveBeenCalledTimes(1)
+		requestFeed({ x: 5, y: 6 })
+		expect(director.feed).toHaveBeenLastCalledWith({ x: 5, y: 6 })
+		fireEvent.keyDown(window, { key: 'Escape' })
+		expect(director.cancelGags).toHaveBeenCalledTimes(1)
+		const gagProxy = document.querySelector('[data-gag-proxy]')
+		expect(gagProxy).toHaveAttribute('aria-hidden', 'true')
+		expect(gagProxy).toHaveAttribute('tabindex', '-1')
 	})
 
 	it('uses the painted screen in lite mode', async () => {
