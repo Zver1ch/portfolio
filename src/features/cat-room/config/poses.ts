@@ -70,7 +70,7 @@ export type PoseName =
  */
 
 const LYING_ROOT = {
-	position: [0, 0.07, 0] as Vec3,
+	position: [0, 0.08, 0] as Vec3,
 	rotation: [0, 0, -90] as Vec3,
 }
 
@@ -92,18 +92,18 @@ export const POSES: Record<PoseName, Pose> = {
 			neck: { aim: [-0.65, 0.7, 0.2] },
 			head: { aim: [-0.8, 0.55, -0.25] },
 			// Lower (left) arm: upper arm forward and down, forearm up, cheek on the paw.
-			arm_l: { aim: [0.45, 0.3, 0.85] },
+			arm_l: { aimWorld: [0.3, -0.02, 0.95] },
 			elbow_l: { aim: [-0.9, 0.35, 0.25] },
 			wrist_l: { aim: [-0.8, 0.5, 0.3] },
 			// Upper (right) arm reaches over to the keyboard in front.
-			arm_r: { aim: [0.55, -0.2, 0.8] },
-			elbow_r: { aim: [0.5, -0.3, 0.8] },
-			wrist_r: { aim: [0.25, -0.35, 0.9] },
+			arm_r: { aimWorld: [-0.1, -0.45, 0.88] },
+			elbow_r: { aimWorld: [0, -0.02, 1] },
+			wrist_r: { aimWorld: [0, 0.08, 1] },
 			// Knees drawn forward and stacked, bent about 90°: thighs towards the
 			// visitor and down the body, shins back and further down, never
 			// folded into the thighs.
-			leg_l: { aimWorld: [-0.5, -0.12, 0.85] },
-			knee_l: { aimWorld: [-0.8, -0.12, -0.55] },
+			leg_l: { aimWorld: [-0.5, 0.05, 0.87] },
+			knee_l: { aimWorld: [-0.8, 0.02, -0.55] },
 			foot_l: { aimWorld: [-0.95, 0.1, -0.3] },
 			leg_r: { aimWorld: [-0.45, 0.04, 0.88] },
 			knee_r: { aimWorld: [-0.78, 0.02, -0.6] },
@@ -127,23 +127,23 @@ export const POSES: Record<PoseName, Pose> = {
 			chest: { aim: [0.1, 1, -0.2] },
 			neck: { aim: [-0.3, 0.9, -0.3] },
 			head: { aim: [-0.6, 0.7, -0.4] },
-			arm_l: { aim: [0.1, 0.8, 0.55] },
+			arm_l: { aimWorld: [0.85, 0.08, 0.5] },
 			elbow_l: { aim: [-0.1, 0.95, 0.3] },
 			wrist_l: { aim: [-0.2, 0.95, 0.25] },
 			arm_r: { aim: [-0.25, 0.85, 0.45] },
 			elbow_r: { aim: [-0.35, 0.9, 0.25] },
 			wrist_r: { aim: [-0.4, 0.9, 0.2] },
-			leg_l: { aim: [0.1, -0.9, 0.4] },
-			knee_l: { aim: [0.05, -1, -0.1] },
-			foot_l: { aim: [0.2, -0.6, -0.75] },
+			leg_l: { aimWorld: [-0.9, 0.06, 0.4] },
+			knee_l: { aimWorld: [-1, 0.03, -0.1] },
+			foot_l: { aimWorld: [-0.6, 0.05, -0.78] },
 			leg_r: { aim: [-0.05, -0.92, 0.38] },
 			knee_r: { aim: [-0.1, -1, -0.1] },
 			foot_r: { aim: [0.1, -0.6, -0.78] },
 			tailroot: { aim: [-0.4, -0.2, -0.9] },
-			tail: { aim: [-0.9, -0.2, -0.4] },
-			tail001: { aim: [-1, -0.2, 0] },
-			tail002: { aim: [-0.95, -0.3, 0.15] },
-			tail003: { aim: [-0.8, -0.4, 0.4] },
+			tail: { aimWorld: [-0.3, 0.9, -0.1] },
+			tail001: { aimWorld: [-0.2, 1, 0.15] },
+			tail002: { aimWorld: [-0.3, 0.9, 0.35] },
+			tail003: { aimWorld: [-0.4, 0.75, 0.5] },
 			ear_l: { rot: [0, 0, -14] },
 			ear_r: { rot: [0, 0, 14] },
 		},
@@ -158,32 +158,33 @@ export const POSES: Record<PoseName, Pose> = {
 	 * (`lib/scene/cat/eyelids.ts`). Look-at is off while this pose is active.
 	 */
 	sleep: {
-		root: { position: [0, 0.05, 0], rotation: [-75, 0, -90] },
+		root: { position: [0, 0.12, 0.04], rotation: [-75, 0, -90] },
 		bones: {
 			hips: { aimWorld: [1, 0.08, 0.02] },
 			chest: { aimWorld: [1, 0.12, -0.05] },
 			neck: { aimWorld: [0.95, -0.1, -0.2] },
-			head: { aimWorld: [0.85, -0.45, -0.25], twist: 25 },
-			// Front paws up past the head; the far one bent at the wrist.
-			arm_l: { aimWorld: [0.85, 0.2, 0.45] },
-			elbow_l: { aimWorld: [0.95, 0.2, 0.2] },
-			wrist_l: { aimWorld: [0.8, 0.5, 0.3] },
-			arm_r: { aimWorld: [0.9, 0.15, -0.4] },
-			elbow_r: { aimWorld: [0.75, 0.55, -0.35] },
-			wrist_r: { aimWorld: [0.2, 0.9, -0.3] },
+			head: { aimWorld: [0.9, -0.3, -0.25], twist: 25 },
+			// Front paws stretched past the head and resting on the desk.
+			arm_l: { aimWorld: [0.7, -0.45, 0.4] },
+			elbow_l: { aimWorld: [0.95, -0.08, 0.25] },
+			wrist_l: { aimWorld: [1, 0.1, 0.15] },
+			arm_r: { aimWorld: [0.75, -0.45, -0.3] },
+			elbow_r: { aimWorld: [0.95, -0.08, -0.2] },
+			wrist_r: { aimWorld: [1, 0.1, -0.1] },
 			// Hind legs stretched the other way, slightly splayed, toes up.
-			leg_l: { aimWorld: [-0.85, -0.1, 0.5] },
-			knee_l: { aimWorld: [-0.95, 0, 0.3] },
+			leg_l: { aimWorld: [-0.85, 0.1, 0.45] },
+			knee_l: { aimWorld: [-0.95, 0.12, 0.3] },
 			foot_l: { aimWorld: [-0.85, 0.45, 0.3] },
-			leg_r: { aimWorld: [-0.85, 0.05, -0.5] },
-			knee_r: { aimWorld: [-0.9, 0.15, -0.4] },
+			leg_r: { aimWorld: [-0.88, 0.12, -0.3] },
+			knee_r: { aimWorld: [-0.92, 0.2, -0.25] },
 			foot_r: { aimWorld: [-0.75, 0.6, -0.3] },
-			// Tail out along the desk behind the body, curling towards the head.
-			tailroot: { aimWorld: [-0.5, -0.15, -0.85] },
-			tail: { aimWorld: [-0.1, -0.05, -1] },
-			tail001: { aimWorld: [0.5, 0, -0.85] },
-			tail002: { aimWorld: [0.9, 0.05, -0.4] },
-			tail003: { aimWorld: [1, 0.1, 0.15] },
+			// Tail thrown over the near thigh and down along the shin: the only
+			// room on the desk (the monitor base is behind, the keyboard in front).
+			tailroot: { aimWorld: [-0.35, 0.45, 0.8] },
+			tail: { aimWorld: [-0.8, 0.2, 0.45] },
+			tail001: { aimWorld: [-0.95, 0.05, -0.1] },
+			tail002: { aimWorld: [-0.95, 0, -0.3] },
+			tail003: { aimWorld: [-0.9, 0, -0.45] },
 			ear_l: { rot: [0, 0, 20] },
 			ear_r: { rot: [0, 0, -20] },
 			lefteye: { rot: [180, 0, 0] },

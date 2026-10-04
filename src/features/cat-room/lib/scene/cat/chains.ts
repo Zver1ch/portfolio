@@ -12,6 +12,8 @@ export type Chain = {
 	tip: number
 	params: ChainParams
 	particles: Particle[]
+	/** World height the particles may not sink below. */
+	floor?: number
 }
 
 /**
@@ -27,13 +29,21 @@ export class SpringChains {
 
 	constructor(private readonly rig: CatRig) {}
 
-	add(name: string, keys: string[], tipKey: string, params: ChainParams) {
+	/** `floor`: world height the chain's particles may not sink below (a tail on the desk). */
+	add(
+		name: string,
+		keys: string[],
+		tipKey: string,
+		params: ChainParams,
+		floor?: number,
+	) {
 		this.chains.push({
 			name,
 			bones: keys.map((key) => this.rig.indexOf(key)),
 			tip: this.rig.indexOf(tipKey),
 			params,
 			particles: [],
+			floor,
 		})
 	}
 
@@ -142,6 +152,22 @@ export class SpringChains {
 							)
 				}
 				particle.position.copy(head).addScaledVector(direction, length)
+				if (
+					chain.floor !== undefined &&
+					particle.position.y < chain.floor
+				) {
+					// Slide along the floor: keep the length, lift the tip.
+					particle.position.y = chain.floor
+					const flat = particle.position.clone().sub(head)
+					if (flat.lengthSq() > 1e-12)
+						particle.position
+							.copy(head)
+							.addScaledVector(flat.normalize(), length)
+					particle.position.y = Math.max(
+						particle.position.y,
+						chain.floor,
+					)
+				}
 			}
 			const actualDirection = particle.position
 				.clone()

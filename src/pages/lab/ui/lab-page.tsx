@@ -15,7 +15,6 @@ import {
 import { advance } from '@/features/cat-room/lib/scene-time'
 import type { DirectorFrame } from '@/features/cat-room/model/frame'
 import type { Vec3 } from '@/shared/lib/math/vec3'
-import { CatFace } from '@/shared/ui/cat-face/cat-face'
 import {
 	type LabParams,
 	modelUrl,
@@ -330,20 +329,9 @@ export function LabPage() {
 		}
 	}
 
-	const face = params?.view === 'face'
 	return (
 		<main className='fixed inset-0 flex bg-ink text-snow'>
-			<div
-				ref={stageRef}
-				className={
-					face ? 'relative h-full w-1/2' : 'relative h-full flex-1'
-				}
-			/>
-			{face ? (
-				<div className='flex h-full w-1/2 items-center justify-center bg-ink-2 p-12'>
-					<CatFace className='h-auto w-[70%]' />
-				</div>
-			) : null}
+			<div ref={stageRef} className='relative h-full flex-1' />
 			{params?.view === 'probe' ? (
 				<ProbeLabels bone={params.bone} deg={params.deg} />
 			) : null}

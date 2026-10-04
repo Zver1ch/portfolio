@@ -7,6 +7,7 @@ import {
 } from 'three'
 import { DEG, smoothstep } from '@/shared/lib/math/ease'
 import type { Vec3 } from '@/shared/lib/math/vec3'
+import type { Collider } from '../../../config/colliders'
 import { POSES, type PoseName } from '../../../config/poses'
 import { CAT_SPOT } from '../../../config/room-layout'
 import { CHAINS, EYELIDS } from '../../../config/tuning'
@@ -26,6 +27,7 @@ import {
 import { type CatModel, loadCat } from './load-cat'
 import { PoseMixer } from './pose-mixer'
 import { AXES, CatRig } from './rig'
+import { dominantJoint, skinnedWorldPosition } from './skinned'
 
 export type Rect = { x: number; y: number; width: number; height: number }
 
@@ -59,7 +61,20 @@ export type CatActor = {
 	setOverrides(overrides: Record<string, Vec3>): void
 	/** World position of a bone, for lab framing. */
 	bonePosition(key: string): Vector3
+	/** Skinned vertices inside the given solids, deepest first (lab check). */
+	penetration(colliders: readonly Collider[]): PenetrationHit[]
 	dispose(): void
+}
+
+export type PenetrationHit = {
+	collider: string
+	vertices: number
+	/** Largest depth inside the solid, metres. */
+	depth: number
+	/** Bone that drives the deepest vertex. */
+	bone: string
+	/** The same per driving bone, deepest first. */
+	bones: { bone: string; vertices: number; depth: number }[]
 }
 
 const MEASURE_KEYS = [
@@ -110,11 +125,13 @@ export async function createCat({
 	const mixer = new PoseMixer(rig, POSES, 'rest')
 	const layers = createLayerState()
 	const chains = new SpringChains(rig)
+	// The tail may droop, but not through the desk.
 	chains.add(
 		'tail',
 		['tailroot', 'tail', 'tail001', 'tail002', 'tail003'],
 		'tail003_end',
 		CHAINS.tail,
+		spot[1] + CHAINS.tailRadius,
 	)
 	chains.add(
 		'ear_l',
@@ -278,6 +295,51 @@ export async function createCat({
 		},
 		bonePosition(key) {
 			return rig.bones[rig.indexOf(key)].getWorldPosition(new Vector3())
+		},
+		penetration(colliders) {
+			type Tally = { vertices: number; depth: number }
+			const hits = new Map<string, Map<string, Tally>>()
+			const point = new Vector3()
+			for (const mesh of model.meshes) {
+				const count = mesh.geometry.getAttribute('position').count
+				for (let v = 0; v < count; v++) {
+					skinnedWorldPosition(mesh, v, point)
+					const p: Vec3 = [point.x, point.y, point.z]
+					let bone: string | null = null
+					for (const collider of colliders) {
+						const depth = collider.depth(p)
+						if (depth <= 0) continue
+						if (bone === null) {
+							const joint = dominantJoint(mesh, v)
+							bone = joint >= 0 ? rig.keys[joint] : '?'
+						}
+						const perBone =
+							hits.get(collider.name) ?? new Map<string, Tally>()
+						const tally = perBone.get(bone) ?? {
+							vertices: 0,
+							depth: 0,
+						}
+						tally.vertices++
+						tally.depth = Math.max(tally.depth, depth)
+						perBone.set(bone, tally)
+						hits.set(collider.name, perBone)
+					}
+				}
+			}
+			return [...hits.entries()]
+				.map(([collider, perBone]) => {
+					const bones = [...perBone.entries()]
+						.map(([bone, tally]) => ({ bone, ...tally }))
+						.sort((a, b) => b.depth - a.depth)
+					return {
+						collider,
+						vertices: bones.reduce((sum, b) => sum + b.vertices, 0),
+						depth: bones[0].depth,
+						bone: bones[0].bone,
+						bones,
+					}
+				})
+				.sort((a, b) => b.depth - a.depth)
 		},
 		dispose() {
 			eyelids.dispose()

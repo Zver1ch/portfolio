@@ -1,8 +1,16 @@
 import { Mesh, PerspectiveCamera, Scene, type WebGLRenderer } from 'three'
 import type { CameraPose } from '@/shared/lib/math/projection'
 import { CAMERA_FAR, CAMERA_NEAR } from '../../config/camera-tracks'
+import { roomColliders } from '../../config/colliders'
 import type { DirectorFrame, ShadingVariant } from '../../model/frame'
-import { type CatActor, createCat, type Rect, type SceneEvent } from './cat/cat'
+import { screenWidth } from '../screen-quad'
+import {
+	type CatActor,
+	createCat,
+	type PenetrationHit,
+	type Rect,
+	type SceneEvent,
+} from './cat/cat'
 import {
 	createGlowMaterial,
 	createRoomMaterial,
@@ -48,6 +56,8 @@ export type RoomScene = {
 		dt: number,
 		clear?: boolean,
 	): void
+	/** The posed cat against the room's solids (lab check, plan §7). */
+	penetration(): PenetrationHit[]
 	readonly cat: CatActor | null
 	readonly renderer: WebGLRenderer
 	readonly triangles: number
@@ -162,6 +172,11 @@ export async function createRoomScene(
 			return cat
 				? cat.measure(camera, { width, height })
 				: { cat: null, head: null }
+		},
+		penetration() {
+			return cat
+				? cat.penetration(roomColliders(screenWidth(width / height)))
+				: []
 		},
 		dispose() {
 			cat?.dispose()

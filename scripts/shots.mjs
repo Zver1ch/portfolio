@@ -7,6 +7,7 @@
  *   pnpm assets:shots --sequence dive|finale  p = 0, 0.1, …, 1
  *   pnpm assets:shots --compare-source        rest pose, fixed source vs shipped model, pixel diff
  *   pnpm assets:shots --gate                  the Gate 1 package into docs/lookdev/gate-1/
+ *   pnpm assets:shots --clip [--poses a,b] [--verbose]   cat-versus-furniture penetration per pose (and bone positions)
  *
  * Starts `next dev` on port 3100 unless `--url` points at a running server.
  * Output goes to artifacts/shots/ (git-ignored) unless the mode says otherwise.
@@ -24,6 +25,9 @@ const SOURCE_MODEL =
 const SPACE_MODEL = 'artifacts/model/3-space.glb'
 const OUT_DIR = 'artifacts/shots'
 const GATE_DIR = 'docs/lookdev/gate-1'
+/** Vertices of the cat inside the furniture, deeper than this, are a problem. */
+const CLIP_TOLERANCE = 0.003
+const CLIP_POSES = ['lounge', 'sleep', 'stretch']
 const DEFAULT_TIME = 2.4
 
 const args = process.argv.slice(2)
@@ -51,6 +55,7 @@ try {
 	else if (option('--pose')) await poseSheet(option('--pose'))
 	else if (option('--sequence')) await sequence(option('--sequence'))
 	else if (flag('--compare-source')) await compareSource()
+	else if (flag('--clip')) await clipCheck()
 	else if (option('--view')) {
 		const { width, height } = size(option('--size'), '1440x900')
 		await shoot(
@@ -74,7 +79,8 @@ if (problems.length) {
 }
 
 /** Opens the lab with a query, waits for the first frame, saves a PNG. */
-async function shoot(query, width, height, path) {
+/** Opens the lab at `query`, waits for the first frame, runs `run(page)`, closes. */
+async function withLab(query, width, height, run) {
 	const page = await browser.newPage({
 		viewport: { width, height },
 		deviceScaleFactor: 1,
@@ -98,12 +104,94 @@ async function shoot(query, width, height, path) {
 		timeout: 180_000,
 	})
 	await page.evaluate(() => window.__lab.ready)
-	await page.screenshot({ path, fullPage: false })
+	const result = await run(page, started)
 	await page.close()
-	console.log(
-		`${path}  (${width}×${height}, ${((Date.now() - started) / 1000).toFixed(1)}s)  ${query}`,
-	)
-	return path
+	return result
+}
+
+async function shoot(query, width, height, path) {
+	return withLab(query, width, height, async (page, started) => {
+		await page.screenshot({ path, fullPage: false })
+		console.log(
+			`${path}  (${width}×${height}, ${((Date.now() - started) / 1000).toFixed(1)}s)  ${query}`,
+		)
+		return path
+	})
+}
+
+/**
+ * Runs every skinned vertex of each pose through the room's solids
+ * (`scene.penetration()`); `--poses a,b` picks the poses. Part of `--gate`.
+ */
+async function clipCheck(
+	poses = (option('--poses') ?? CLIP_POSES.join(',')).split(','),
+) {
+	const rows = []
+	for (const pose of poses) {
+		const query = withTime(`view=turntable&pose=${pose}&cam=quarter`)
+		const { hits, bones } = await withLab(query, 1200, 800, (page) =>
+			page.evaluate(() => {
+				const scene = window.__lab.scene
+				const keys = [
+					'hips',
+					'chest',
+					'head',
+					'arm_l',
+					'elbow_l',
+					'wrist_l',
+					'arm_r',
+					'elbow_r',
+					'wrist_r',
+					'leg_l',
+					'knee_l',
+					'foot_l_end',
+					'leg_r',
+					'knee_r',
+					'foot_r_end',
+					'tailroot',
+					'tail003_end',
+					'ear_l002_end',
+					'ear_r002_end',
+				]
+				return {
+					hits: scene.penetration(),
+					bones: keys.map((key) => [
+						key,
+						scene.cat.bonePosition(key).toArray(),
+					]),
+				}
+			}),
+		)
+		if (flag('--verbose'))
+			console.log(
+				`${pose}: ${bones
+					.map(
+						([key, p]) =>
+							`${key} (${p.map((v) => v.toFixed(3)).join(', ')})`,
+					)
+					.join('  ')}`,
+			)
+		if (hits.length === 0)
+			rows.push({ pose, collider: '—', vertices: 0, mm: 0, bones: '' })
+		for (const hit of hits) {
+			rows.push({
+				pose,
+				collider: hit.collider,
+				vertices: hit.vertices,
+				mm: Math.round(hit.depth * 1000 * 10) / 10,
+				bones: hit.bones
+					.slice(0, 7)
+					.map((b) => `${b.bone} ${(b.depth * 1000).toFixed(0)}`)
+					.join(', '),
+			})
+			if (hit.depth > CLIP_TOLERANCE)
+				problems.push(
+					`clip: ${pose} enters the ${hit.collider} by ${(hit.depth * 1000).toFixed(1)} mm (${hit.vertices} vertices, deepest on ${hit.bone})`,
+				)
+		}
+	}
+	console.table(rows)
+	return rows
 }
 
 function withTime(query, time = DEFAULT_TIME) {
@@ -259,7 +347,6 @@ async function gatePackage() {
 			1600,
 			1000,
 		],
-		['face-svg-vs-3d.png', 'view=face&cam=face&pose=lounge', 1600, 900],
 		['sticker.png', 'view=turntable&cam=sticker', 1600, 1000],
 		[
 			'desk-props.png',
@@ -278,4 +365,5 @@ async function gatePackage() {
 		join(OUT_DIR, 'gate-shots.json'),
 		JSON.stringify(shots, null, '\t'),
 	)
+	await clipCheck(CLIP_POSES)
 }

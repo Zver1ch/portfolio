@@ -41,12 +41,14 @@ export const MONITOR_STAND = {
 
 export const KEYBOARD = {
 	/** Centre of the footprint on the desk. */
-	center: [0.22, DESK_TOP, -0.9] as Vec3,
+	center: [0.22, DESK_TOP, -0.87] as Vec3,
 	/** Width and depth of the footprint. */
 	size: [0.42, 0.145] as const,
 	heightBack: 0.024,
 	heightFront: 0.013,
 	chamfer: 0.006,
+	/** Keycaps stand this far above the wedge. */
+	keyHeight: 0.0045,
 	rows: 5,
 	columns: 14,
 	yawDeg: 3,
@@ -54,7 +56,7 @@ export const KEYBOARD = {
 
 export const MOUSE = {
 	/** Centre of the footprint on the desk. */
-	center: [0.58, DESK_TOP, -0.88] as Vec3,
+	center: [0.58, DESK_TOP, -0.85] as Vec3,
 	size: [0.062, 0.036, 0.1] as Vec3,
 	yawDeg: -12,
 } as const

@@ -303,7 +303,7 @@ function buildKeyboard(kit: Kit) {
 	const margin = 0.016
 	const gap = 0.004
 	const bevel = 0.0012
-	const keyHeight = 0.0045
+	const keyHeight = KEYBOARD.keyHeight
 	const keyW =
 		(w - 2 * margin - gap * (KEYBOARD.columns - 1)) / KEYBOARD.columns
 	const keyD = (d - 2 * margin - gap * (KEYBOARD.rows - 1)) / KEYBOARD.rows

@@ -68,6 +68,8 @@ export type ChainParams = {
 export const CHAINS = {
 	subStep: 1 / 120,
 	maxSubSteps: 4,
+	/** Half thickness of the tail: how high above the desk its spring chain is floored. */
+	tailRadius: 0.075,
 	tail: { stiffness: 140, inertia: 0.9, gravity: 0.8, maxBendDeg: 40 },
 	ear: { stiffness: 320, inertia: 0.85, gravity: 0, maxBendDeg: 14 },
 	hair: { stiffness: 260, inertia: 0.86, gravity: 0.3, maxBendDeg: 18 },

@@ -472,11 +472,11 @@ Shared:
 - `src/shared/config/credits.ts`: typed credit entries with the exact strings of §1.2.
 - `src/shared/lib/math/vec3.ts`, `projection.ts`, `homography.ts`, `ease.ts`, `spring.ts`: tuple maths, no three.
 - `src/shared/lib/sound/audio-context.ts`, `ambient.ts`, `sfx.ts`.
-- `src/shared/ui/cat-face/cat-face.tsx` and `cat-face.module.css`: an original 2D face SVG drawn after the avatar's face, with CSS ear twitch.
+- The 2D face is `public/stickers/cat-sticker.png` wherever the plan says "2D face" (owner decision at Gate 1: no new drawing). No `cat-face` SVG component exists.
 - `src/shared/ui/statement.tsx`, `meta-caption.tsx`, `room-poster.tsx`.
 
 `src/features/boop-cat`:
-- `ui/cat-face-button.tsx`: a labelled button around `CatFace`; calls `boop()` and `stampHearts`.
+- `ui/cat-face-button.tsx`: a labelled button around the sticker image (`public/stickers/cat-sticker.png`); calls `boop()` and `stampHearts`.
 
 `src/features/toggle-sound`:
 - `ui/sound-prompt.tsx`, `ui/ambient-sound.tsx`.
@@ -516,7 +516,7 @@ Scripts, assets and docs:
 - `vitest.setup.ts`: a quiet `HTMLCanvasElement.prototype.getContext` stub returning `null`.
 - `.gitignore` (`/artifacts/`), `.dockerignore` (`/artifacts`), `.github/workflows/ci.yml` (asset guard step).
 - `assets/models/README.md`: add the inspect output.
-- `app/layout.tsx`, `app/globals.css`, `app/not-found.tsx` (adds `CatFace`; texts unchanged).
+- `app/layout.tsx`, `app/globals.css`, `app/not-found.tsx` (adds the sticker image; texts unchanged).
 - `src/pages/home/ui/home-page.tsx`: the composition is `SmoothScroll`, `SiteHeader`, `CatStage`, `main` (`Hero` with `Manifesto` as children, `About`, `Stack`, `Contact`), then `Finale` with the footer statement as children.
 - `src/widgets/about/ui/about.tsx`, `stack/ui/stack.tsx`, `contact/ui/contact.tsx`: rewritten as flat typographic sections.
 - `src/shared/config/profile.ts`, `motion.ts`.
@@ -561,7 +561,7 @@ Never run `optimize`, `join`, `flatten`, `simplify`, `palette` or `weld` on the 
 |---|---|
 | `pnpm assets:inspect` | `scripts/inspect-model.mjs`, a dependency-free reader of the GLB JSON chunk (`scripts/lib/glb.mjs`). Prints triangles, meshes, materials, attributes (is `NORMAL` present?), skin joints with parents and bounding boxes for the source model and for `public/models/cat.glb`. Paste the result into `assets/models/README.md` and compare it with §1.3. With `--write-rig` it writes `src/features/cat-room/config/cat-rig.gen.ts` (bone keys and parents in skin order, byte size, SHA-256 prefix) from `public/models/cat.glb` and formats that file with Biome. |
 | `pnpm assets:shots` | Lab screenshots (§3.9). The source model is injected with `page.route('**/__lab/*.glb', …)` from `assets/models/source/`; the app never serves it. |
-| `pnpm assets:posters` | Renders the night and dawn rooms with the fake screen at 1920×1200 and 1080×1920 into `public/posters/`; `app/apple-icon.png` from the face SVG. |
+| `pnpm assets:posters` | Renders the night and dawn rooms with the fake screen at 1920×1200 and 1080×1920 into `public/posters/`; `app/apple-icon.png` from the sticker PNG. |
 | `pnpm assets:check` | Fails if any `.glb`, `.gltf` or `.bin` exists under `public/` other than `models/cat.glb`; if any file under `public/` has the SHA-256 of a source model; if `cat-rig.gen.ts` does not match the committed GLB. |
 
 Fallbacks:
@@ -596,8 +596,8 @@ Run `pnpm verify` and `pnpm build` after every milestone; `pnpm test:e2e` from M
 | # | Scope | Acceptance | Effort budget and fallback |
 |---|---|---|---|
 | M0 | Dependencies, the model build, inspect and check scripts, guard in `verify` and CI, Playwright arguments, model facts recorded. Verify the sandbox network: registry, Playwright browser, Google Fonts during `next build`. | `cat.glb` ≤ 400 kB; the guard fails when a source is copied into `public/` (unit-tested); headless WebGL confirmed with a one-page smoke run. | 0.5 d |
-| M1 | Look-dev in the lab only: renderer, room, rig, poses `lounge`, `stretch`, `sleep`, idle layers, shading variants, face SVG, sticker placement. The home page is untouched. | Gate package in `docs/lookdev/gate-1/`: hero night 1920×1200 and 390×844; cat close-up, side, top; stretch; finale dawn; sleep close-up; shading A and B; face SVG next to the 3D face; sticker; dive tunnel at p = 0.95; a README listing what to approve. | 3 d. If the side-lying pose still collapses or interpenetrates after 1.5 d, also deliver alternative B. Hair springs are optional. |
-| **Gate 1** | **Stop. The owner approves the pose, room, night and dawn palettes, shading variant, face SVG, sticker, sock placement and whether the film grain stays.** Nothing in M3–M8 starts before approval. | | |
+| M1 | Look-dev in the lab only: renderer, room, rig, poses `lounge`, `stretch`, `sleep`, idle layers, shading variants, sticker placement. The home page is untouched. | Gate package in `docs/lookdev/gate-1/`: hero night 1920×1200 and 390×844; cat close-up, side, top; stretch; finale dawn; sleep close-up; shading A and B; sticker; dive tunnel at p = 0.95; a README listing what to approve. | 3 d. If the side-lying pose still collapses or interpenetrates after 1.5 d, also deliver alternative B. Hair springs are optional. |
+| **Gate 1** | **Stop. The owner approves the pose, room, night and dawn palettes, shading variant, sticker, sock placement and whether the film grain stays.** (Gate 1 feedback: the 2D face is the sticker PNG, no new drawing.) Nothing in M3–M8 starts before approval. | | |
 | M2 | English content pass and the whole static page (all new widgets, `CatFaceButton`, placeholder poster, credits). Independent of the look; may run while Gate 1 is pending. | No-JS and reduced-motion e2e green; no Russian text left; overflow tests at 320, 360 and 390 px. | 1.5 d |
 | M3 | Posters captured; modes, store, director, `RoomLayer`, veil with real progress, all fallbacks, hero `room` phase, pet proxy. | `data-room-mode='full'` and `data-scene-ready='true'` under SwiftShader; every fallback e2e green; three absent from initial chunks. | 1.5 d |
 | M4 | Dive: pin, camera path, portal, docking, tail flick, typing line. | At dive end the portal's computed transform is `none` and the phase is `inside`; mid-dive alignment error ≤ 2 px (§8); `--sequence dive` reviewed. | 2 d. Fallback: draw the first section's statement into a `CanvasTexture` on the screen and crossfade the canvas to the un-warped DOM section over p 0.85–1. |

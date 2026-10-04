@@ -15,7 +15,6 @@ export type LabView =
 	| 'dive'
 	| 'finale'
 	| 'turntable'
-	| 'face'
 	| 'probe'
 	| 'overlay'
 export type CamPreset =
@@ -65,7 +64,6 @@ const VIEWS: LabView[] = [
 	'dive',
 	'finale',
 	'turntable',
-	'face',
 	'probe',
 	'overlay',
 ]

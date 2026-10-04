@@ -13,6 +13,7 @@ import { EYELIDS } from '../../../config/tuning'
 import { type PatchOptions, patchMaterial } from '../materials'
 import type { CatModel } from './load-cat'
 import type { CatRig } from './rig'
+import { skinnedWorldPosition } from './skinned'
 
 const EYES = ['lefteye', 'righteye'] as const
 
@@ -62,7 +63,9 @@ export function createEyelids(
 	}
 	const mesh = outlineMesh
 	const count = mesh.geometry.getAttribute('position').count
-	const world = Array.from({ length: count }, (_, v) => skinnedWorld(mesh, v))
+	const world = Array.from({ length: count }, (_, v) =>
+		skinnedWorldPosition(mesh, v, new Vector3()),
+	)
 	const isPupil = new Uint8Array(count)
 	for (const vertices of pupils) for (const v of vertices) isPupil[v] = 1
 
@@ -212,16 +215,6 @@ function influencedVertices(mesh: SkinnedMesh, joint: number): number[] {
 			vertices.push(v)
 	}
 	return vertices
-}
-
-/** World position of a skinned vertex in the skeleton's current pose. */
-function skinnedWorld(mesh: SkinnedMesh, v: number): Vector3 {
-	const point = new Vector3().fromBufferAttribute(
-		mesh.geometry.getAttribute('position'),
-		v,
-	)
-	mesh.applyBoneTransform(v, point)
-	return point.applyMatrix4(mesh.matrixWorld)
 }
 
 /** Connected-component label per vertex over triangles that avoid `skip` vertices. */

@@ -175,9 +175,15 @@ otherwise the value is captured during prerendering.
   enabled through `pageExtensions` in `PHASE_DEVELOPMENT_SERVER` only).
   `pnpm assets:shots` drives it headlessly with software WebGL
   (`--view`, `--probe <bone>`, `--pose <name>`, `--sequence`,
-  `--compare-source`, `--gate`); set `CHROME_PATH` where Playwright cannot
-  download Chromium. Screenshots go to `artifacts/` (git-ignored); the Gate 1
-  package lives in `docs/lookdev/gate-1/`.
+  `--compare-source`, `--clip`, `--gate`); set `CHROME_PATH` where Playwright
+  cannot download Chromium. Screenshots go to `artifacts/` (git-ignored); the
+  Gate 1 package lives in `docs/lookdev/gate-1/`, its README is in Russian
+  (the owner's language), code and the other docs stay English.
+- The cat must not enter the furniture. `src/features/cat-room/config/colliders.ts`
+  describes the room's solids; `scene.penetration()` runs every skinned vertex
+  of the posed cat through them, and `pnpm assets:shots --clip` (also part of
+  `--gate`) fails above 3 mm for `lounge`, `sleep` and `stretch`. After moving
+  a prop or editing a pose, run it; `--verbose` prints bone positions.
 
 ## Environment
 

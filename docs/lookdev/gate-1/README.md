@@ -1,80 +1,102 @@
-# Gate 1: look-dev package
+# Gate 1: пакет look-dev
 
-Rendered from the dev-only `/lab` route with `pnpm assets:shots --gate`
-(headless Chromium, software WebGL, device pixel ratio 1, animation clock
-frozen at t = 2.4 s). The home page is untouched; nothing here is wired into
-the site yet. Every shot can be reproduced by opening the lab URL in the
-table with `pnpm dev` running.
+Отрендерено с dev-маршрута `/lab` командой `pnpm assets:shots --gate`
+(headless Chromium, программный WebGL, device pixel ratio 1, часы анимации
+остановлены на t = 2,4 с). Главная страница не тронута; ничего из этого ещё
+не подключено к сайту. Любой кадр воспроизводится: открой URL лаба из
+таблицы при запущенном `pnpm dev`.
 
-## Changes since the first package (owner feedback, round 1)
+## Что изменилось после правок владельца
 
-1. **Hind legs of the awake cat.** The shins no longer fold into the thighs:
-   the knees bend about 90° with the paws tucked under the belly, written as
-   `aimWorld` directions (see below). `cat-top.png`, `cat-side.png`.
-2. **The sleep pose** is rebuilt from the owner's photo: on the back, belly
-   up, rolled a little towards the visitor, head tipped back, both front paws
-   stretched past the head, hind legs long and loose, tail curled away. The
-   eyes are closed: the pupils and the black eye outlines collapse into the
-   head and a `︶` stroke grows over each eye (the model has no eyelids or
-   morph targets). `finale-dawn-1920x1200.png`, `sleep-close-up.png`,
-   `sleep-side.png`.
-3. **Keyboard and mouse** are no longer boxes: the keyboard is a chamfered
-   wedge with bevelled keycaps and a space bar, the mouse a twelve-sided dome
-   lofted from five rings with a rose scroll wheel. `desk-props.png`.
-4. **The lamp** is an articulated desk lamp: round base, short post, two arm
-   segments with knobs at the joints, a conical rose shade aimed at the desk
-   and a pale bulb disc inside. `lamp.png`, `hero-night-1920x1200.png`.
+Раунд 1:
 
-## What to approve
+1. **Задние лапы бодрствующего кота.** Голени больше не входят в бёдра:
+   колени согнуты примерно на 90°, лапы подобраны под живот. Направления
+   конечностей записаны как `aimWorld` (см. ниже). `cat-top.png`, `cat-side.png`.
+2. **Поза сна** собрана по фото владельца: на спине, животом вверх, чуть
+   повёрнут к зрителю, голова запрокинута, передние лапы вытянуты за голову,
+   задние длинные и расслабленные. Глаза закрыты: зрачки и чёрные обводки
+   глаз схлопываются внутрь головы, поверх каждого глаза вырастает штрих «︶»
+   (у модели нет век и морф-таргетов). `finale-dawn-1920x1200.png`,
+   `sleep-close-up.png`, `sleep-side.png`.
+3. **Клавиатура и мышь** больше не коробки: клавиатура — скошенный клин с
+   фасками, клавишами с бевелами и пробелом; мышь — двенадцатигранный купол
+   из пяти колец с розовым колёсиком. `desk-props.png`.
+4. **Лампа** — шарнирная настольная: круглое основание, стойка, два колена с
+   шарнирами, конический розовый абажур, направленный на стол, светлый диск
+   лампочки внутри. `lamp.png`, `hero-night-1920x1200.png`.
 
-| # | Decision | Look at | Lab URL |
+Раунд 2:
+
+5. **Кот не залезает в геометрию.** Появилась проверка `pnpm assets:shots
+   --clip`: каждая вершина кота в позах `lounge`, `sleep` и `stretch`
+   прогоняется через твёрдые тела комнаты (стол, клавиатура с клавишами,
+   мышь, монитор с подбородком, стойка и подставка монитора, лампа, системник).
+   Проверка входит в `--gate` и падает при заглублении больше 3 мм. До правок
+   лапа лежачего кота уходила в клавиатуру на 78 мм, хвост спящего под стол
+   на 105 мм; сейчас пересечений нет. Хвост как пружинная цепочка получил
+   «пол» на высоте стола, чтобы не провисать сквозь него.
+6. **Лапы спящего лежат на столе**: обе передние лапы вытянуты за голову по
+   столешнице, подушечками вниз. Хвост переброшен через ближнее бедро и лежит
+   вдоль голени — единственное место на столе, где ему хватает места (сзади
+   подставка монитора, спереди клавиатура). `sleep-close-up.png`, `sleep-side.png`.
+7. **Никакого нового 2D-лица.** SVG-компонент `cat-face` удалён вместе с
+   кадром `face-svg-vs-3d.png` и видом лаба `view=face`. Везде, где план
+   говорит «2D-лицо» (вуаль загрузки, кнопка в контактах, 404, apple-icon),
+   будет `public/stickers/cat-sticker.png`; план поправлен.
+
+## Что нужно утвердить
+
+| # | Решение | Смотреть | URL лаба |
 |---|---|---|---|
-| 1 | **The lounge pose** (binding decision 4): side-lying along the desk, head propped on the left paw, right paw on the keys, knees bent with the paws tucked under the belly, tail up in front of the screen, bored look at the visitor. | `hero-night-1920x1200.png`, `cat-close-up.png`, `cat-side.png`, `cat-top.png` | `/lab?view=hero`, `/lab?view=turntable&pose=lounge&cam=close\|side\|top` |
-| 2 | **The room** (decision 1): desk, flat monitor, small tower with the sticker, keyboard, mouse, window with the moon, articulated lamp, socks with paw prints on the floor (visible in the portrait shot). Nothing else was added; a shelf or a mug would need approval. | `hero-night-1920x1200.png`, `hero-night-390x844-lite.png`, `desk-props.png`, `lamp.png` | `/lab?view=hero`, `/lab?view=hero&lite=1`, `/lab?view=turntable&cam=desk\|lamp` |
-| 3 | **Night palette**: ink walls with a lavender tint, plum-rose desk, orchid screen glow, rose lamp pool, lavender moonlight. All colours are palette tokens or mixes of them (`src/features/cat-room/lib/scene/room/build-room.ts`, `PAINTS`). | `hero-night-1920x1200.png` | `/lab?view=hero` |
-| 4 | **Dawn palette and the sleep pose**: the window turns lavender-to-rose and the moon fades into the sky, the walls lift to a blush-grey plum, a sun patch lands on the floor and the desk, the monitor goes dark; the cat sleeps on its back with closed eyes. | `finale-dawn-1920x1200.png`, `sleep-close-up.png`, `sleep-side.png` | `/lab?view=finale&p=1`, `/lab?view=turntable&pose=sleep&dawn=1&cam=close&yaw=60&pitch=45&dist=0.75`, `/lab?view=turntable&pose=sleep&dawn=1&cam=side` |
-| 5 | **Shading variant**: A keeps the authored unlit colours (flat white limbs); B multiplies by a two-step tone from the flat face normal against a key direction, which separates the limbs from the torso. Variant C (plum outline) was not built. | `shading-a.png`, `shading-b.png` | `/lab?view=turntable&cam=quarter&shading=a\|b` |
-| 6 | **The 2D face SVG** (`src/shared/ui/cat-face/cat-face.tsx`): an original drawing after the avatar: wedge head with cheek tufts, tall ears with rose insides, slanted black almond eyes with heavy lids, three blush dots a side, a small `w` mouth; CSS ear twitch; an `asleep` variant for the finale. | `face-svg-vs-3d.png` | `/lab?view=face&cam=face` |
-| 7 | **The sticker** on the tower's front panel, tilted 9°, left of the vent slots. | `sticker.png` | `/lab?view=turntable&cam=sticker` |
-| 8 | **Sock placement**: a pair on the floor in front of the desk, paw prints up. Only the portrait framing shows them; from the desktop hero camera the desk hides the floor. | `hero-night-390x844-lite.png` | `/lab?view=hero&lite=1` |
-| 9 | **Film grain**: the lab renders without the page's `body::after` grain. Keep it over the 3D room, or drop it? | compare any shot with the current site | — |
+| 1 | **Поза `lounge`** (обязательное решение 4): лежит на боку вдоль стола, голова на левой лапе, правая лапа на клавишах, колени согнуты, лапы под животом, хвост поднят перед экраном, скучающий взгляд на зрителя. Подходит? | `hero-night-1920x1200.png`, `cat-close-up.png`, `cat-side.png`, `cat-top.png` | `/lab?view=hero`, `/lab?view=turntable&pose=lounge&cam=close\|side\|top` |
+| 2 | **Комната** (решение 1): стол, плоский монитор, маленький системник со стикером, клавиатура, мышь, окно с луной, шарнирная лампа, носки с лапками на полу (видны в портретном кадре). Ничего сверх этого не добавлено; полка или кружка потребуют отдельного одобрения. Так и оставляем? | `hero-night-1920x1200.png`, `hero-night-390x844-lite.png`, `desk-props.png`, `lamp.png` | `/lab?view=hero`, `/lab?view=hero&lite=1`, `/lab?view=turntable&cam=desk\|lamp` |
+| 3 | **Ночная палитра**: чернильные стены с лавандовым оттенком, сливово-розовый стол, орхидейное свечение экрана, розовое пятно от лампы, лавандовый лунный свет. Все цвета — токены палитры или их смеси (`src/features/cat-room/lib/scene/room/build-room.ts`, `PAINTS`). Устраивает? | `hero-night-1920x1200.png` | `/lab?view=hero` |
+| 4 | **Рассветная палитра и поза сна**: окно уходит из лаванды в розовый, луна растворяется в небе, стены светлеют до серо-сливового, на пол и стол ложится солнечное пятно, монитор гаснет; кот спит на спине с закрытыми глазами, лапы на столе. Принимается? | `finale-dawn-1920x1200.png`, `sleep-close-up.png`, `sleep-side.png` | `/lab?view=finale&p=1`, `/lab?view=turntable&pose=sleep&dawn=1&cam=close&yaw=60&pitch=45&dist=0.75`, `/lab?view=turntable&pose=sleep&dawn=1&cam=side` |
+| 5 | **Вариант шейдинга**: A оставляет авторские unlit-цвета (плоские белые конечности); B умножает на двухступенчатый тон от нормали грани против ключевого направления, отделяя конечности от туловища. Вариант C (сливовый контур) не делался. Какой берём: A или B? | `shading-a.png`, `shading-b.png` | `/lab?view=turntable&cam=quarter&shading=a\|b` |
+| 6 | **2D-лицо** — это `public/stickers/cat-sticker.png`, без новой отрисовки (по твоему решению). В коде оно будет пересвечиваться под палитру, как разрешает план. Подтверждаешь? | `sticker.png` | `/lab?view=turntable&cam=sticker` |
+| 7 | **Стикер** на передней панели системника, наклон 9°, левее вентиляционных щелей. Так? | `sticker.png` | `/lab?view=turntable&cam=sticker` |
+| 8 | **Носки**: пара на полу перед столом, лапками вверх. Видны только в портретном кадре; с десктопной hero-камеры пол закрыт столом. Оставляем? | `hero-night-390x844-lite.png` | `/lab?view=hero&lite=1` |
+| 9 | **Плёночное зерно**: лаб рендерит без зерна `body::after` со страницы. Оставить зерно поверх 3D-комнаты или убрать? | сравни любой кадр с текущим сайтом | — |
 
-Also in the package:
+Также в пакете:
 
-- `stretch.png`: the click reaction (`stretch` pose plus the meow jaw). `/lab?view=turntable&pose=stretch&cam=quarter&meow=1`
-- `dive-mid-p065.png` and `dive-tunnel-p095.png`: the dive track at p = 0.65 (the tail is leaving the screen) and p = 0.95 (the screen fills the viewport, no part of the cat inside the tunnel). `/lab?view=dive&p=0.65`, `/lab?view=dive&p=0.95`
-- `probe-head.png`: one of the probe contact sheets used to read the bones' local axes (rest and +30° about x, y, z, front and side).
+- `stretch.png`: реакция на клик (поза `stretch` плюс мяуканье челюстью). `/lab?view=turntable&pose=stretch&cam=quarter&meow=1`
+- `dive-mid-p065.png` и `dive-tunnel-p095.png`: трек погружения при p = 0,65 (хвост уходит с экрана) и p = 0,95 (экран заполняет вьюпорт, кота внутри туннеля нет). `/lab?view=dive&p=0.65`, `/lab?view=dive&p=0.95`
+- `probe-head.png`: один из контактных листов проб, по которым читались локальные оси костей (покой и +30° вокруг x, y, z, спереди и сбоку).
 
-## What to look at (plan §7)
+## На что смотреть (план §7)
 
-- Flat colours with no banding or tone-mapping shift: sample the back wall against `#1a1420` (night, `mix(ink, lavender, 7%)`) and the desk against `#4a2536`.
-- The screen fully visible above the cat at rest: only the tail crosses the screen; the head stays below the bezel.
-- The cat reads as a silhouette with distinguishable limbs: compare `shading-a.png` with `shading-b.png`.
-- No mesh interpenetration at the hero framing: the lower paw sits under the cheek, the upper paw on the keys, the knees in front of the belly, the shins clear of the thighs (`cat-top.png`).
-- Nothing of the cat inside the tunnel at p ≥ 0.9: `dive-tunnel-p095.png`.
-- The dawn frame shows the window: `finale-dawn-1920x1200.png`.
-- The sleeping face: closed eyes, no pupil or outline showing from any angle (`sleep-close-up.png`, `sleep-side.png`; orbit with `&yaw=`/`&pitch=`).
+- Плоские цвета без бандинга и сдвига тонмаппинга: задняя стена против `#1a1420` (ночь, `mix(ink, lavender, 7%)`), стол против `#4a2536`.
+- Экран целиком виден над котом в покое: экран пересекает только хвост, голова ниже рамки.
+- Кот читается силуэтом с различимыми конечностями: сравни `shading-a.png` и `shading-b.png`.
+- Никаких пересечений мешей в hero-кадре: нижняя лапа под щекой, верхняя на клавишах, колени перед животом, голени не в бёдрах (`cat-top.png`); `--clip` даёт ноль по всем трём позам.
+- Кота нет внутри туннеля при p ≥ 0,9: `dive-tunnel-p095.png`.
+- Рассветный кадр показывает окно: `finale-dawn-1920x1200.png`.
+- Спящая морда: глаза закрыты, зрачки и обводка не видны ни под каким углом (`sleep-close-up.png`, `sleep-side.png`; покрути `&yaw=`/`&pitch=`).
 
-## How it was built
+## Как это сделано
 
-- Room: one merged mesh of boxes, cylinders, discs, lofts and quads with two colour attributes (night, dawn) and a per-face tone from the normal; painted light is a second mesh of transparent quads. The keyboard, the mouse and the lamp come from the kit's `loft`, `tube`, `sphere` and `fan` helpers (`src/features/cat-room/lib/scene/room/kit.ts`). About 1,600 triangles plus the monitor.
-- Cat: `public/models/cat.glb` (190 kB, one skin, 134 joints), normalised to 0.62 m. Poses are `aim` directions (character space) or `aimWorld` directions (the placed cat's world: +X along the desk towards the head side, +Y up, +Z towards the visitor) compiled into local rotations; the lounge, stretch and sleep poses live in `src/features/cat-room/config/poses.ts`. Idle layers on top: breathing, head and eye look-at towards the camera (off while asleep), ear twitches, the jaw on a meow, verlet springs on the tail and the ears (hair springs exist but are off by default). The stepped 12 fps clock is a lab toggle (`&stepped=1`).
-- Closed eyes (`src/features/cat-room/lib/scene/cat/eyelids.ts`): measured from the loaded model, each eye's black outline is a ring and a crease skinned to the head within one pupil-size of the pupil. The sleep pose rolls the eye bones 180°; that roll drives `uEyesClosed`, which moves those vertices and the pupils to a point inside the head through a `sleepShift` vertex attribute, and scales a stroke on the head bone up from the same point. The stroke follows a quadratic fit of the eye surface.
-- `--compare-source`: the rest pose of the fixed, uncompressed model against the shipped meshopt file differs in 0.011% of pixels (quantisation is visually lossless).
+- Комната: один слитый меш из боксов, цилиндров, дисков, лофтов и квадов с двумя атрибутами цвета (ночь, рассвет) и тоном грани от нормали; нарисованный свет — второй меш из прозрачных квадов. Клавиатура, мышь и лампа собраны помощниками кита `loft`, `tube`, `sphere` и `fan` (`src/features/cat-room/lib/scene/room/kit.ts`). Около 1 600 треугольников плюс монитор.
+- Кот: `public/models/cat.glb` (190 кБ, один скин, 134 сустава), нормализован до 0,62 м. Позы — направления `aim` (пространство персонажа) или `aimWorld` (мир уложенного кота: +X вдоль стола к голове, +Y вверх, +Z к зрителю), скомпилированные в локальные повороты; `lounge`, `stretch` и `sleep` лежат в `src/features/cat-room/config/poses.ts`. Поверх — idle-слои: дыхание, взгляд головы и глаз на камеру (выключен во сне), подёргивание ушей, челюсть на мяу, верле-пружины на хвосте и ушах (пружины шерсти есть, но по умолчанию выключены). Хвостовая цепочка не опускается ниже стола. Степ-часы 12 fps — переключатель лаба (`&stepped=1`).
+- Закрытые глаза (`src/features/cat-room/lib/scene/cat/eyelids.ts`): по загруженной модели измерено, что чёрная обводка каждого глаза — кольцо и складка, прискиненные к голове в пределах одного размера зрачка. Поза сна поворачивает кости глаз на 180°; этот поворот ведёт `uEyesClosed`, который через вершинный атрибут `sleepShift` уводит эти вершины и зрачки в точку внутри головы и растит штрих на кости головы из той же точки. Штрих идёт по квадратичной аппроксимации поверхности глаза.
+- Проверка пересечений (`src/features/cat-room/config/colliders.ts`, `scene.penetration()`): твёрдые тела комнаты описаны функциями глубины (столешница как полупространство, клавиатура как клин с клавишами, мышь как купол, монитор, стойка, лампа как капсулы, системник как бокс); каждая прискиненная вершина кота проверяется в текущей позе, отчёт — по телу и по ведущей кости.
+- `--compare-source`: поза покоя исправленной несжатой модели против отгружаемого meshopt-файла отличается на 0,011 % пикселей (квантование визуально без потерь).
 
-## Deviations from the plan, for the record
+## Отклонения от плана, для протокола
 
-- The source GLB stores the body, fur, black details and stockings 26.76 times smaller than the skin's bind space (the bows are at scale). `scripts/fix-model-space.mjs` rescales those positions before compression; see `assets/models/README.md`.
-- `meshopt` runs with `--quantization-volume scene --quantize-position 16`: the per-mesh default clones the skin seven times.
-- `prune` drops `NORMAL` and `TEXCOORD_0` (unlit, untextured); shading B uses screen-space derivative normals instead.
-- The window sits lower than the plan's first guess so the moon is inside the hero framing; the lite pull-back factor is 1.0 instead of 1.35 (the 390×844 shot was too distant); the cat's spot moved to x = 0 so the head clears the lamp.
-- Room and glow materials are double-sided: large single quads (walls, sky, light pools) must show whatever their winding.
-- `aimWorld` was added next to `aim`: the limbs of a lying cat are far easier to write in the world of the placed cat than in the character space of a standing one.
-- The plan's "no eyelids" limit is lifted by the collapse-and-stroke mechanism above instead of a second model or morph targets; the sleep pose is supine (the plan's first guess was curled up).
-- The lab's `side` camera orbits at 70° instead of 90°, where the new lamp shade would sit between the camera and the cat.
+- Исходный GLB хранит тело, шерсть, чёрные детали и чулки в 26,76 раза меньше пространства привязки скина (банты в масштабе). `scripts/fix-model-space.mjs` масштабирует эти позиции перед сжатием; см. `assets/models/README.md`.
+- `meshopt` запускается с `--quantization-volume scene --quantize-position 16`: объём по умолчанию (на меш) клонирует скин семь раз.
+- `prune` выкидывает `NORMAL` и `TEXCOORD_0` (unlit, без текстур); шейдинг B берёт нормали из экранных производных.
+- Окно ниже первой прикидки плана, чтобы луна попадала в hero-кадр; коэффициент отъезда lite-камеры 1,0 вместо 1,35 (кадр 390×844 был слишком далёким); точка кота сдвинута к x = 0, чтобы голова не упиралась в лампу.
+- Материалы комнаты и свечения двусторонние: большие одиночные квады (стены, небо, пятна света) должны показываться при любом порядке обхода.
+- Рядом с `aim` добавлен `aimWorld`: конечности лежачего кота куда проще писать в мире уложенного кота, чем в пространстве стоящего персонажа.
+- Ограничение плана «без век» снято механикой схлопывания и штриха вместо второй модели или морф-таргетов; поза сна — на спине (первая прикидка плана была «свернувшись»).
+- Камера `side` лаба стоит под 70°, а не 90°: под 90° новый абажур закрывал бы кота.
+- 2D-лицо — стикер-PNG, а не новый SVG (решение владельца на Gate 1).
 
-## Known limits
+## Известные ограничения
 
-- The eyes close over the 0.6 s pose blend: the pupils roll back while the outline shrinks and the stroke grows. There is no separate blink.
-- The pink tail tuft extends 0.4 m beyond the last tail bone in the authored mesh, so the tuft is large and moves as one piece.
-- The lab screenshots use software WebGL; colours are exact, anti-aliasing matches a real GPU closely but not pixel for pixel.
+- Глаза закрываются за 0,6 с перехода позы: зрачки закатываются, пока обводка сжимается, а штрих растёт. Отдельного моргания нет.
+- Розовая кисточка хвоста в авторском меше выходит на 0,4 м за последнюю кость хвоста, поэтому кисточка большая и движется одним куском; радиус хвоста около 7 см задаёт высоту «пола» цепочки.
+- Скриншоты лаба сделаны на программном WebGL; цвета точные, сглаживание близко к реальному GPU, но не попиксельно.
