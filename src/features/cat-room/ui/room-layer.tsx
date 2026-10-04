@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { playChomp, playPlop } from '@/shared/lib/sound/sfx'
 import { CAT_GLB } from '../config/cat-rig.gen'
 import { DPR_CAP, ROOM_LOAD } from '../config/tuning'
 import { createDprGovernor } from '../lib/dpr-governor'
@@ -109,6 +110,9 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 		)
 		for (const section of sections) entries.observe(section)
 		const main = document.querySelector('main')
+		const feed = (drop: { x: number; y: number }) => {
+			if (director?.feed(drop)) void playPlop()
+		}
 		let press: { x: number; y: number } | null = null
 		const onPointerDown = (event: PointerEvent) => {
 			press =
@@ -128,12 +132,12 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 			const target = event.target instanceof Element ? event.target : null
 			if (target?.closest(NO_FISH)) return
 			if (window.getSelection()?.isCollapsed === false) return
-			director?.feed({ x: event.clientX, y: event.clientY })
+			feed({ x: event.clientX, y: event.clientY })
 		}
 		main?.addEventListener('pointerdown', onPointerDown)
 		main?.addEventListener('pointerup', onPointerUp)
 		const unfeed = onFeedRequest((drop) =>
-			director?.feed(
+			feed(
 				drop ?? {
 					x: timeline.viewport.width * 0.72,
 					y: timeline.viewport.height * 0.35,
@@ -203,6 +207,7 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 				proxy: proxyRef.current,
 				gagProxy: gagProxyRef.current,
 				governor,
+				onFishCaught: () => void playChomp(),
 				onFirstFrame: () => {
 					window.clearTimeout(timeout)
 					roomReady()

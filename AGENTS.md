@@ -232,6 +232,20 @@ otherwise the value is captured during prerendering.
   two-bone IK. The peeking head gets `[data-gag-proxy]`, pointer-only
   (`tabindex=-1`, `aria-hidden`); clicking it meows. The nice-to-have gags of
   plan §3.10 (tail sweep, swat, glass) are not built.
+- Sound (`src/shared/lib/sound`): one shared `AudioContext`
+  (`audio-context.ts`); the meow and the synthesised effects (`sfx.ts`: tick,
+  plop, chomp) play unless muted, and only the plop, which always follows a
+  gesture, may create the context. The code-generated ambient lives in
+  `ambient.ts`, a module that imports nothing on purpose: the e2e loudness
+  test strips its types with `node:module` and renders it through an
+  `OfflineAudioContext` in the browser (RMS −34…−26 dBFS, peak ≤ −9 dBFS);
+  its gains are tuned to that window, not to the plan's first numbers.
+  `ambient-engine.ts` runs it on the page; `features/cat-room/ui/ambient-sound.tsx`
+  starts it only after the explicit opt-in (`getSoundOptIn()`, the stored
+  value exactly `'true'`), while the room is ready and the tab visible, dawn
+  mood in the finale. `features/toggle-sound/ui/sound-prompt.tsx` is the
+  "Enable sound" chip, mounted by `widgets/cat-stage` once the room runs and
+  gone once any choice is stored; the toggle mutes everything.
 - Posters (`public/posters/room-{night,dawn}{,-portrait}.jpg`) and
   `app/apple-icon.png` are rendered from the lab with `pnpm assets:posters`;
   re-run it after any change to the room, the poses or the palette.

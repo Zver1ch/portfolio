@@ -425,18 +425,19 @@ M6 notes: the scheduler counts "entry" per IntersectionObserver event of a secti
 - SFX and the meow keep today's default (on unless muted). Ambient plays only after an explicit opt-in and a user gesture.
 - `features/toggle-sound/ui/sound-prompt.tsx`: an "Enable sound" chip shown while no choice is stored; clicking calls `setSoundEnabled(true)`.
 - `ui/ambient-sound.tsx` renders nothing and starts or stops the engine.
-- `ambient.ts` exposes `createAmbientGraph(ctx: BaseAudioContext, out: AudioNode)` and `setAmbientMood(dawn)`:
+- `ambient.ts` exposes `createAmbientGraph(ctx: BaseAudioContext, out: AudioNode)` (the graph: `setMood`, `schedule`, `fadeTo`) and imports nothing, so the e2e can load it as is; `ambient-engine.ts` holds the page-level `startAmbient`, `stopAmbient`, `setAmbientMood(dawn)`. Shipped recipe (the gains were tuned to the loudness window below; the brown noise is normalised to a peak of 1, so they are higher than the first draft's):
 
 | Element | Recipe |
 |---|---|
-| Room tone | Looped brown noise, lowpass 320 Hz, gain 0.035 |
-| PC hum | Sines at 55 and 110.5 Hz, gains 0.010 and 0.004, 0.13 Hz tremolo |
-| Sparse plucks | Every 5–11 s, A-minor pentatonic sine, 2.4 s decay, gain 0.04, through a 0.38 s feedback delay |
-| Dawn (mood > 0.5) | Short chirps (2.4 to 3.2 kHz sweeps); hum halves |
+| Room tone | Looped brown noise (4 s, seeded), lowpass 320 Hz, gain 0.26 |
+| PC hum | Sines at 55 and 110.5 Hz, gains 0.075 and 0.03, 0.13 Hz tremolo of depth 0.3 |
+| Sparse plucks | Every 5–11 s, A-minor pentatonic sine, 2.4 s decay, gain 0.3, through a 0.38 s feedback delay (feedback 0.35, wet 0.4) |
+| Dawn (mood > 0.5) | Short chirps (2.4 to 3.2 kHz sweeps, 80 ms, every 1.5–4 s, gain 0.12); hum halves |
 | Master | 0.5 with 1.2 s fades |
 
-- `sfx.ts`: key tick, plop, chomp.
-- The sandbox has no audio output: loudness is asserted by rendering 10 s through `OfflineAudioContext` (RMS between −34 and −26 dBFS, peak at most −9 dBFS). The owner listens at Gate 2.
+- `sfx.ts`: key tick (the typing line), plop (the fish drop), chomp (the catch). Only the plop, always a gesture, may create the context; the others play on an existing one.
+- The sandbox has no audio output: loudness is asserted by rendering 10 s through `OfflineAudioContext` (RMS between −34 and −26 dBFS, peak at most −9 dBFS) in `e2e/sound.spec.ts`, which strips the module's types with `node:module` and imports it from a blob URL. Measured: −27.6 dBFS RMS / −14.0 peak at night, −28.8 / −14.5 at dawn. The owner listens at Gate 2.
+- The prompt is a fixed chip at the bottom centre (z 50), mounted by `widgets/cat-stage` once the room is ready, rather than a header item: the header has no room for it at 320 px.
 
 ### 3.13 Performance budget
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { REDUCED_MOTION_QUERY } from '@/shared/config/motion'
+import { playTick } from '@/shared/lib/sound/sfx'
 import { cn } from '@/shared/lib/utils'
 import { useInView } from '../lib/use-in-view'
 
@@ -44,6 +45,7 @@ export function TypingLine({
 				}
 				length += 1
 				setShown(text.slice(0, length))
+				void playTick()
 				if (length < text.length)
 					timer = window.setTimeout(
 						step,

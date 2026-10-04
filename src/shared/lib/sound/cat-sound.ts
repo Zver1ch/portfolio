@@ -1,28 +1,13 @@
 import { CAT_SOUND_SRC } from '@/shared/config/sounds'
+import { getAudioContext } from './audio-context'
 import { getSoundEnabled } from './sound-enabled'
 
 const MAX_VOICES = 4
 const MIN_RATE = 0.92
 const MAX_RATE = 1.12
 
-type WindowWithWebkitAudio = Window & {
-	webkitAudioContext?: typeof AudioContext
-}
-
-let context: AudioContext | undefined
 let buffer: Promise<AudioBuffer | null> | undefined
 let voices = 0
-
-function getContext(): AudioContext | undefined {
-	if (!context) {
-		const Ctor =
-			window.AudioContext ??
-			(window as WindowWithWebkitAudio).webkitAudioContext
-		if (!Ctor) return undefined
-		context = new Ctor()
-	}
-	return context
-}
 
 function loadBuffer(audio: AudioContext): Promise<AudioBuffer | null> {
 	buffer ??= fetch(CAT_SOUND_SRC)
@@ -55,7 +40,7 @@ export async function playCatSound(
 ): Promise<void> {
 	if (typeof window === 'undefined' || !getSoundEnabled()) return
 	try {
-		const audio = getContext()
+		const audio = getAudioContext()
 		if (!audio) return
 		if (audio.state === 'suspended') audio.resume().catch(() => {})
 		const decoded = await loadBuffer(audio)
