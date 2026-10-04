@@ -14,7 +14,7 @@ import {
 	WINDOW,
 } from '../../../config/room-layout'
 import { mixHex, PALETTE as P, paint } from '../materials'
-import { flatRing, Kit, yawAround } from './kit'
+import { flatRing, Kit, ring, yawAround } from './kit'
 
 /**
  * The static room as two geometries: the opaque set and the painted light.
@@ -436,6 +436,14 @@ function sub3(a: Vec3, b: Vec3): Vec3 {
 	return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 }
 
+function cross3(a: Vec3, b: Vec3): Vec3 {
+	return [
+		a[1] * b[2] - a[2] * b[1],
+		a[2] * b[0] - a[0] * b[2],
+		a[0] * b[1] - a[1] * b[0],
+	]
+}
+
 function unit3(a: Vec3): Vec3 {
 	const len = Math.hypot(a[0], a[1], a[2]) || 1
 	return [a[0] / len, a[1] / len, a[2] / len]
@@ -457,31 +465,81 @@ function frameOf3(axis: Vec3): [Vec3, Vec3] {
 
 function buildSocks(kit: Kit) {
 	const [cx, cy, cz] = SOCKS.center
-	const [w, h, l] = SOCKS.size
-	for (const [index, dx] of [-1, 1].entries()) {
-		const yaw = SOCKS.yawDeg + index * 9
-		const center: Vec3 = [
-			cx + dx * (SOCKS.gap + w / 2),
-			cy + h / 2,
-			cz + index * 0.04,
-		]
-		kit.box(center, [w, h, l], PAINTS.sock, { yaw })
-		// Paw print on top: pad plus three toes, towards the toe end.
-		const top = cy + h + 0.0015
-		const a = (yaw * Math.PI) / 180
-		const place = (dxLocal: number, dzLocal: number): Vec3 => [
-			center[0] + dxLocal * Math.cos(a) + dzLocal * Math.sin(a),
-			top,
-			center[2] - dxLocal * Math.sin(a) + dzLocal * Math.cos(a),
-		]
-		kit.disc(place(0, l * 0.22), 0.017, 12, PAINTS.pawPrint)
-		for (const [tx, tz] of [
-			[-0.022, 0.07],
-			[0, 0.082],
-			[0.022, 0.07],
-		] as const)
-			kit.disc(place(tx, tz), 0.0075, 8, PAINTS.pawPrint)
+	const [w] = SOCKS.size
+	for (const [index, side] of [-1, 1].entries()) {
+		buildSock(
+			kit,
+			[cx + side * (SOCKS.gap + w / 2), cy, cz + index * 0.03],
+			SOCKS.yawDeg + index * 22,
+			side,
+		)
 	}
+}
+
+/**
+ * One sock lying flat: a lofted tube that runs down the leg, turns at the
+ * heel and tapers to a rounded toe, with a cuff lip at the open end and a
+ * paw print on the top of the foot. `mirror` flips which way the leg bends.
+ */
+function buildSock(kit: Kit, origin: Vec3, yawDeg: number, mirror: number) {
+	const [w, h, l] = SOCKS.size
+	const up: Vec3 = [0, 1, 0]
+	const foot: Vec3 = [0, 0, 1]
+	const leg = unit3([-0.6 * mirror, 0, -0.8])
+	const at = (x: number, z: number, y = 0): Vec3 =>
+		yawAround([origin[0] + x, origin[1] + y, origin[2] + z], yawDeg, origin)
+	// A flattened ellipse resting on the floor, across `tangent`.
+	const station = (
+		x: number,
+		z: number,
+		tangent: Vec3,
+		scaleW: number,
+		scaleH: number,
+	) => {
+		const across = unit3(cross3(tangent, up))
+		const yawed = unit3(sub3(at(x + across[0], z + across[2]), at(x, z)))
+		return ring(
+			at(x, z, (h / 2) * scaleH),
+			yawed,
+			up,
+			(w / 2) * scaleW,
+			(h / 2) * scaleH,
+			12,
+		)
+	}
+	const alongLeg = (distance: number) =>
+		[leg[0] * distance, leg[2] * distance] as const
+	const rings = [
+		station(...alongLeg(0.13), leg, 0.9, 1.1),
+		station(...alongLeg(0.115), leg, 1.05, 1.15),
+		station(...alongLeg(0.1), leg, 0.95, 1),
+		station(...alongLeg(0.05), leg, 1, 1),
+		station(
+			0,
+			0,
+			unit3([leg[0] * -0.5 + 0, 0, leg[2] * -0.5 + 1]),
+			1.12,
+			1.05,
+		),
+		station(0, l * 0.3, foot, 1, 1),
+		station(0, l * 0.6, foot, 0.95, 0.95),
+		station(0, l * 0.82, foot, 0.78, 0.8),
+		station(0, l * 0.95, foot, 0.45, 0.55),
+		station(0, l, foot, 0.18, 0.25),
+	]
+	kit.loft(rings, PAINTS.sock, { closeStart: true, closeEnd: true })
+	// Paw print on top of the foot, each disc on the ellipse's surface.
+	const print = (x: number, z: number, radius: number) => {
+		const top = h * Math.sqrt(Math.max(0, 1 - (x / (w / 2)) ** 2))
+		kit.disc(at(x, z, top + 0.0015), radius, 12, PAINTS.pawPrint)
+	}
+	print(0, l * 0.5, 0.017)
+	for (const [tx, tz] of [
+		[-0.022, 0.09],
+		[0, 0.1],
+		[0.022, 0.09],
+	] as const)
+		print(tx, l * 0.5 + tz - 0.03, 0.0075)
 }
 
 function buildPaintedLight(glow: Kit) {

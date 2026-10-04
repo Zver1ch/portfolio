@@ -183,7 +183,7 @@ otherwise the value is captured during prerendering.
 - The cat must not enter the furniture. `src/features/cat-room/config/colliders.ts`
   describes the room's solids; `scene.penetration()` runs every skinned vertex
   of the posed cat through them, and `pnpm assets:shots --clip` (also part of
-  `--gate`) fails above 3 mm for `lounge`, `sleep` and `stretch`. After moving
+  `--gate`) fails above 3 mm for `sit`, `sleep` and `stretch`. After moving
   a prop or editing a pose, run it; `--verbose` prints bone positions.
 
 ## Environment

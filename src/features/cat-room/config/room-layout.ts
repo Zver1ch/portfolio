@@ -56,7 +56,7 @@ export const KEYBOARD = {
 
 export const MOUSE = {
 	/** Centre of the footprint on the desk. */
-	center: [0.58, DESK_TOP, -0.85] as Vec3,
+	center: [0.54, DESK_TOP, -0.84] as Vec3,
 	size: [0.062, 0.036, 0.1] as Vec3,
 	yawDeg: -12,
 } as const
@@ -112,7 +112,11 @@ export const SOCKS = {
 	yawDeg: 78,
 } as const
 
-/** Where the cat's feet-origin sits on the desk (character space origin). */
+/**
+ * Where the cat's character origin sits: on the desk top at the seat of the
+ * sitting pose, 5 cm behind the front edge so the calves clear it, between
+ * the mouse and the lamp. The sleep pose offsets itself from here.
+ */
 export const CAT_SPOT = {
-	position: [0.0, DESK_TOP, -1.14] as Vec3,
+	position: [0.7, DESK_TOP, -0.84] as Vec3,
 } as const

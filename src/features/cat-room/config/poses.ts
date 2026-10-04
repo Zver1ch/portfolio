@@ -40,7 +40,7 @@ export type Pose = {
 
 export type PoseName =
 	| 'rest'
-	| 'lounge'
+	| 'sit'
 	| 'stretch'
 	| 'sleep'
 	| 'peek'
@@ -49,9 +49,9 @@ export type PoseName =
 
 /*
  * Character space: +Y up, +Z forward (the face), +X the cat's own left.
- * Lying poses turn the whole cat with `root.rotation` ([0, 0, -90] lays the
- * head towards +X with the left side down), so limb aims are written as if
- * the cat stood up and were then tipped over.
+ * The sitting poses keep the root upright and facing the visitor; the sleep
+ * pose turns the whole cat with `root.rotation`, so its limbs are written in
+ * `aimWorld`.
  *
  * Bone axes (rest pose, character space): spine chain +Y; thighs and shins
  * -Y; upper arms and forearms ±X (T-pose, left arm +X); tail chain -Z then
@@ -69,98 +69,93 @@ export type PoseName =
  *   Z tilts it outward; the twitch layer uses Z.
  */
 
-const LYING_ROOT = {
-	position: [0, 0.075, 0] as Vec3,
-	rotation: [0, 0, -90] as Vec3,
+/**
+ * Seated on the desk: the character origin (the standing feet) drops by the
+ * height of the seat, 19 cm at the 0.354 model scale (the hip joints sit at
+ * 26 cm, the pelvis bone at 33 cm), so the seat meets the desk top and the
+ * thighs rest on it with the shins bent over the edge.
+ */
+const SIT_ROOT = {
+	position: [0, -0.19, 0] as Vec3,
+	rotation: [0, 0, 0] as Vec3,
 }
 
 export const POSES: Record<PoseName, Pose> = {
 	rest: { bones: {} },
 
 	/**
-	 * On the left side along the desk, head towards the visitor, bored. With
-	 * the root turned by -90° about Z a world direction (x, y, z) is written
-	 * here as (-y, x, z): the desk runs along world X (the head at +X), the
-	 * visitor sits at +Z, up is +Y.
+	 * Sitting on the front edge of the desk next to the mouse, facing the
+	 * visitor: thighs on the desk, shins dangling over the edge, the left paw
+	 * propped beside the hip, the right paw resting on the mouse, tail curled
+	 * on the desk round the left side. The root drops the standing origin by
+	 * the hip height so the seat lands on the desk top.
 	 */
-	lounge: {
-		root: LYING_ROOT,
+	sit: {
+		root: SIT_ROOT,
 		bones: {
-			// Torso flat along the desk, the chest lifting a little towards the
-			// visitor; neck and head stay low so the cheek rests on the folded paw.
-			hips: { aim: [0.05, 1, 0.1] },
-			chest: { aim: [-0.25, 0.95, 0.15] },
-			neck: { aim: [-0.5, 0.8, 0.2] },
-			head: { aim: [-0.4, 0.85, -0.25] },
-			// Lower (left) arm folded on the desk: upper arm forward, forearm back
-			// under the chin, so the cheek rests on the paw.
-			arm_l: { aimWorld: [0.2, 0, 0.95] },
-			elbow_l: { aimWorld: [0.75, 0.32, -0.6] },
-			wrist_l: { aimWorld: [0.8, 0.3, -0.5] },
-			// Upper (right) arm reaches over to the keyboard in front.
-			arm_r: { aimWorld: [-0.1, -0.45, 0.88] },
-			elbow_r: { aimWorld: [0, 0.03, 1] },
-			wrist_r: { aimWorld: [0, 0.18, 1] },
-			// Hind legs stacked and trailing: thighs angled forward, shins back
-			// with an easy bend (about 40°) so the knees read as knees and the
-			// stockings stay on them.
-			leg_l: { aimWorld: [-0.75, 0.16, 0.65] },
-			knee_l: { aimWorld: [-0.95, 0.05, 0.05] },
-			foot_l: { aimWorld: [-0.9, 0.1, -0.2] },
-			leg_r: { aimWorld: [-0.7, 0.05, 0.7] },
-			knee_r: { aimWorld: [-0.95, 0.05, 0.1] },
-			foot_r: { aimWorld: [-0.9, 0.15, -0.15] },
-			// Tail clears the back, then rises in front of the screen (world up is character -X).
-			tailroot: { aim: [-0.6, -0.15, -0.78] },
-			tail: { aim: [-0.97, -0.1, -0.2] },
-			tail001: { aim: [-0.95, 0.3, 0.05] },
-			tail002: { aim: [-0.6, 0.75, 0.25] },
-			tail003: { aim: [-0.1, 0.9, 0.4] },
-			ear_l: { rot: [0, 0, 8] },
-			ear_r: { rot: [0, 0, -8] },
+			hips: { aim: [0, 1, -0.08] },
+			chest: { aim: [0, 1, 0.06] },
+			neck: { aim: [0, 0.98, 0.15] },
+			head: { aim: [0, 0.98, 0.2] },
+			// Left paw on the desk beside the hip.
+			arm_l: { aim: [0.3, -0.95, 0.05] },
+			elbow_l: { aim: [0.1, -0.97, 0.2] },
+			wrist_l: { aim: [0.05, -0.15, 1] },
+			// Right paw over to the mouse.
+			arm_r: { aim: [-0.5, -0.88, 0.22] },
+			elbow_r: { aim: [-0.4, -0.88, 0.35] },
+			wrist_r: { aim: [-0.2, -0.3, 0.93] },
+			// Thighs forward on the desk, shins hanging past the edge, toes down.
+			leg_l: { aim: [0.2, 0.02, 0.98] },
+			knee_l: { aim: [0.05, -0.95, 0.32] },
+			foot_l: { aim: [0, -0.5, 0.85] },
+			leg_r: { aim: [-0.2, 0.02, 0.98] },
+			knee_r: { aim: [-0.05, -0.95, 0.3] },
+			foot_r: { aim: [0, -0.5, 0.85] },
+			// Tail along the desk behind, curling round the left hip.
+			tailroot: { aim: [0.3, -0.5, -0.8] },
+			tail: { aim: [0.8, -0.1, -0.6] },
+			tail001: { aim: [1, 0, 0.1] },
+			tail002: { aim: [0.7, 0, 0.7] },
+			tail003: { aim: [0.2, 0.05, 1] },
+			ear_l: { rot: [0, 0, 6] },
+			ear_r: { rot: [0, 0, -6] },
 		},
 	},
 
-	/** The click reaction: arms out past the head, legs long, back arched, mouth open through the jaw layer. */
+	/** The click reaction, seated: paws thrown up and out, back arched, legs kicking forward, tail up, mouth open through the jaw layer. */
 	stretch: {
-		root: LYING_ROOT,
+		root: SIT_ROOT,
 		bones: {
-			hips: { aim: [0.05, 1, -0.05] },
-			chest: { aim: [0.1, 1, -0.2] },
-			neck: { aim: [-0.3, 0.9, -0.3] },
-			head: { aim: [-0.6, 0.7, -0.4] },
-			arm_l: { aimWorld: [0.85, 0.08, 0.5] },
-			elbow_l: { aim: [-0.1, 0.95, 0.3] },
-			wrist_l: { aim: [-0.2, 0.95, 0.25] },
-			arm_r: { aim: [-0.25, 0.85, 0.45] },
-			elbow_r: { aim: [-0.35, 0.9, 0.25] },
-			wrist_r: { aim: [-0.4, 0.9, 0.2] },
-			leg_l: { aimWorld: [-0.9, 0.16, 0.4] },
-			knee_l: { aimWorld: [-1, 0.03, -0.1] },
-			foot_l: { aimWorld: [-0.6, 0.05, -0.78] },
-			leg_r: { aim: [-0.05, -0.92, 0.38] },
-			knee_r: { aim: [-0.1, -1, -0.1] },
-			foot_r: { aim: [0.1, -0.6, -0.78] },
-			tailroot: { aim: [-0.4, -0.2, -0.9] },
-			tail: { aimWorld: [-0.3, 0.9, -0.1] },
-			tail001: { aimWorld: [-0.2, 1, 0.15] },
-			tail002: { aimWorld: [-0.3, 0.9, 0.35] },
-			tail003: { aimWorld: [-0.4, 0.75, 0.5] },
+			hips: { aim: [0, 1, -0.15] },
+			chest: { aim: [0, 0.95, -0.3] },
+			neck: { aim: [0, 0.8, 0.55] },
+			head: { aim: [0, 0.7, 0.7] },
+			arm_l: { aim: [0.55, 0.8, 0.15] },
+			elbow_l: { aim: [0.35, 0.93, 0.1] },
+			wrist_l: { aim: [0.25, 0.93, 0.25] },
+			arm_r: { aim: [-0.55, 0.8, 0.15] },
+			elbow_r: { aim: [-0.35, 0.93, 0.1] },
+			wrist_r: { aim: [-0.25, 0.93, 0.25] },
+			leg_l: { aim: [0.25, 0.1, 0.96] },
+			knee_l: { aim: [0.1, -0.55, 0.83] },
+			foot_l: { aim: [0, -0.2, 1] },
+			leg_r: { aim: [-0.25, 0.1, 0.96] },
+			knee_r: { aim: [-0.1, -0.55, 0.83] },
+			foot_r: { aim: [0, -0.2, 1] },
+			tailroot: { aim: [0.2, 0.4, -0.9] },
+			tail: { aim: [0.3, 0.9, -0.3] },
+			tail001: { aim: [0.2, 1, 0.1] },
+			tail002: { aim: [0.1, 0.9, 0.45] },
+			tail003: { aim: [0, 0.6, 0.8] },
 			ear_l: { rot: [0, 0, -14] },
 			ear_r: { rot: [0, 0, 14] },
 		},
 	},
 
-	/**
-	 * Asleep at dawn, sprawled on the back the way real cats do: belly up and
-	 * rolled a little towards the visitor, head tipped back, both front paws
-	 * stretched past the head, hind legs long and loose, tail curled away.
-	 * The 180° roll of the eye bones turns the pupils into the head and brings
-	 * the closed lids built on the back of those bones to the front
-	 * (`lib/scene/cat/eyelids.ts`). Look-at is off while this pose is active.
-	 */
 	sleep: {
-		root: { position: [0, 0.12, 0.04], rotation: [-75, 0, -90] },
+		// Relative to the sitting spot: the sleeper lies along the desk from x = 0.
+		root: { position: [-0.7, 0.12, -0.26], rotation: [-75, 0, -90] },
 		bones: {
 			hips: { aimWorld: [1, 0.08, 0.02] },
 			chest: { aimWorld: [1, 0.12, -0.05] },

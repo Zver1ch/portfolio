@@ -29,7 +29,7 @@ const STOCKING_MESHES = [
 	'Stockings_Material_0',
 ]
 /** Radial scale of the covered leg about its axis. */
-export const TUCK = 0.7
+export const TUCK = 0.5
 /** Body vertices this far from the leg's axis count as the leg, metres. */
 const LEG_REACH = 0.12
 /** Keep the leg intact this close to the stocking's top and bottom edges, metres. */

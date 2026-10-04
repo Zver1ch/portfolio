@@ -3,7 +3,7 @@
  *
  *   pnpm assets:shots --view 'view=hero&t=2' [--size 1440x900] [--out file.png]
  *   pnpm assets:shots --probe head            contact sheet: rest and +deg about x, y, z, front and side
- *   pnpm assets:shots --pose lounge           front, side, top, three-quarter and hero framing
+ *   pnpm assets:shots --pose sit              front, side, top, three-quarter and hero framing
  *   pnpm assets:shots --sequence dive|finale  p = 0, 0.1, …, 1
  *   pnpm assets:shots --compare-source        rest pose, fixed source vs shipped model, pixel diff
  *   pnpm assets:shots --gate                  the Gate 1 package into docs/lookdev/gate-1/
@@ -27,7 +27,7 @@ const OUT_DIR = 'artifacts/shots'
 const GATE_DIR = 'docs/lookdev/gate-1'
 /** Vertices of the cat inside the furniture, deeper than this, are a problem. */
 const CLIP_TOLERANCE = 0.003
-const CLIP_POSES = ['lounge', 'sleep', 'stretch']
+const CLIP_POSES = ['sit', 'sleep', 'stretch']
 const DEFAULT_TIME = 2.4
 
 const args = process.argv.slice(2)
@@ -308,14 +308,9 @@ async function gatePackage() {
 	const shots = [
 		['hero-night-1920x1200.png', 'view=hero', 1920, 1200],
 		['hero-night-390x844-lite.png', 'view=hero&lite=1', 390, 844],
-		[
-			'cat-close-up.png',
-			'view=turntable&cam=close&pose=lounge',
-			1600,
-			1000,
-		],
-		['cat-side.png', 'view=turntable&cam=side&pose=lounge', 1600, 1000],
-		['cat-top.png', 'view=turntable&cam=top&pose=lounge', 1600, 1000],
+		['cat-close-up.png', 'view=turntable&cam=close&pose=sit', 1600, 1000],
+		['cat-side.png', 'view=turntable&cam=side&pose=sit', 1600, 1000],
+		['cat-top.png', 'view=turntable&cam=top&pose=sit', 1600, 1000],
 		[
 			'stretch.png',
 			'view=turntable&cam=quarter&pose=stretch&meow=1',
@@ -335,12 +330,7 @@ async function gatePackage() {
 			1600,
 			1000,
 		],
-		[
-			'cat-quarter.png',
-			'view=turntable&cam=quarter&pose=lounge',
-			1600,
-			1000,
-		],
+		['cat-quarter.png', 'view=turntable&cam=quarter&pose=sit', 1600, 1000],
 		['sticker.png', 'view=turntable&cam=sticker', 1600, 1000],
 		[
 			'desk-props.png',

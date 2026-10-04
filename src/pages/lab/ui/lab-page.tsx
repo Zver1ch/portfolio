@@ -41,7 +41,7 @@ function basePose(params: LabParams): PoseName {
 	if (params.view === 'finale') return 'sleep'
 	if (params.view === 'probe') return 'rest'
 	if (params.view === 'overlay') return 'peek'
-	return 'lounge'
+	return 'sit'
 }
 
 function frameFor(

@@ -6,9 +6,8 @@ export const CAT_REST_HEIGHT = 0.62
 export const BREATHING = { hz: 0.28, pitchDeg: 1 } as const
 
 export const LOOK_AT = {
-	/** Small turns: the head lies on a paw and must not lift off it. */
-	yawDeg: 35,
-	pitchDeg: 12,
+	yawDeg: 50,
+	pitchDeg: 25,
 	neckShare: 0.35,
 	headShare: 0.65,
 	/** Exponential damping rate, 1/s. */

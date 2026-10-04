@@ -44,6 +44,8 @@ export function endCamera(overshoot = END_OVERSHOOT): CameraPose {
 /** Lite mode: the hero camera pushed away from its target on narrow viewports. */
 export function liteHeroCamera(aspect: number): CameraPose {
 	const factor = Math.max(1, LITE_PULLBACK / aspect)
+	// Wide viewports keep the hero camera as is (no rounding through the maths).
+	if (factor === 1) return HERO_CAMERA
 	const offset = sub(HERO_CAMERA.position, HERO_CAMERA.target)
 	return {
 		...HERO_CAMERA,

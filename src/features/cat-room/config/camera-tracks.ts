@@ -7,8 +7,8 @@ export const CAMERA_NEAR = 0.05
 export const CAMERA_FAR = 30
 
 export const HERO_CAMERA: CameraPose = {
-	position: [0.95, 1.36, 0.55],
-	target: [0.2, 1.0, -1.2],
+	position: [1.05, 1.42, 0.9],
+	target: [0.35, 0.92, -1.15],
 	fov: 32,
 }
 

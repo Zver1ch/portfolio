@@ -30,7 +30,7 @@ Working agreement:
 | 1 | World: cozy developer room at night. Base set only: desk, modern flat monitor (no CRT or retro devices), PC tower, keyboard, mouse, window with the moon, lamp, plus one pair of socks with a paw print (an object in the room). Anything else needs owner approval at Gate 1. |
 | 2 | Structure: 3D hero with a scroll-driven camera, 2D sections with huge type, a second 3D moment at the end, credits. |
 | 3 | Dark only, existing palette tokens, no `dark:` variants. |
-| 4 | The cat gets in the way of work: lying on his side on the desk in front of the monitor, head propped on a paw, tail over the screen; gibberish (`asdfghjkl`) gets typed; on click he stretches and meows. Wholesome, lazy, cat-like, no pin-up staging. The pose render is approved by the owner before anything is built on it. |
+| 4 | The cat gets in the way of work: sitting on the front edge of the desk next to the mouse, legs dangling over the edge, one paw on the mouse, facing the visitor (Gate 1 decision: the side-lying pose of the first drafts was rejected); gibberish (`asdfghjkl`) gets typed; on click he stretches and meows. Wholesome, lazy, cat-like, no pin-up staging. The pose render is approved by the owner before anything is built on it. |
 | 5 | Dive into the monitor until the screen fills the viewport and is the page. Finale: pull back out of the monitor; dawn; cat asleep. |
 | 6 | In 2D sections the cat stays outside the screen and intrudes from the edges (ears, paw swatting the cursor, tail sweep, face against the glass, `asdfgh` typed). A click drops a fish and a paw snatches it. Clicking the cat meows. No walking mini-cat. |
 | 7 | Style: clean flat low-poly, flat palette colours, light painted with colour, full resolution. |
@@ -145,7 +145,7 @@ Rules:
 
 | Phase | When | Camera | Room | Cat | Loop |
 |---|---|---|---|---|---|
-| `room` | full: `dive < 0.985` and hero stage on screen; lite: hero on screen | Perspective, dive track | Night | Lounge plus idle layers | Every frame |
+| `room` | full: `dive < 0.985` and hero stage on screen; lite: hero on screen | Perspective, dive track | Night | Sit plus idle layers | Every frame |
 | `inside` | full only, between the two stages | Orthographic overlay in CSS px | Hidden | Gag poses | Only while a gag or fish is active |
 | `finale` | full: `finale > 0.015`; lite: finale spacer on screen | Perspective, finale track | Dawn | Sleep plus breathing | Every frame |
 | `off` | static, hidden tab, nothing on screen | none | none | none | Stopped |
@@ -293,7 +293,7 @@ The screen in 3D:
 - The bezel colour equals `--ink`, so any sub-pixel seam is invisible.
 - In lite mode and in posters the same quad uses an opaque "fake screen" material: flat glow plus a few bar quads.
 
-Dive tunnel rule: at `p >= 0.9` no part of the cat may be inside the pyramid from the end camera to the screen. At the cat's depth this is y from 1.04 to 1.22 around x = 0.25. The lounge pose keeps the head outside it and the tail flick clears the tail.
+Dive tunnel rule: at `p >= 0.9` no part of the cat may be inside the pyramid from the end camera to the screen. At the cat's depth this is y from 1.04 to 1.22 around x = 0.25. The sitting pose keeps the whole cat to the right of it, at the front edge of the desk.
 
 Resize: the observer updates `timeline.viewport`, the renderer size and the monitor aspect; ScrollTrigger refreshes itself; the matrix is recomputed every tick.
 
@@ -342,7 +342,7 @@ export type Pose = {
 - `aim`: desired direction of the bone in character space (+Y up, +Z forward), resolved parent-first by shortest arc, then `twist` degrees about the bone axis.
 - `cat/rig.ts` compiles each pose once into local quaternions.
 - `cat/pose-mixer.ts` slerps between compiled poses with eased weights. An optional stepped clock (`floor(t * 12) / 12`) is a lab toggle for Gate 1.
-- Poses: `rest`, `lounge`, `stretch`, `sleep`, `peek`, `reach`, `tail-up`.
+- Poses: `rest`, `sit`, `stretch`, `sleep`, `peek`, `reach`, `tail-up`.
 
 Procedural layers, applied after the mixer in this order:
 1. Breathing: chest pitch ±1° at 0.28 Hz.
@@ -379,8 +379,8 @@ Query parameters:
 - `--sequence dive|finale`: production build, p = 0, 0.1, …, 1.
 - `--compare-source`: rest pose of the source GLB against the optimised GLB with a pixel diff.
 
-Staging rules for `lounge`:
-- The classic cat in front of the screen: side-lying along the desk, facing the camera, bored expression; knees loosely bent and stacked; one forearm propping the cheek; the other paw on the keys.
+Staging rules for `sit` (Gate 1 decision; the side-lying `lounge` was rejected):
+- Seated on the front edge of the desk between the mouse and the lamp, facing the camera, bored expression; thighs on the desk, shins dangling over the edge; the left paw propped beside the hip, the right paw resting on the mouse; tail curled on the desk round the left hip.
 - The hero camera never frames hips or stockings as the focal point.
 - No arched back and no hip-forward line.
 - Prepare alternative B as a backup: sprawled on the belly across the keyboard, chin on forearms.
@@ -596,7 +596,7 @@ Run `pnpm verify` and `pnpm build` after every milestone; `pnpm test:e2e` from M
 | # | Scope | Acceptance | Effort budget and fallback |
 |---|---|---|---|
 | M0 | Dependencies, the model build, inspect and check scripts, guard in `verify` and CI, Playwright arguments, model facts recorded. Verify the sandbox network: registry, Playwright browser, Google Fonts during `next build`. | `cat.glb` ≤ 400 kB; the guard fails when a source is copied into `public/` (unit-tested); headless WebGL confirmed with a one-page smoke run. | 0.5 d |
-| M1 | Look-dev in the lab only: renderer, room, rig, poses `lounge`, `stretch`, `sleep`, idle layers, shading variants, sticker placement. The home page is untouched. | Gate package in `docs/lookdev/gate-1/`: hero night 1920×1200 and 390×844; cat close-up, side, top; stretch; finale dawn; sleep close-up; shading A and B; sticker; dive tunnel at p = 0.95; a README listing what to approve. | 3 d. If the side-lying pose still collapses or interpenetrates after 1.5 d, also deliver alternative B. Hair springs are optional. |
+| M1 | Look-dev in the lab only: renderer, room, rig, poses `sit`, `stretch`, `sleep`, idle layers, shading variants, sticker placement. The home page is untouched. | Gate package in `docs/lookdev/gate-1/`: hero night 1920×1200 and 390×844; cat close-up, side, top; stretch; finale dawn; sleep close-up; shading A and B; sticker; dive tunnel at p = 0.95; a README listing what to approve. | 3 d. If the pose still collapses or interpenetrates after 1.5 d, also deliver alternative B. Hair springs are optional. |
 | **Gate 1** | **Stop. The owner approves the pose, room, night and dawn palettes, shading variant, sticker, sock placement and whether the film grain stays.** (Gate 1 feedback: the 2D face is the sticker PNG, no new drawing.) Nothing in M3–M8 starts before approval. | | |
 | M2 | English content pass and the whole static page (all new widgets, `CatFaceButton`, placeholder poster, credits). Independent of the look; may run while Gate 1 is pending. | No-JS and reduced-motion e2e green; no Russian text left; overflow tests at 320, 360 and 390 px. | 1.5 d |
 | M3 | Posters captured; modes, store, director, `RoomLayer`, veil with real progress, all fallbacks, hero `room` phase, pet proxy. | `data-room-mode='full'` and `data-scene-ready='true'` under SwiftShader; every fallback e2e green; three absent from initial chunks. | 1.5 d |

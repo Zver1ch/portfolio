@@ -42,7 +42,7 @@ dedup → prune → fix-model-space → tuck-stockings → meshopt --level mediu
   `pnpm dlx @gltf-transform/cli@4.5.1`. Never `optimize`, `join`, `flatten`,
   `simplify`, `palette` or `weld`: they can alter the rig or the authored look.
 - `tuck-stockings` (`scripts/tuck-stockings.mjs`) pulls the body vertices
-  under the stockings 30% towards each leg's axis. The stockings are a
+  under the stockings 50% towards each leg's axis. The stockings are a
   separate skinned mesh with rings 5–6 cm apart; on a bent knee they cut the
   corner with a straight chord while the denser white leg follows the arc,
   and a white kneecap pokes through. The covered leg is never visible, so

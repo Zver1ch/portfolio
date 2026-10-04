@@ -3,6 +3,7 @@ import {
 	CAT_SPOT,
 	KEYBOARD,
 	LAMP,
+	SOCKS,
 	STICKER,
 } from '@/features/cat-room/config/room-layout'
 import { clamp, DEG } from '@/shared/lib/math/ease'
@@ -28,6 +29,7 @@ export type CamPreset =
 	| 'sticker'
 	| 'lamp'
 	| 'desk'
+	| 'socks'
 export type LabModel = 'shipped' | 'source' | 'space'
 
 export type LabParams = {
@@ -79,6 +81,7 @@ const CAMS: CamPreset[] = [
 	'sticker',
 	'lamp',
 	'desk',
+	'socks',
 ]
 
 function pick<T extends string>(
@@ -141,7 +144,7 @@ type Orbit = {
 	pitch: number
 	dist: number
 	fov: number
-	focus: 'cat' | 'head' | 'sticker' | 'lamp' | 'desk'
+	focus: 'cat' | 'head' | 'sticker' | 'lamp' | 'desk' | 'socks'
 }
 
 /** Yaw is measured from +Z (the visitor's side) towards +X; the cat lies with its head towards +X. */
@@ -156,14 +159,11 @@ export const CAM_PRESETS: Record<Exclude<CamPreset, 'hero'>, Orbit> = {
 	sticker: { yaw: 4, pitch: 6, dist: 0.5, fov: 30, focus: 'sticker' },
 	lamp: { yaw: -30, pitch: 12, dist: 0.9, fov: 30, focus: 'lamp' },
 	desk: { yaw: -15, pitch: 40, dist: 0.8, fov: 30, focus: 'desk' },
+	socks: { yaw: 25, pitch: 50, dist: 0.7, fov: 30, focus: 'socks' },
 }
 
 /** Centre of interest for a focus; `head` is refined by the lab from the live bone position. */
-const LYING_POSES: ReadonlySet<PoseName> = new Set([
-	'lounge',
-	'stretch',
-	'sleep',
-])
+const SEATED_POSES: ReadonlySet<PoseName> = new Set(['sit', 'stretch'])
 
 export function focusPoint(
 	focus: Orbit['focus'],
@@ -173,6 +173,8 @@ export function focusPoint(
 	if (focus === 'sticker') return STICKER.center
 	if (focus === 'lamp')
 		return [LAMP.head[0], LAMP.head[1] - 0.12, LAMP.head[2] + 0.05]
+	if (focus === 'socks')
+		return [SOCKS.center[0], SOCKS.center[1] + 0.03, SOCKS.center[2]]
 	if (focus === 'desk')
 		return [
 			KEYBOARD.center[0] + 0.15,
@@ -181,8 +183,10 @@ export function focusPoint(
 		]
 	if (focus === 'head' && headWorld) return headWorld
 	const [x, y, z] = CAT_SPOT.position
-	// A lying cat spans the desk towards +X from its feet-origin; a standing one stands on it.
-	return LYING_POSES.has(pose) ? [x + 0.25, y + 0.12, z] : [x, y + 0.31, z]
+	// The sleeper lies along the desk from x = 0; a seated cat's chest is a
+	// little above the spot; a standing one (rest, probes) stands on it.
+	if (pose === 'sleep') return [0.25, y + 0.12, z - 0.26]
+	return SEATED_POSES.has(pose) ? [x, y + 0.18, z] : [x, y + 0.31, z]
 }
 
 export function orbitCamera(
