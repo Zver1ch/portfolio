@@ -84,6 +84,7 @@ function frameFor(
 			params.look === 'none'
 				? [camera.target[0], camera.target[1], camera.target[2] + 4]
 				: null,
+		cut: false,
 		stepped: params.stepped,
 	}
 }

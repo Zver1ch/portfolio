@@ -104,6 +104,17 @@ export function dawnFactor(finaleProgress: number): number {
 	return 0.55 + 0.45 * smoothstep(from, to, finaleProgress)
 }
 
+/**
+ * The finale portal's progress in the dive's terms (plan §3.5): identity at
+ * the start of the stage, the docking lerp run backwards over the undock
+ * stretch, the bare projected quad once the camera pulls back.
+ */
+export function finaleUndock(finaleProgress: number): number {
+	if (finaleProgress <= 0) return 1
+	if (finaleProgress >= FINALE.undock) return DIVE.dock
+	return 1 - (1 - DIVE.dock) * (finaleProgress / FINALE.undock)
+}
+
 /** Tail flick progress during the dive: 0 before, 1 after, eased between. */
 export function tailFlick(diveProgress: number): number {
 	const [from, to] = DIVE.tailFlick

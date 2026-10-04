@@ -22,6 +22,8 @@ export type DirectorFrame = {
 	pose: PoseName
 	/** World point the cat looks at; null looks at the camera. */
 	lookAt: Vec3 | null
+	/** The scene was off screen since the last frame: a pose change is a cut, not a blend. */
+	cut: boolean
 	/** Quantise the animation clock to 12 steps a second (lab toggle). */
 	stepped: boolean
 }

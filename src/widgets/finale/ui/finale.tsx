@@ -1,6 +1,7 @@
 import { ArrowUp } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { CatFaceButton } from '@/features/boop-cat/ui/cat-face-button'
+import { PortalStage } from '@/features/cat-room/ui/portal-stage'
 import { profile } from '@/shared/config/profile'
 import { RoomPoster } from '@/shared/ui/room-poster'
 import { Credits } from './credits'
@@ -8,14 +9,16 @@ import { Credits } from './credits'
 /**
  * The finale stage (plan §2, §3.4): the footer statement is the page the
  * camera pulls back from, so it is the portal; the dawn room is the slot.
- * Stacked in the static layout, overlaid once the full room runs. Credits
- * follow as a sibling of the stage, never a child.
+ * Stacked in the static layout, overlaid once the full room runs, where the
+ * stage pins and the credits are a sibling of it, never a child: pinned at
+ * the footer's bottom edge they roll in over the last stretch of the
+ * pull-back, as a column on the left so the sleeping cat stays in reach.
  */
 export function Finale({ children }: { children: ReactNode }) {
 	return (
 		<footer id='finale' className='relative border-t border-border'>
-			<div
-				data-stage='finale'
+			<PortalStage
+				track='finale'
 				className='grid room-full:h-lvh room-full:overflow-clip'
 			>
 				<div
@@ -33,15 +36,21 @@ export function Finale({ children }: { children: ReactNode }) {
 						aria-hidden
 						className='absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-ink to-transparent'
 					/>
-					<div className='absolute top-6 right-4 room-full:hidden sm:top-10 sm:right-10'>
+					<div
+						data-static-face
+						className='absolute top-6 right-4 sm:top-10 sm:right-10'
+					>
 						<CatFaceButton label='Pet the sleeping cat' />
 					</div>
 				</div>
-			</div>
-			<div className='relative z-[45] bg-ink px-4 pt-6 pb-16 sm:px-6'>
-				<div className='mx-auto max-w-7xl'>
+			</PortalStage>
+			<div
+				data-credits-roll
+				className='relative z-[45] px-4 pt-20 pb-16 sm:px-6 room-full:absolute room-full:bottom-0 room-full:left-0 room-full:max-w-xl room-full:pr-10 room-full:pb-10'
+			>
+				<div className='mx-auto max-w-7xl room-full:mx-0'>
 					<Credits />
-					<div className='mt-12 flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground'>
+					<div className='mt-12 flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground room-full:mt-8'>
 						<p>
 							{profile.handle} · {profile.location}
 						</p>

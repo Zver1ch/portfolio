@@ -41,7 +41,8 @@ test('the dive ends inside the monitor with the page at identity', async ({
 }) => {
 	const problems = collectProblems(page)
 	await waitForRoom(page)
-	await expect(page.locator('.pin-spacer')).toHaveCount(1)
+	// Both stages pin in full mode: the hero and the finale.
+	await expect(page.locator('.pin-spacer')).toHaveCount(2)
 	const portal = page.locator('[data-stage="hero"] [data-portal]')
 	// At rest the page already sits on the monitor.
 	await expect(portal).toHaveCSS('transform', /^matrix3d\(/)
@@ -51,6 +52,12 @@ test('the dive ends inside the monitor with the page at identity', async ({
 	await expect(portal).toHaveCSS('transform', 'none')
 	await expect(page.getByText(profile.statement)).toBeInViewport()
 	await expect(page.locator('[data-room-layer]')).toBeHidden()
+
+	// Back up the dive: the idle director wakes and the room returns.
+	await diveTo(page, 0.5)
+	await expect(html(page)).toHaveAttribute('data-room-phase', 'room')
+	await expect(portal).toHaveCSS('transform', /^matrix3d\(/)
+	await expect(page.locator('[data-room-layer]')).toBeVisible()
 	expect(problems).toEqual([])
 })
 

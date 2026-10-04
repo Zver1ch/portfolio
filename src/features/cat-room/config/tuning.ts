@@ -24,6 +24,28 @@ export const EAR_TWITCH = {
 export const MEOW = { jawDeg: 18, durationMs: 350 } as const
 
 /**
+ * The pet reaction (plan §2): the overlay pose played over the base pose,
+ * its envelope in seconds and the delay before the jaw opens. The sleeper
+ * stretches slower and yawns later.
+ */
+export const PET = {
+	awake: {
+		pose: 'stretch',
+		fadeIn: 0.25,
+		hold: 0.8,
+		fadeOut: 0.6,
+		jawDelay: 0.15,
+	},
+	asleep: {
+		pose: 'sleep-stretch',
+		fadeIn: 0.55,
+		hold: 1.1,
+		fadeOut: 0.9,
+		jawDelay: 0.45,
+	},
+} as const
+
+/**
  * Closed eyes of the sleep pose (`lib/scene/cat/eyelids.ts`): the black eye
  * outlines collapse into the head and a `︶` stroke grows over each eye,
  * both driven by how far the eye bones have rolled.

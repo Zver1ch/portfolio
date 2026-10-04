@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
 	DAWN_CAMERA,
+	DIVE,
+	FINALE,
 	HERO_CAMERA,
 	LITE_PULLBACK,
 } from '../config/camera-tracks'
@@ -8,6 +10,7 @@ import {
 	cameraAt,
 	dawnFactor,
 	endCamera,
+	finaleUndock,
 	liteFinaleCamera,
 	liteHeroCamera,
 } from './camera-path'
@@ -102,5 +105,18 @@ describe('liteFinaleCamera', () => {
 			...DAWN_CAMERA.position.map((v, i) => v - DAWN_CAMERA.target[i]),
 		)
 		expect(far / near).toBeCloseTo(LITE_PULLBACK / 0.5625)
+	})
+})
+
+describe('finaleUndock', () => {
+	it('runs the docking backwards over the undock stretch, then frees the quad', () => {
+		expect(finaleUndock(0)).toBe(1)
+		expect(finaleUndock(-0.1)).toBe(1)
+		expect(finaleUndock(FINALE.undock / 2)).toBeCloseTo(
+			1 - (1 - DIVE.dock) / 2,
+		)
+		expect(finaleUndock(FINALE.undock)).toBe(DIVE.dock)
+		expect(finaleUndock(0.5)).toBe(DIVE.dock)
+		expect(finaleUndock(1)).toBe(DIVE.dock)
 	})
 })

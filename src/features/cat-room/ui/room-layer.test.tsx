@@ -46,7 +46,8 @@ vi.mock('../model/director', () => ({
 	}),
 }))
 
-import { getRoomState, resetRoomStore } from '../model/room-store'
+import { getRoomState, resetRoomStore, setRoomPhase } from '../model/room-store'
+import { resetTimeline, touchTimeline } from '../model/timeline'
 import { RoomLayer } from './room-layer'
 
 const flush = () => act(() => new Promise((resolve) => setTimeout(resolve, 0)))
@@ -54,6 +55,7 @@ const flush = () => act(() => new Promise((resolve) => setTimeout(resolve, 0)))
 describe('RoomLayer', () => {
 	beforeEach(() => {
 		resetRoomStore()
+		resetTimeline()
 		hooks.reducedMotion = false
 		hooks.webgl = true
 		hooks.fullViewport = true
@@ -124,6 +126,17 @@ describe('RoomLayer', () => {
 		fireEvent.click(proxy)
 		expect(onPet).toHaveBeenCalledTimes(1)
 		expect(scene.trigger).toHaveBeenCalledWith({ type: 'pet' })
+
+		// The same button is the finale's pet target, named for the sleeper.
+		act(() => setRoomPhase('finale'))
+		expect(proxy).toHaveAttribute('aria-label', 'Pet the sleeping cat')
+		act(() => setRoomPhase('room'))
+		expect(proxy).toHaveAttribute('aria-label', 'Pet the cat')
+
+		// A scroll handler writing the timeline wakes an idle director.
+		director.wake.mockClear()
+		touchTimeline()
+		expect(director.wake).toHaveBeenCalledTimes(1)
 	})
 
 	it('uses the painted screen in lite mode', async () => {
@@ -162,5 +175,8 @@ describe('RoomLayer', () => {
 		await flush()
 		unmount()
 		expect(document.querySelector('canvas')).toBeNull()
+		director.wake.mockClear()
+		touchTimeline()
+		expect(director.wake).not.toHaveBeenCalled()
 	})
 })

@@ -48,5 +48,4 @@ export const FINALE = {
 	undock: 0.1,
 	pullBackEnd: 0.85,
 	dawnRamp: [0.1, 0.9] as const,
-	creditsFrom: 0.7,
 } as const

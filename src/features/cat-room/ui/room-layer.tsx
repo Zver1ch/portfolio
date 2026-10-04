@@ -15,7 +15,7 @@ import {
 	startRoom,
 	useRoomState,
 } from '../model/room-store'
-import { timeline } from '../model/timeline'
+import { onTimelineTouch, timeline } from '../model/timeline'
 import { type PetOrigin, PetProxy } from './pet-proxy'
 
 /**
@@ -27,7 +27,7 @@ import { type PetOrigin, PetProxy } from './pet-proxy'
  */
 export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 	const mode = useRoomMode()
-	const { status } = useRoomState()
+	const { status, phase } = useRoomState()
 	const layerRef = useRef<HTMLDivElement>(null)
 	const proxyRef = useRef<HTMLButtonElement>(null)
 	const sceneRef = useRef<RoomScene | null>(null)
@@ -82,6 +82,9 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 			director?.wake()
 		})
 		for (const [, element] of stages) if (element) inView.observe(element)
+
+		// A stage's scroll handler wrote the timeline: the director may be idle.
+		const untouch = onTimelineTouch(() => director?.wake())
 
 		const resize = new ResizeObserver(() => {
 			timeline.viewport = size()
@@ -189,6 +192,7 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 			window.clearTimeout(timeout)
 			canvas.removeEventListener('webglcontextlost', onContextLost)
 			inView.disconnect()
+			untouch()
 			resize.disconnect()
 			window.removeEventListener('pointermove', onPointerMove)
 			window.removeEventListener('pointerout', onPointerOut)
@@ -214,6 +218,11 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 			{mode !== 'static' ? (
 				<PetProxy
 					ref={proxyRef}
+					label={
+						phase === 'finale'
+							? 'Pet the sleeping cat'
+							: 'Pet the cat'
+					}
 					disabled={status !== 'ready'}
 					onPet={(origin) => {
 						onPet(origin)

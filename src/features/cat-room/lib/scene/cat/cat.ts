@@ -10,7 +10,7 @@ import type { Vec3 } from '@/shared/lib/math/vec3'
 import type { Collider } from '../../../config/colliders'
 import { POSES, type PoseName } from '../../../config/poses'
 import { CAT_SPOT } from '../../../config/room-layout'
-import { CHAINS, EYELIDS } from '../../../config/tuning'
+import { CHAINS, EYELIDS, PET } from '../../../config/tuning'
 import type { DirectorFrame } from '../../../model/frame'
 import { tailFlick } from '../../camera-path'
 import { patchMaterial, type SceneUniforms } from '../materials'
@@ -172,7 +172,12 @@ export async function createCat({
 			: frame.time
 		lastTime = time
 		if (lastPose !== frame.pose) {
-			mixer.setBase(frame.pose, time, lastPose === null ? 0.001 : 0.6)
+			// A cut when the scene was not on screen in between; a blend otherwise.
+			mixer.setBase(
+				frame.pose,
+				time,
+				lastPose === null || frame.cut ? 0.001 : 0.6,
+			)
 			lastPose = frame.pose
 		}
 		const pose = mixer.evaluate(time)
@@ -282,12 +287,14 @@ export async function createCat({
 		update,
 		trigger(event) {
 			if (event.type === 'pet') {
-				mixer.play('stretch', lastTime, {
-					fadeIn: 0.25,
-					hold: 0.8,
-					fadeOut: 0.6,
+				const reaction =
+					mixer.basePose === 'sleep' ? PET.asleep : PET.awake
+				mixer.play(reaction.pose, lastTime, {
+					fadeIn: reaction.fadeIn,
+					hold: reaction.hold,
+					fadeOut: reaction.fadeOut,
 				})
-				openJaw(layers, lastTime + 0.15)
+				openJaw(layers, lastTime + reaction.jawDelay)
 			}
 		},
 		measure(camera, viewport) {

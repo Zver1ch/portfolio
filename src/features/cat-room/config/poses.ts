@@ -43,6 +43,7 @@ export type PoseName =
 	| 'sit'
 	| 'stretch'
 	| 'sleep'
+	| 'sleep-stretch'
 	| 'peek'
 	| 'reach'
 	| 'tail-up'
@@ -191,6 +192,45 @@ export const POSES: Record<PoseName, Pose> = {
 			tail005: { aimWorld: [-0.8, 0, -0.55] },
 			ear_l: { rot: [0, 0, 20] },
 			ear_r: { rot: [0, 0, -20] },
+			lefteye: { rot: [180, 0, 0] },
+			righteye: { rot: [180, 0, 0] },
+		},
+	},
+
+	/**
+	 * The pet reaction of the sleeper, played over `sleep` (same root, eyes
+	 * still shut): front paws pushed further along the desk, back arched,
+	 * hind legs straightened with the toes spread, head lifting a little,
+	 * ears up, tail curling off the shin. The jaw layer adds the yawn.
+	 */
+	'sleep-stretch': {
+		root: { position: [-0.7, 0.12, -0.26], rotation: [-75, 0, -90] },
+		bones: {
+			hips: { aimWorld: [1, 0.16, 0.02] },
+			chest: { aimWorld: [1, 0.26, -0.05] },
+			neck: { aimWorld: [0.95, 0.05, -0.2] },
+			head: { aimWorld: [0.92, -0.12, -0.3], twist: 15 },
+			arm_l: { aimWorld: [0.85, -0.3, 0.42] },
+			elbow_l: { aimWorld: [1, 0, 0.2] },
+			wrist_l: { aimWorld: [1, 0.12, 0.1] },
+			arm_r: { aimWorld: [0.88, -0.3, -0.32] },
+			elbow_r: { aimWorld: [1, 0, -0.15] },
+			wrist_r: { aimWorld: [1, 0.12, -0.05] },
+			leg_l: { aimWorld: [-0.92, 0.05, 0.4] },
+			knee_l: { aimWorld: [-0.98, 0.08, 0.2] },
+			foot_l: { aimWorld: [-0.9, 0.4, 0.2] },
+			leg_r: { aimWorld: [-0.94, 0.08, -0.3] },
+			knee_r: { aimWorld: [-0.97, 0.15, -0.2] },
+			foot_r: { aimWorld: [-0.8, 0.55, -0.25] },
+			tailroot: { aimWorld: [-0.3, 0.6, 0.7] },
+			tail: { aimWorld: [-0.7, 0.45, 0.5] },
+			tail001: { aimWorld: [-0.9, 0.3, 0.1] },
+			tail002: { aimWorld: [-0.95, 0.15, -0.2] },
+			tail003: { aimWorld: [-0.92, 0.05, -0.4] },
+			tail004: { aimWorld: [-0.88, 0, -0.48] },
+			tail005: { aimWorld: [-0.82, 0, -0.55] },
+			ear_l: { rot: [0, 0, 6] },
+			ear_r: { rot: [0, 0, -6] },
 			lefteye: { rot: [180, 0, 0] },
 			righteye: { rot: [180, 0, 0] },
 		},

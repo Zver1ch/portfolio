@@ -9,7 +9,7 @@ import { createPortal } from '../lib/portal'
 import { projectScreen } from '../lib/screen-quad'
 import { registerPortal } from '../model/portals'
 import { useRoomMode } from '../model/room-mode'
-import { timeline } from '../model/timeline'
+import { timeline, touchTimeline } from '../model/timeline'
 
 /** Pinned scroll length of each stage, in viewport heights (plan §3.4). */
 const PIN_HEIGHTS: Record<Track, number> = { dive: 2.2, finale: 1.8 }
@@ -73,6 +73,7 @@ export function PortalStage({
 				}
 				const write = (self: ScrollTrigger) => {
 					timeline[track] = self.progress
+					touchTimeline()
 					if (track !== 'dive' || !portal) return
 					// The warp before the scene: the same maths the director uses.
 					const { width, height } = timeline.viewport
@@ -127,6 +128,7 @@ export function PortalStage({
 					timeline.dive = LITE_DIVE * self.progress
 					timeline.layerOpacity =
 						1 - smoothstep(0.15, 0.75, self.progress)
+					touchTimeline()
 				}
 				triggers.push(
 					ScrollTrigger.create({
@@ -144,6 +146,7 @@ export function PortalStage({
 						0.85,
 						self.progress,
 					)
+					touchTimeline()
 				}
 				triggers.push(
 					ScrollTrigger.create({

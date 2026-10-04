@@ -104,7 +104,7 @@ Modes (decided on the client; the server always renders `static`):
 | Stack | Table: skill and status. `profile.skills` are "In use", `profile.learning` are "Learning". Note: "Learning rows move up with the first live demo." | Same. | Same. |
 | Contact | "Looking for": `profile.lookingFor`; giant links from `profile.links`; `profile.now`. | Same, plus a 2D face button. | Same, plus a 2D face button. |
 | Edge intrusions | Ears and eyes peek from the bottom edge; a paw swats near the cursor; the tail sweeps on section change; rarely the face against the glass; `asdfgh` typed in a small line. Clicking an empty page area (or "Feed the cat" in the header) drops a fish and a paw snatches it. Clicking the head meows. | None. | None. |
-| Finale | The finale stage pins for 1.8 viewport heights. The page (showing `profile.footerStatement`) undocks and shrinks into the monitor as the camera pulls back; dawn light warms; the cat sleeps. Credits roll in at the end. Click on the cat: sleepy stretch and meow. | No pin. The canvas fades in over the finale spacer showing the dawn room; credits overlaid. | Footer statement, dawn poster, credits, face button. |
+| Finale | The finale stage pins for 1.8 viewport heights. The page (showing `profile.footerStatement`) undocks and shrinks into the monitor as the camera pulls back; dawn light warms; the cat sleeps. Credits roll in at the end. Click on the cat: sleepy stretch (`sleep-stretch` over `sleep`) and meow. | No pin. The canvas fades in over the finale spacer showing the dawn room; credits overlaid. | Footer statement, dawn poster, credits, face button. |
 
 ## 3. Technical design
 
@@ -201,7 +201,7 @@ ScrollTrigger.create({
 
 - No `scrub` smoothing: Lenis already smooths on fine pointers.
 - Dive progress map: 0–0.08 hold; 0.08–0.90 camera travel (`easeInOutCubic`); 0.55–0.80 tail flick off the screen; 0.90–1.00 dock; the phase becomes `inside` at 0.985.
-- Finale progress map: 0–0.10 undock; 0.10–0.85 pull back; dawn factor `0.55 + 0.45 * smoothstep(0.1, 0.9, p)`; credits become visible over the last 30%.
+- Finale progress map: 0–0.10 undock (the docking lerp of §3.5 run backwards, `finaleUndock`); 0.10–0.85 pull back; dawn factor `0.55 + 0.45 * smoothstep(0.1, 0.9, p)`. The credits block is absolutely positioned at the footer's bottom edge in full mode, so it rolls in from the bottom over the last stretch of the pin (about the last 30% for its height) and sits fully in view exactly at p = 1, the end of the document; a left column, so the sleeping cat stays uncovered.
 - Hero copy fades with a scrubbed tween over the first 0.45 viewport heights.
 - Set `history.scrollRestoration = 'manual'`. After the first refresh, scroll to `location.hash` if present.
 
@@ -343,7 +343,7 @@ export type Pose = {
 - `aim`: desired direction of the bone in character space (+Y up, +Z forward), resolved parent-first by shortest arc, then `twist` degrees about the bone axis.
 - `cat/rig.ts` compiles each pose once into local quaternions.
 - `cat/pose-mixer.ts` slerps between compiled poses with eased weights. An optional stepped clock (`floor(t * 12) / 12`) is a lab toggle for Gate 1.
-- Poses: `rest`, `sit`, `stretch`, `sleep`, `peek`, `reach`, `tail-up`.
+- Poses: `rest`, `sit`, `stretch`, `sleep`, `sleep-stretch`, `peek`, `reach`, `tail-up`.
 
 Procedural layers, applied after the mixer in this order:
 1. Breathing: chest pitch ±1° at 0.28 Hz.

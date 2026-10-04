@@ -204,6 +204,19 @@ otherwise the value is captured during prerendering.
   alignment check (`e2e/dive.spec.ts`), which reads screenshot pixels with
   the tiny PNG reader in `e2e/png.ts`. Lite mode never pins: the hero
   trigger pushes the camera a third of the way in and fades the layer.
+- The finale (`src/widgets/finale`, the `finale` branch of the director): the
+  footer statement is the `[data-portal]` of the finale stage. Past
+  `data-room-phase='finale'` the director undocks it with the dive's docking
+  run backwards (`finaleUndock` in `lib/camera-path.ts`) and the camera pulls
+  back to the dawn camera; the room turns to dawn through `dawnFactor`, the
+  cat sleeps, a pet plays `sleep-stretch` over `sleep` (`PET` in
+  `config/tuning.ts`). The credits block is a sibling of the stage, absolute
+  at the footer's bottom edge in full mode, so it rolls in over the last
+  stretch of the pin as a left column that leaves the cat in reach; its
+  scrim is a CSS gradient that is invisible on the ink page. The pet proxy's
+  label follows the phase from `model/room-store.ts` ("Pet the sleeping
+  cat"); the 2D face button in the finale slot is `[data-static-face]`,
+  shown only when no room will come.
 - Posters (`public/posters/room-{night,dawn}{,-portrait}.jpg`) and
   `app/apple-icon.png` are rendered from the lab with `pnpm assets:posters`;
   re-run it after any change to the room, the poses or the palette.
@@ -218,7 +231,7 @@ otherwise the value is captured during prerendering.
 - The cat must not enter the furniture. `src/features/cat-room/config/colliders.ts`
   describes the room's solids; `scene.penetration()` runs every skinned vertex
   of the posed cat through them, and `pnpm assets:shots --clip` (also part of
-  `--gate`) fails above 3 mm for `sit`, `sleep` and `stretch`. After moving
+  `--gate`) fails above 3 mm for `sit`, `sleep`, `stretch` and `sleep-stretch`. After moving
   a prop or editing a pose, run it; `--verbose` prints bone positions.
 
 ## Environment

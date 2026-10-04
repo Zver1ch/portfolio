@@ -1,5 +1,12 @@
 import { expect, type Page, type Route, test } from '@playwright/test'
-import { collectProblems, DESKTOP, gotoHydrated, heroCat } from './helpers'
+import {
+	collectProblems,
+	countMeows,
+	DESKTOP,
+	gotoHydrated,
+	heroCat,
+	meows,
+} from './helpers'
 
 /** Only the lazily loaded three.js scene chunk carries the renderer. */
 const SCENE_CHUNK_SIGNATURE = 'WebGLRenderer'
@@ -9,24 +16,6 @@ const READY_TIMEOUT = 80_000
 test.describe.configure({ mode: 'serial', timeout: 90_000 })
 
 const html = (page: Page) => page.locator('html')
-
-function countMeows(page: Page) {
-	return page.addInitScript(() => {
-		const counter = { starts: 0 }
-		Object.assign(window, { __audio: counter })
-		const start = AudioBufferSourceNode.prototype.start
-		AudioBufferSourceNode.prototype.start = function (...args) {
-			counter.starts += 1
-			return start.apply(this, args)
-		}
-	})
-}
-const meows = (page: Page) =>
-	page.evaluate(
-		() =>
-			(window as unknown as { __audio: { starts: number } }).__audio
-				.starts,
-	)
 
 /** Holds (or aborts) the three.js chunk so the page can be checked without it. */
 async function interceptSceneChunk(page: Page, mode: 'hold' | 'abort') {

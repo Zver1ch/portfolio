@@ -4,6 +4,7 @@ import {
 	getRoomState,
 	resetRoomStore,
 	roomReady,
+	setRoomPhase,
 	setRoomProgress,
 	startRoom,
 } from './room-store'
@@ -45,5 +46,15 @@ describe('room store', () => {
 			failed: true,
 			reason: 'chunk',
 		})
+	})
+
+	it('mirrors the phase the director reports, off at rest', () => {
+		expect(getRoomState().phase).toBe('off')
+		setRoomPhase('room')
+		expect(getRoomState().phase).toBe('room')
+		setRoomPhase('finale')
+		expect(getRoomState().phase).toBe('finale')
+		resetRoomStore()
+		expect(getRoomState().phase).toBe('off')
 	})
 })

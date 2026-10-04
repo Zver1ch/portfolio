@@ -341,6 +341,14 @@ test.describe('narrow viewports', () => {
 				page.getByRole('link', { name: 'Back to top' }),
 			).toBeInViewport()
 
+			// The sleeper is petted with the dawn room on screen: at the very
+			// end the credits lie over it (the lite room's proxy, or the static
+			// face button in the slot).
+			await page
+				.locator('[data-stage="finale"] [data-slot]')
+				.evaluate((node) => node.scrollIntoView({ block: 'start' }))
+			await waitForScrollToSettle(page)
+			await page.waitForTimeout(600)
 			await page
 				.getByRole('button', { name: 'Pet the sleeping cat' })
 				.click()

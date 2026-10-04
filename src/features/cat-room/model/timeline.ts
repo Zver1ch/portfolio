@@ -29,7 +29,26 @@ export function createTimeline(): Timeline {
 /** The page's one timeline; the stages and the layer share it. */
 export const timeline: Timeline = createTimeline()
 
+const touchListeners = new Set<() => void>()
+
+/**
+ * The director listens here: a scroll handler wrote the timeline, so a frame
+ * may be needed. Without it the director, idle inside the monitor, would
+ * never notice a stage's progress changing under it.
+ */
+export function onTimelineTouch(listener: () => void): () => void {
+	touchListeners.add(listener)
+	return () => {
+		touchListeners.delete(listener)
+	}
+}
+
+export function touchTimeline() {
+	for (const listener of touchListeners) listener()
+}
+
 /** Test hook. */
 export function resetTimeline() {
 	Object.assign(timeline, createTimeline())
+	touchListeners.clear()
 }

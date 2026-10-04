@@ -27,7 +27,7 @@ const OUT_DIR = 'artifacts/shots'
 const GATE_DIR = 'docs/lookdev/gate-1'
 /** Vertices of the cat inside the furniture, deeper than this, are a problem. */
 const CLIP_TOLERANCE = 0.003
-const CLIP_POSES = ['sit', 'sleep', 'stretch']
+const CLIP_POSES = ['sit', 'sleep', 'stretch', 'sleep-stretch']
 const DEFAULT_TIME = 2.4
 
 const args = process.argv.slice(2)

@@ -139,3 +139,23 @@ export function invisibleText(page: Page, selector: string) {
 		return hidden
 	})
 }
+
+/** Counts started audio sources from the first script on: the meow plays through one. */
+export function countMeows(page: Page) {
+	return page.addInitScript(() => {
+		const counter = { starts: 0 }
+		Object.assign(window, { __audio: counter })
+		const start = AudioBufferSourceNode.prototype.start
+		AudioBufferSourceNode.prototype.start = function (...args) {
+			counter.starts += 1
+			return start.apply(this, args)
+		}
+	})
+}
+
+export const meows = (page: Page) =>
+	page.evaluate(
+		() =>
+			(window as unknown as { __audio: { starts: number } }).__audio
+				.starts,
+	)

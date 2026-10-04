@@ -192,6 +192,18 @@ html[data-room-mode="static"] [data-loader-veil] {
 		display: block;
 	}
 }
+/*
+ * The credits over the dawn room (plan §3.14): a scrim that fades in from the
+ * top and is solid ink at the bottom, invisible on the ink page itself.
+ */
+[data-credits-roll] {
+	background: linear-gradient(
+		to bottom,
+		transparent,
+		color-mix(in oklch, var(--ink) 85%, transparent) 5rem,
+		var(--ink)
+	);
+}
 /* The first frame: the veil fades, the posters make way for the live room. */
 html[data-scene-ready="true"] [data-loader-veil] {
 	opacity: 0;
