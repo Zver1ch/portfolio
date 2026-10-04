@@ -331,7 +331,7 @@ Resize: the observer updates `timeline.viewport`, the renderer size and the moni
 Pose format (`config/poses.ts`, three-free data):
 
 ```ts
-export type BonePose = { rot?: Vec3; aim?: Vec3; twist?: number }
+export type BonePose = { rot?: Vec3; aim?: Vec3; aimWorld?: Vec3; twist?: number; post?: Vec3 }
 export type Pose = {
 	root?: { position: Vec3; rotation: Vec3 } // metres, degrees
 	hips?: Vec3
@@ -340,7 +340,7 @@ export type Pose = {
 ```
 
 - `rot`: local Euler XYZ offset in degrees on top of rest.
-- `aim`: desired direction of the bone in character space (+Y up, +Z forward), resolved parent-first by shortest arc, then `twist` degrees about the bone axis.
+- `aim`: desired direction of the bone in character space (+Y up, +Z forward), resolved parent-first by shortest arc, then `twist` degrees about the bone axis; `aimWorld` is the same in the placed cat's world; `post` is a local Euler offset applied last, the same thing the lab's overrides do (Gate 2, round 1).
 - `cat/rig.ts` compiles each pose once into local quaternions.
 - `cat/pose-mixer.ts` slerps between compiled poses with eased weights. An optional stepped clock (`floor(t * 12) / 12`) is a lab toggle for Gate 1.
 - Poses: `rest`, `sit`, `stretch`, `sleep`, `sleep-stretch`, `peek`, `reach`, `tail-up`.

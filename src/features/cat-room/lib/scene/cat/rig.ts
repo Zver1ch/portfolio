@@ -215,6 +215,17 @@ export class CatRig {
 						entry.twist * DEG,
 					),
 				)
+			if (entry.post)
+				local[i].multiply(
+					new Quaternion().setFromEuler(
+						new Euler(
+							entry.post[0] * DEG,
+							entry.post[1] * DEG,
+							entry.post[2] * DEG,
+							'XYZ',
+						),
+					),
+				)
 		}
 		return {
 			local,

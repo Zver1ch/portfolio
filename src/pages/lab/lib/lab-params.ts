@@ -59,6 +59,8 @@ export type LabParams = {
 	hair: boolean
 	/** Hide the cat (room look-dev). */
 	nocat: boolean
+	/** Roll of the reaching forearm, degrees (null keeps the tuning value). */
+	twist: number | null
 }
 
 const VIEWS: LabView[] = [
@@ -130,6 +132,7 @@ export function parseLabParams(search: string): LabParams {
 		lite: q.get('lite') === '1',
 		hair: q.get('hair') === '1',
 		nocat: q.get('nocat') === '1',
+		twist: num(q.get('twist')),
 	}
 }
 
@@ -185,7 +188,7 @@ export function focusPoint(
 	const [x, y, z] = CAT_SPOT.position
 	// The sleeper lies along the desk from x = 0; a seated cat's chest is a
 	// little above the spot; a standing one (rest, probes) stands on it.
-	if (pose === 'sleep') return [0.25, y + 0.12, z - 0.26]
+	if (pose === 'sleep') return [0.25, y + 0.1, z - 0.3]
 	return SEATED_POSES.has(pose) ? [x, y + 0.18, z] : [x, y + 0.31, z]
 }
 

@@ -29,6 +29,8 @@ export type DirectorFrame = {
 	overlay: OverlayPlacement | null
 	/** World point the left paw reaches for (the fish), or null. */
 	reach: Vec3 | null
+	/** Roll of the reaching forearm, degrees; the tuning value when absent (a lab override). */
+	reachTwistDeg?: number
 	/** The dropped fish: where it is, or that the paw holds it now. */
 	fish: { position: Vec3; held: boolean } | null
 	/** Quantise the animation clock to 12 steps a second (lab toggle). */

@@ -28,6 +28,12 @@ export type BonePose = {
 	aimWorld?: Vec3
 	/** Roll about the bone axis after `aim`, degrees. */
 	twist?: number
+	/**
+	 * Local Euler XYZ offset in degrees applied last, after `aim` and
+	 * `twist`: the same thing the lab's sliders and `bone/axis/deg` do, so a
+	 * value found there bakes in as it is.
+	 */
+	post?: Vec3
 }
 
 export type Pose = {
@@ -160,37 +166,49 @@ export const POSES: Record<PoseName, Pose> = {
 		},
 	},
 
+	/**
+	 * Asleep on the desk in front of the monitor (Gate 2, round 1): curled on
+	 * the left side, back to the monitor, belly to the visitor, head towards the
+	 * lamp. Written in character space, which lying on the left side maps to
+	 * the world as: +Y along the desk towards the head (+X world), +Z to the
+	 * visitor, +X down into the desk. The spine bends gently towards the
+	 * belly, so the face turns along the desk towards the dawn camera; the
+	 * forearms fold under the chin; the thighs come up towards the belly with
+	 * the shins folded back; the tail trails behind and curls round the feet.
+	 */
 	sleep: {
-		// Relative to the sitting spot: the sleeper lies along the desk from x = 0.
-		root: { position: [-0.7, 0.12, -0.26], rotation: [-75, 0, -90] },
+		root: { position: [-0.7, 0.1, -0.34], rotation: [-20, 0, -90] },
 		bones: {
-			hips: { aimWorld: [1, 0.08, 0.02] },
-			chest: { aimWorld: [1, 0.12, -0.05] },
-			neck: { aimWorld: [0.95, -0.1, -0.2] },
-			head: { aimWorld: [0.9, -0.3, -0.25], twist: 25 },
-			// Front paws stretched past the head and resting on the desk.
-			arm_l: { aimWorld: [0.7, -0.45, 0.4] },
-			elbow_l: { aimWorld: [0.95, -0.08, 0.25] },
-			wrist_l: { aimWorld: [1, 0.1, 0.15] },
-			arm_r: { aimWorld: [0.75, -0.45, -0.3] },
-			elbow_r: { aimWorld: [0.95, -0.08, -0.2] },
-			wrist_r: { aimWorld: [1, 0.1, -0.1] },
-			// Hind legs stretched the other way, slightly splayed, toes up.
-			leg_l: { aimWorld: [-0.85, 0.1, 0.45] },
-			knee_l: { aimWorld: [-0.95, 0.12, 0.3] },
-			foot_l: { aimWorld: [-0.85, 0.45, 0.3] },
-			leg_r: { aimWorld: [-0.88, 0.12, -0.3] },
-			knee_r: { aimWorld: [-0.92, 0.2, -0.25] },
-			foot_r: { aimWorld: [-0.75, 0.6, -0.3] },
-			// Tail thrown over the near thigh and down along the shin: the only
-			// room on the desk (the monitor base is behind, the keyboard in front).
-			tailroot: { aimWorld: [-0.35, 0.45, 0.8] },
-			tail: { aimWorld: [-0.8, 0.2, 0.45] },
-			tail001: { aimWorld: [-0.95, 0.05, -0.1] },
-			tail002: { aimWorld: [-0.95, 0, -0.3] },
-			tail003: { aimWorld: [-0.9, 0, -0.45] },
-			tail004: { aimWorld: [-0.85, 0, -0.5] },
-			tail005: { aimWorld: [-0.8, 0, -0.55] },
+			hips: { aim: [0, 1, 0.1] },
+			chest: { aim: [0, 0.95, 0.3] },
+			neck: { aim: [0, 0.9, 0.44] },
+			head: { aim: [0, 0.78, 0.63], post: [0, 0, 60] },
+			// Upper arms along the chest towards the chin, forearms folded in
+			// front of it, paws tucked under the chin (the `post` raise is what
+			// the lab's sliders found): the lower (left) arm on the desk, the
+			// right one over it.
+			arm_l: { aim: [0.5, 0.75, 0.45], post: [40, 0, 0] },
+			elbow_l: { aim: [0.2, 0.3, 0.93] },
+			wrist_l: { aim: [0, 0.5, 0.86] },
+			arm_r: { aim: [-0.1, 0.8, 0.6], post: [40, 0, 0] },
+			elbow_r: { aim: [0.1, 0.2, 0.97] },
+			wrist_r: { aim: [0, 0.4, 0.9] },
+			// Thighs up towards the belly, shins folded back, the right leg lying
+			// on the left one.
+			leg_l: { aim: [0.15, 0.45, 0.88] },
+			knee_l: { aim: [0.05, -0.95, 0.3] },
+			foot_l: { aim: [0, -0.8, 0.6] },
+			leg_r: { aim: [0.05, 0.45, 0.88] },
+			knee_r: { aim: [0, -0.95, 0.3] },
+			foot_r: { aim: [0, -0.8, 0.6] },
+			// The tail trails behind along the desk and curls round the feet.
+			tailroot: { aim: [0.1, -0.8, -0.6] },
+			tail: { aim: [0.1, -1, -0.1] },
+			tail001: { aim: [0.1, -0.9, 0.4] },
+			tail002: { aim: [0.1, -0.6, 0.8] },
+			tail003: { aim: [0.1, -0.2, 1] },
+			tail004: { aim: [0.05, 0.2, 0.98] },
+			tail005: { aim: [0.05, 0.5, 0.86] },
 			ear_l: { rot: [0, 0, 20] },
 			ear_r: { rot: [0, 0, -20] },
 			lefteye: { rot: [180, 0, 0] },
@@ -200,36 +218,37 @@ export const POSES: Record<PoseName, Pose> = {
 
 	/**
 	 * The pet reaction of the sleeper, played over `sleep` (same root, eyes
-	 * still shut): front paws pushed further along the desk, back arched,
-	 * hind legs straightened with the toes spread, head lifting a little,
-	 * ears up, tail curling off the shin. The jaw layer adds the yawn.
+	 * still shut): the front legs push out along the desk past the head, the
+	 * back arches, the hind legs straighten with the toes spread, the head
+	 * lifts a little, the ears come up, the tail straightens behind. The jaw
+	 * layer adds the yawn. Character space, as `sleep`.
 	 */
 	'sleep-stretch': {
-		root: { position: [-0.7, 0.12, -0.26], rotation: [-75, 0, -90] },
+		root: { position: [-0.7, 0.1, -0.34], rotation: [-20, 0, -90] },
 		bones: {
-			hips: { aimWorld: [1, 0.16, 0.02] },
-			chest: { aimWorld: [1, 0.26, -0.05] },
-			neck: { aimWorld: [0.95, 0.05, -0.2] },
-			head: { aimWorld: [0.92, -0.12, -0.3], twist: 15 },
-			arm_l: { aimWorld: [0.85, -0.3, 0.42] },
-			elbow_l: { aimWorld: [1, 0, 0.2] },
-			wrist_l: { aimWorld: [1, 0.12, 0.1] },
-			arm_r: { aimWorld: [0.88, -0.3, -0.32] },
-			elbow_r: { aimWorld: [1, 0, -0.15] },
-			wrist_r: { aimWorld: [1, 0.12, -0.05] },
-			leg_l: { aimWorld: [-0.92, 0.05, 0.4] },
-			knee_l: { aimWorld: [-0.98, 0.08, 0.2] },
-			foot_l: { aimWorld: [-0.9, 0.4, 0.2] },
-			leg_r: { aimWorld: [-0.94, 0.08, -0.3] },
-			knee_r: { aimWorld: [-0.97, 0.15, -0.2] },
-			foot_r: { aimWorld: [-0.8, 0.55, -0.25] },
-			tailroot: { aimWorld: [-0.3, 0.6, 0.7] },
-			tail: { aimWorld: [-0.7, 0.45, 0.5] },
-			tail001: { aimWorld: [-0.9, 0.3, 0.1] },
-			tail002: { aimWorld: [-0.95, 0.15, -0.2] },
-			tail003: { aimWorld: [-0.92, 0.05, -0.4] },
-			tail004: { aimWorld: [-0.88, 0, -0.48] },
-			tail005: { aimWorld: [-0.82, 0, -0.55] },
+			hips: { aim: [0, 1, -0.05] },
+			chest: { aim: [0, 0.95, -0.2] },
+			neck: { aim: [0, 0.95, 0.1] },
+			head: { aim: [0, 0.9, 0.4], post: [0, 0, 45] },
+			arm_l: { aim: [0.05, 0.95, 0.3] },
+			elbow_l: { aim: [0, 0.95, 0.3] },
+			wrist_l: { aim: [0, 0.9, 0.44] },
+			arm_r: { aim: [-0.2, 0.9, 0.4] },
+			elbow_r: { aim: [0, 0.95, 0.3] },
+			wrist_r: { aim: [0, 0.9, 0.44] },
+			leg_l: { aim: [0.05, -0.9, 0.42] },
+			knee_l: { aim: [0.05, -0.95, 0.3] },
+			foot_l: { aim: [0, -0.7, 0.7] },
+			leg_r: { aim: [-0.1, -0.85, 0.5] },
+			knee_r: { aim: [-0.05, -0.95, 0.3] },
+			foot_r: { aim: [0, -0.6, 0.8] },
+			tailroot: { aim: [0.1, -0.9, -0.4] },
+			tail: { aim: [0.1, -1, -0.1] },
+			tail001: { aim: [0.1, -1, 0.1] },
+			tail002: { aim: [0.1, -0.95, 0.3] },
+			tail003: { aim: [0.05, -0.9, 0.44] },
+			tail004: { aim: [0.05, -0.85, 0.5] },
+			tail005: { aim: [0, -0.8, 0.6] },
 			ear_l: { rot: [0, 0, 6] },
 			ear_r: { rot: [0, 0, -6] },
 			lefteye: { rot: [180, 0, 0] },
@@ -259,13 +278,18 @@ export const POSES: Record<PoseName, Pose> = {
 		},
 	},
 
-	/** Overlay gag: the left paw reaching up for the fish or the cursor. */
+	/**
+	 * Overlay gag: the left paw reaching up for the fish or the cursor. The
+	 * arm itself is placed by the IK; the wrist's flex (`post`) curls the paw
+	 * towards the head so the pads face it, and `GAGS.fish.pawTwistDeg` rolls
+	 * the forearm so that curl faces the visitor.
+	 */
 	reach: {
 		bones: {
 			chest: { aim: [0.15, 0.95, 0.15] },
 			arm_l: { aim: [0.3, 0.9, 0.3] },
 			elbow_l: { aim: [0.1, 0.95, 0.25] },
-			wrist_l: { aim: [0, 0.9, 0.4] },
+			wrist_l: { aim: [0, 0.9, 0.4], post: [70, 0, 0] },
 			arm_r: { aim: [-0.3, -0.9, 0.3] },
 			elbow_r: { aim: [-0.1, -0.6, 0.8] },
 		},

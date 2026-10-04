@@ -192,6 +192,18 @@ html[data-room-mode="static"] [data-loader-veil] {
 		display: block;
 	}
 }
+/* The typing line's caret blinks like a prompt waiting for input; it holds while the paw types. */
+@media (prefers-reduced-motion: no-preference) {
+	[data-typing-line]:not([data-busy])::after {
+		animation: caret-blink 1.1s steps(1, end) infinite;
+	}
+}
+@keyframes caret-blink {
+	50% {
+		opacity: 0;
+	}
+}
+
 /*
  * The credits over the dawn room (plan §3.14): a scrim that fades in from the
  * top and is solid ink at the bottom, invisible on the ink page itself.

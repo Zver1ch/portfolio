@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { PoseName } from '@/features/cat-room/config/poses'
+import { CAT_SPOT } from '@/features/cat-room/config/room-layout'
 import { GAGS, OVERLAY } from '@/features/cat-room/config/tuning'
 import {
 	cameraAt,
@@ -94,6 +95,12 @@ function frameFor(
 	} else if (params.cam === 'hero') {
 		camera = cameraAt('dive', 0, aspect)
 	}
+	// A turntable `reach` gets a fish-height target too, so the close cameras
+	// show the IK'd paw (the overlay sets its own above).
+	if (!reach && basePose(params) === 'reach') {
+		const [sx, sy, sz] = CAT_SPOT.position
+		reach = [sx + 0.1, sy + 0.95, sz + 0.2]
+	}
 	return {
 		phase: view === 'finale' ? 'finale' : 'room',
 		camera,
@@ -110,6 +117,7 @@ function frameFor(
 		cut: false,
 		overlay,
 		reach,
+		reachTwistDeg: params.twist ?? undefined,
 		fish,
 		stepped: params.stepped,
 	}

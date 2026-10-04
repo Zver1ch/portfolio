@@ -26,6 +26,8 @@ export function TypingLine({
 	const line = useRef<HTMLSpanElement>(null)
 	const { entered } = useInView(line, '0px')
 	const [shown, setShown] = useState(text)
+	// The caret blinks while nothing happens and holds steady while the paw types.
+	const [busy, setBusy] = useState(false)
 
 	useEffect(() => {
 		if (!entered) return
@@ -36,6 +38,7 @@ export function TypingLine({
 			let length = text.length
 			let phase: 'erase' | 'type' = 'erase'
 			const step = () => {
+				setBusy(true)
 				if (phase === 'erase') {
 					length -= 1
 					setShown(text.slice(0, length))
@@ -51,6 +54,7 @@ export function TypingLine({
 						step,
 						TYPE_MS + Math.random() * TYPE_JITTER_MS,
 					)
+				else setBusy(false)
 			}
 			timer = window.setTimeout(step, 400)
 		}
@@ -60,6 +64,7 @@ export function TypingLine({
 			window.clearTimeout(timer)
 			window.removeEventListener('cat-typing', run)
 			setShown(text)
+			setBusy(false)
 		}
 	}, [entered, text])
 
@@ -67,6 +72,7 @@ export function TypingLine({
 		<span
 			ref={line}
 			data-typing-line
+			data-busy={busy ? '' : undefined}
 			aria-hidden
 			className={cn(
 				'inline-block min-w-[10ch] text-right font-mono tracking-normal normal-case after:ml-px after:inline-block after:h-[1em] after:w-[0.5ch] after:translate-y-[0.15em] after:bg-rose/80 after:content-[""]',

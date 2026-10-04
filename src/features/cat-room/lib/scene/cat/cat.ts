@@ -4,7 +4,7 @@ import type { Vec3 } from '@/shared/lib/math/vec3'
 import type { Collider } from '../../../config/colliders'
 import { POSES, type PoseName } from '../../../config/poses'
 import { CAT_SPOT } from '../../../config/room-layout'
-import { CHAINS, EYELIDS, PET } from '../../../config/tuning'
+import { CHAINS, EYELIDS, GAGS, PET } from '../../../config/tuning'
 import type { DirectorFrame } from '../../../model/frame'
 import { tailFlick } from '../../camera-path'
 import { patchMaterial, type SceneUniforms } from '../materials'
@@ -232,6 +232,7 @@ export async function createCat({
 				[target.x, target.y, target.z],
 				[0, 0.4, 1],
 				model.scale,
+				frame.reachTwistDeg ?? GAGS.fish.pawTwistDeg,
 			)
 		}
 

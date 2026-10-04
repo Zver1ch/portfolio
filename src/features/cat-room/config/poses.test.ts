@@ -28,6 +28,8 @@ describe('poses', () => {
 				...Object.values(pose.bones).flatMap((bone) => [
 					...(bone.rot ?? []),
 					...(bone.aim ?? []),
+					...(bone.aimWorld ?? []),
+					...(bone.post ?? []),
 					bone.twist ?? 0,
 				]),
 			]

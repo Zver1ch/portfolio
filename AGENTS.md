@@ -170,9 +170,14 @@ otherwise the value is captured during prerendering.
   and the licence rules are in `assets/models/README.md`.
 - Poses are data in `src/features/cat-room/config/poses.ts`: `aim` directions
   in character space (+Y up, +Z forward, +X the cat's left), `aimWorld` the
-  same in the placed cat's world (after `root.rotation`; lying poses are
-  written this way), `rot` local Euler degrees. `popka*` and `shoulder_*`
-  bones are never animated.
+  same in the placed cat's world (after `root.rotation`), `rot` local Euler
+  degrees, `twist` a roll about the bone after `aim`, `post` a local Euler
+  offset applied last (exactly what the lab's `bone/axis/deg` and sliders do,
+  so a value found there bakes in as it is). `popka*` and `shoulder_*` bones
+  are never animated. The arm IK (`lib/scene/cat/limb-ik.ts`) aims the upper
+  arm and the forearm by shortest arc, which leaves the forearm's roll
+  arbitrary: its `twistDeg` rolls it afterwards, and the wrist's own `post`
+  in the pose decides how the paw curls.
 - The model has no eyelids. The sleep pose rolls the eye bones 180° and
   `lib/scene/cat/eyelids.ts` turns that roll into `uEyesClosed`, which
   collapses the pupils and the black eye outlines (a `sleepShift` vertex

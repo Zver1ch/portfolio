@@ -165,5 +165,11 @@ export const GAGS = {
 		sink: 0.5,
 		show: 0.2,
 		xRange: [0.12, 0.88] as const,
+		/**
+		 * Roll of the reaching forearm about its axis, degrees: with the
+		 * wrist's flex in the `reach` pose the pads face the head and the
+		 * visitor, like a hook, instead of the sky.
+		 */
+		pawTwistDeg: -90,
 	},
 } as const
