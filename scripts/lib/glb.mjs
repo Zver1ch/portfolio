@@ -445,3 +445,108 @@ export function scaleAccessorInPlace(glb, accessorIndex, factor) {
 	if (accessor.max) accessor.max = accessor.max.map((v) => v * factor)
 	if (factor < 0) [accessor.min, accessor.max] = [accessor.max, accessor.min]
 }
+
+/**
+ * Rewrites an uncompressed float VEC3 accessor in place through `map`,
+ * which receives `[x, y, z]` and the vertex index and returns the new triple.
+ * @param {Glb} glb
+ * @param {number} accessorIndex
+ * @param {(xyz: [number, number, number], index: number) => [number, number, number]} map
+ */
+export function mapAccessorInPlace(glb, accessorIndex, map) {
+	const { json, bin } = glb
+	const accessor = json.accessors[accessorIndex]
+	if (accessor.componentType !== 5126 || accessor.type !== 'VEC3')
+		throw new Error(`Accessor ${accessorIndex} is not a float VEC3`)
+	if (isCompressedAccessor(json, accessorIndex) || !bin)
+		throw new Error(
+			`Accessor ${accessorIndex} cannot be rewritten in place`,
+		)
+	const bufferView = json.bufferViews[accessor.bufferView]
+	const start =
+		bin.byteOffset +
+		(bufferView.byteOffset ?? 0) +
+		(accessor.byteOffset ?? 0)
+	const stride = bufferView.byteStride ?? 12
+	const view = new DataView(bin.buffer)
+	const min = [Infinity, Infinity, Infinity]
+	const max = [-Infinity, -Infinity, -Infinity]
+	for (let i = 0; i < accessor.count; i++) {
+		const offset = start + i * stride
+		const next = map(
+			[
+				view.getFloat32(offset, true),
+				view.getFloat32(offset + 4, true),
+				view.getFloat32(offset + 8, true),
+			],
+			i,
+		)
+		for (let c = 0; c < 3; c++) {
+			view.setFloat32(offset + c * 4, next[c], true)
+			min[c] = Math.min(min[c], next[c])
+			max[c] = Math.max(max[c], next[c])
+		}
+	}
+	if (accessor.min) accessor.min = min
+	if (accessor.max) accessor.max = max
+}
+
+/**
+ * Inverse of a column-major 4×4 matrix; throws when singular.
+ * @param {ArrayLike<number>} m
+ * @returns {number[]}
+ */
+export function invertMatrix4(m) {
+	const [
+		a00,
+		a01,
+		a02,
+		a03,
+		a10,
+		a11,
+		a12,
+		a13,
+		a20,
+		a21,
+		a22,
+		a23,
+		a30,
+		a31,
+		a32,
+		a33,
+	] = Array.from(m)
+	const b00 = a00 * a11 - a01 * a10
+	const b01 = a00 * a12 - a02 * a10
+	const b02 = a00 * a13 - a03 * a10
+	const b03 = a01 * a12 - a02 * a11
+	const b04 = a01 * a13 - a03 * a11
+	const b05 = a02 * a13 - a03 * a12
+	const b06 = a20 * a31 - a21 * a30
+	const b07 = a20 * a32 - a22 * a30
+	const b08 = a20 * a33 - a23 * a30
+	const b09 = a21 * a32 - a22 * a31
+	const b10 = a21 * a33 - a23 * a31
+	const b11 = a22 * a33 - a23 * a32
+	const det =
+		b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06
+	if (!det) throw new Error('Matrix is singular')
+	const d = 1 / det
+	return [
+		(a11 * b11 - a12 * b10 + a13 * b09) * d,
+		(a02 * b10 - a01 * b11 - a03 * b09) * d,
+		(a31 * b05 - a32 * b04 + a33 * b03) * d,
+		(a22 * b04 - a21 * b05 - a23 * b03) * d,
+		(a12 * b08 - a10 * b11 - a13 * b07) * d,
+		(a00 * b11 - a02 * b08 + a03 * b07) * d,
+		(a32 * b02 - a30 * b05 - a33 * b01) * d,
+		(a20 * b05 - a22 * b02 + a23 * b01) * d,
+		(a10 * b10 - a11 * b08 + a13 * b06) * d,
+		(a01 * b08 - a00 * b10 - a03 * b06) * d,
+		(a30 * b04 - a31 * b02 + a33 * b00) * d,
+		(a21 * b02 - a20 * b04 - a23 * b00) * d,
+		(a11 * b07 - a10 * b09 - a12 * b06) * d,
+		(a00 * b09 - a01 * b07 + a02 * b06) * d,
+		(a31 * b01 - a30 * b03 - a32 * b00) * d,
+		(a20 * b03 - a21 * b01 + a22 * b00) * d,
+	]
+}

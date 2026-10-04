@@ -1,5 +1,3 @@
-import type { Vec3 } from '@/shared/lib/math/vec3'
-
 /** Animation and rendering constants (plan §3.6 and §3.8). */
 
 /** The cat's rest-pose height after normalisation, metres. */
@@ -8,8 +6,9 @@ export const CAT_REST_HEIGHT = 0.62
 export const BREATHING = { hz: 0.28, pitchDeg: 1 } as const
 
 export const LOOK_AT = {
-	yawDeg: 50,
-	pitchDeg: 25,
+	/** Small turns: the head lies on a paw and must not lift off it. */
+	yawDeg: 35,
+	pitchDeg: 12,
 	neckShare: 0.35,
 	headShare: 0.65,
 	/** Exponential damping rate, 1/s. */
@@ -74,16 +73,6 @@ export const CHAINS = {
 	ear: { stiffness: 320, inertia: 0.85, gravity: 0, maxBendDeg: 14 },
 	hair: { stiffness: 260, inertia: 0.86, gravity: 0.3, maxBendDeg: 18 },
 } as const satisfies Record<string, ChainParams | number>
-
-/** Shading variant B: two-step tone from the flat normal against a key light. */
-export const SHADING = {
-	keyDirection: [-0.4, 0.75, 0.55] as Vec3,
-	lit: 1,
-	mid: 0.86,
-	shade: 0.72,
-	litAbove: 0.3,
-	shadeBelow: -0.15,
-} as const
 
 /** Face tones baked into the room geometry from each face's normal. */
 export const ROOM_TONES = { top: 1, front: 0.9, side: 0.8, away: 0.68 } as const

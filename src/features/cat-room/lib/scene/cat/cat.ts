@@ -11,7 +11,7 @@ import type { Collider } from '../../../config/colliders'
 import { POSES, type PoseName } from '../../../config/poses'
 import { CAT_SPOT } from '../../../config/room-layout'
 import { CHAINS, EYELIDS } from '../../../config/tuning'
-import type { DirectorFrame, ShadingVariant } from '../../../model/frame'
+import type { DirectorFrame } from '../../../model/frame'
 import { tailFlick } from '../../camera-path'
 import { patchMaterial, type SceneUniforms } from '../materials'
 import { SpringChains } from './chains'
@@ -38,7 +38,6 @@ export type SceneEvent =
 export type CatActorOptions = {
 	url: string
 	uniforms: SceneUniforms
-	shading: ShadingVariant
 	spot?: Vec3
 	/** Hair tufts on springs (optional per plan §7, off by default). */
 	hairSprings?: boolean
@@ -109,13 +108,12 @@ const HEAD_KEYS = [
 export async function createCat({
 	url,
 	uniforms,
-	shading,
 	spot = CAT_SPOT.position,
 	hairSprings = false,
 	onProgress,
 }: CatActorOptions): Promise<CatActor> {
 	const model = await loadCat(url, onProgress)
-	const patch = { uniforms, tone: shading === 'b', dawnTint: true }
+	const patch = { uniforms, dawnTint: true }
 	for (const material of model.materials) patchMaterial(material, patch)
 
 	const rig = new CatRig(model)

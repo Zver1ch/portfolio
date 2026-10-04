@@ -70,7 +70,7 @@ export type PoseName =
  */
 
 const LYING_ROOT = {
-	position: [0, 0.08, 0] as Vec3,
+	position: [0, 0.075, 0] as Vec3,
 	rotation: [0, 0, -90] as Vec3,
 }
 
@@ -86,28 +86,30 @@ export const POSES: Record<PoseName, Pose> = {
 	lounge: {
 		root: LYING_ROOT,
 		bones: {
-			// Torso flat along the desk, the chest lifting a little towards the visitor.
+			// Torso flat along the desk, the chest lifting a little towards the
+			// visitor; neck and head stay low so the cheek rests on the folded paw.
 			hips: { aim: [0.05, 1, 0.1] },
 			chest: { aim: [-0.25, 0.95, 0.15] },
-			neck: { aim: [-0.65, 0.7, 0.2] },
-			head: { aim: [-0.8, 0.55, -0.25] },
-			// Lower (left) arm: upper arm forward and down, forearm up, cheek on the paw.
-			arm_l: { aimWorld: [0.3, -0.02, 0.95] },
-			elbow_l: { aim: [-0.9, 0.35, 0.25] },
-			wrist_l: { aim: [-0.8, 0.5, 0.3] },
+			neck: { aim: [-0.5, 0.8, 0.2] },
+			head: { aim: [-0.4, 0.85, -0.25] },
+			// Lower (left) arm folded on the desk: upper arm forward, forearm back
+			// under the chin, so the cheek rests on the paw.
+			arm_l: { aimWorld: [0.2, 0, 0.95] },
+			elbow_l: { aimWorld: [0.75, 0.32, -0.6] },
+			wrist_l: { aimWorld: [0.8, 0.3, -0.5] },
 			// Upper (right) arm reaches over to the keyboard in front.
 			arm_r: { aimWorld: [-0.1, -0.45, 0.88] },
-			elbow_r: { aimWorld: [0, -0.02, 1] },
-			wrist_r: { aimWorld: [0, 0.08, 1] },
-			// Knees drawn forward and stacked, bent about 90°: thighs towards the
-			// visitor and down the body, shins back and further down, never
-			// folded into the thighs.
-			leg_l: { aimWorld: [-0.5, 0.05, 0.87] },
-			knee_l: { aimWorld: [-0.8, 0.02, -0.55] },
-			foot_l: { aimWorld: [-0.95, 0.1, -0.3] },
-			leg_r: { aimWorld: [-0.45, 0.04, 0.88] },
-			knee_r: { aimWorld: [-0.78, 0.02, -0.6] },
-			foot_r: { aimWorld: [-0.92, 0.2, -0.3] },
+			elbow_r: { aimWorld: [0, 0.03, 1] },
+			wrist_r: { aimWorld: [0, 0.18, 1] },
+			// Hind legs stacked and trailing: thighs angled forward, shins back
+			// with an easy bend (about 40°) so the knees read as knees and the
+			// stockings stay on them.
+			leg_l: { aimWorld: [-0.75, 0.16, 0.65] },
+			knee_l: { aimWorld: [-0.95, 0.05, 0.05] },
+			foot_l: { aimWorld: [-0.9, 0.1, -0.2] },
+			leg_r: { aimWorld: [-0.7, 0.05, 0.7] },
+			knee_r: { aimWorld: [-0.95, 0.05, 0.1] },
+			foot_r: { aimWorld: [-0.9, 0.15, -0.15] },
 			// Tail clears the back, then rises in front of the screen (world up is character -X).
 			tailroot: { aim: [-0.6, -0.15, -0.78] },
 			tail: { aim: [-0.97, -0.1, -0.2] },
@@ -133,7 +135,7 @@ export const POSES: Record<PoseName, Pose> = {
 			arm_r: { aim: [-0.25, 0.85, 0.45] },
 			elbow_r: { aim: [-0.35, 0.9, 0.25] },
 			wrist_r: { aim: [-0.4, 0.9, 0.2] },
-			leg_l: { aimWorld: [-0.9, 0.06, 0.4] },
+			leg_l: { aimWorld: [-0.9, 0.16, 0.4] },
 			knee_l: { aimWorld: [-1, 0.03, -0.1] },
 			foot_l: { aimWorld: [-0.6, 0.05, -0.78] },
 			leg_r: { aim: [-0.05, -0.92, 0.38] },

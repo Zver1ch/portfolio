@@ -130,7 +130,6 @@ export function LabPage() {
 				width,
 				height,
 				dpr,
-				shading: params.shading,
 				fakeScreen: true,
 				modelUrl: modelUrl(params.model),
 				cat: !params.nocat,
@@ -268,7 +267,7 @@ export function LabPage() {
 			let last = performance.now()
 			let first = true
 			const loop = (now: number) => {
-				const dt = Math.min((now - last) / 1000, 0.1)
+				const dt = params.dt ?? Math.min((now - last) / 1000, 0.1)
 				last = now
 				const time = advance(clock, dt)
 				present(time, dt)

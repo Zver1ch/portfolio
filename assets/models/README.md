@@ -35,12 +35,23 @@ it; ship only the render.
 `public/models/cat.glb`, the only model file the site serves:
 
 ```
-dedup → prune → fix-model-space → meshopt --level medium --quantization-volume scene --quantize-position 16
+dedup → prune → fix-model-space → tuck-stockings → meshopt --level medium --quantization-volume scene --quantize-position 16
 ```
 
 - `dedup`, `prune` and `meshopt` are one-off runs of
   `pnpm dlx @gltf-transform/cli@4.5.1`. Never `optimize`, `join`, `flatten`,
   `simplify`, `palette` or `weld`: they can alter the rig or the authored look.
+- `tuck-stockings` (`scripts/tuck-stockings.mjs`) pulls the body vertices
+  under the stockings 30% towards each leg's axis. The stockings are a
+  separate skinned mesh with rings 5–6 cm apart; on a bent knee they cut the
+  corner with a straight chord while the denser white leg follows the arc,
+  and a white kneecap pokes through. The covered leg is never visible, so
+  thinning it changes nothing at rest and keeps it inside the stocking when
+  bent. The band is the stocking's vertical extent minus 2 cm at each edge,
+  within 12 cm of the hip-to-ankle axis; 1,000 of the 9,249 body vertices
+  move. Bind-space units come from the hip-to-ankle distance measured in
+  both spaces (13,572 per metre): the bind matrices carry a non-uniform
+  scale, so their columns cannot be used for that.
 - `prune` drops `NORMAL` and `TEXCOORD_0`: every material is unlit and
   untextured, so neither is read. Shading variants that want normals derive
   flat ones from screen-space derivatives in the fragment shader.

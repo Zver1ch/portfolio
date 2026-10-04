@@ -88,12 +88,14 @@ export class SpringChains {
 			CHAINS.subStep * CHAINS.maxSubSteps,
 		)
 		const steps = Math.floor(this.accumulator / CHAINS.subStep)
-		if (steps === 0) return
 		this.accumulator -= steps * CHAINS.subStep
-		for (const chain of this.chains) this.updateChain(chain, steps)
+		// Render between the last two sub-steps: whole steps per frame would
+		// otherwise make the motion stutter at 60 Hz and skip frames at 144 Hz.
+		const alpha = this.accumulator / CHAINS.subStep
+		for (const chain of this.chains) this.updateChain(chain, steps, alpha)
 	}
 
-	private updateChain(chain: Chain, steps: number) {
+	private updateChain(chain: Chain, steps: number, alpha: number) {
 		const { params } = chain
 		const h = CHAINS.subStep
 		for (let k = 0; k < chain.bones.length; k++) {
@@ -156,7 +158,8 @@ export class SpringChains {
 					chain.floor !== undefined &&
 					particle.position.y < chain.floor
 				) {
-					// Slide along the floor: keep the length, lift the tip.
+					// Rest on the floor: keep the length, lift the tip, and drop
+					// the vertical velocity so the contact does not bounce.
 					particle.position.y = chain.floor
 					const flat = particle.position.clone().sub(head)
 					if (flat.lengthSq() > 1e-12)
@@ -167,12 +170,13 @@ export class SpringChains {
 						particle.position.y,
 						chain.floor,
 					)
+					particle.previous.y = particle.position.y
 				}
 			}
-			const actualDirection = particle.position
+			const rendered = particle.previous
 				.clone()
-				.sub(head)
-				.normalize()
+				.lerp(particle.position, steps > 0 ? alpha : 1)
+			const actualDirection = rendered.sub(head).normalize()
 			const rotation = new Quaternion().setFromUnitVectors(
 				posedDirection,
 				actualDirection,

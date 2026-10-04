@@ -100,12 +100,16 @@ export const WINDOW = {
 	moon: { center: [-0.27, 1.49] as const, radius: 0.08 },
 } as const
 
-/** A pair of socks on the floor in front of the desk, paw prints up. */
+/**
+ * A pair of socks on the floor in front of the desk, paw prints up. The
+ * portrait hero camera sees only a 12 cm strip of floor between the desk's
+ * front edge and the bottom of the frame, so they lie along that strip.
+ */
 export const SOCKS = {
-	center: [0.02, ROOM.floorY, -0.48] as Vec3,
+	center: [0.5, ROOM.floorY, -0.7] as Vec3,
 	size: [0.09, 0.05, 0.2] as Vec3,
 	gap: 0.05,
-	yawDeg: 24,
+	yawDeg: 78,
 } as const
 
 /** Where the cat's feet-origin sits on the desk (character space origin). */

@@ -155,8 +155,9 @@ otherwise the value is captured during prerendering.
   portal maths, poses) is three-free tuple maths in `src/shared/lib/math`.
 - `public/models/cat.glb` is the only model the site serves. Rebuild it with
   `pnpm assets:model` (glTF Transform dedup → prune → `fix-model-space` →
-  meshopt; never the `optimize` preset), then `pnpm assets:inspect --write-rig`
-  to refresh `src/features/cat-room/config/cat-rig.gen.ts`. `pnpm assets:check`
+  `tuck-stockings` → meshopt; never the `optimize` preset), then
+  `pnpm assets:inspect --write-rig` to refresh
+  `src/features/cat-room/config/cat-rig.gen.ts`. `pnpm assets:check`
   (in `verify` and CI) fails on a stale rig file, on any other `.glb`/`.gltf`/
   `.bin` under `public/`, and on any copy of a source model there. Model facts
   and the licence rules are in `assets/models/README.md`.

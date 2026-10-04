@@ -4,8 +4,8 @@
 /** The shipped model: byte size for load progress, digest for the cache-busting URL. */
 export const CAT_GLB = {
 	url: '/models/cat.glb',
-	bytes: 190776,
-	sha256: 'f46ff775ffb50d05',
+	bytes: 190796,
+	sha256: 'c222f9bf3656766a',
 } as const
 
 /** Bones in skin order: `skeleton.bones[i]` is `CAT_RIG_BONES[i]`. */

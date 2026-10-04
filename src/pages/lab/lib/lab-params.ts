@@ -5,7 +5,6 @@ import {
 	LAMP,
 	STICKER,
 } from '@/features/cat-room/config/room-layout'
-import type { ShadingVariant } from '@/features/cat-room/model/frame'
 import { clamp, DEG } from '@/shared/lib/math/ease'
 import type { CameraPose } from '@/shared/lib/math/projection'
 import type { Vec3 } from '@/shared/lib/math/vec3'
@@ -39,8 +38,9 @@ export type LabParams = {
 	pose: PoseName | null
 	/** Animation time for a deterministic still; null runs the live loop. */
 	t: number | null
-	shading: ShadingVariant
 	stepped: boolean
+	/** Fixed frame step for the live loop, seconds; null uses the real frame time. */
+	dt: number | null
 	bone: string | null
 	axis: 'x' | 'y' | 'z'
 	deg: number
@@ -106,8 +106,8 @@ export function parseLabParams(search: string): LabParams {
 		dawn: num(q.get('dawn')),
 		pose: pose && pose in POSES ? (pose as PoseName) : null,
 		t: num(q.get('t')),
-		shading: pick(q.get('shading'), ['a', 'b'] as const, 'a'),
 		stepped: q.get('stepped') === '1',
+		dt: num(q.get('dt')),
 		bone: q.get('bone'),
 		axis: pick(q.get('axis'), ['x', 'y', 'z'] as const, 'x'),
 		deg: num(q.get('deg')) ?? 30,

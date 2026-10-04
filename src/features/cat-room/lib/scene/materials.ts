@@ -8,7 +8,6 @@ import {
 	ShaderMaterial,
 	SRGBColorSpace,
 } from 'three'
-import { SHADING } from '../../config/tuning'
 
 /**
  * The palette of `app/globals.css`, mirrored for the scene. Room colours are
@@ -69,20 +68,12 @@ export type SceneUniforms = {
 	uDawn: IUniform<number>
 	/** 0 awake … 1 asleep: drives the cat's eye outlines and lids (`cat/eyelids.ts`). */
 	uEyesClosed: IUniform<number>
-	uKeyDir: IUniform<[number, number, number]>
-	uToneSteps: IUniform<[number, number]>
-	uToneLevels: IUniform<[number, number]>
 }
 
 export function createSceneUniforms(): SceneUniforms {
 	return {
 		uDawn: { value: 0 },
 		uEyesClosed: { value: 0 },
-		uKeyDir: {
-			value: [...SHADING.keyDirection] as [number, number, number],
-		},
-		uToneSteps: { value: [SHADING.litAbove, SHADING.shadeBelow] },
-		uToneLevels: { value: [SHADING.mid, SHADING.shade] },
 	}
 }
 
@@ -90,8 +81,6 @@ export type PatchOptions = {
 	uniforms: SceneUniforms
 	/** The geometry carries a `colorDawn` attribute (vec3, or vec4 with alpha). */
 	dawnAttribute?: 'vec3' | 'vec4'
-	/** Multiply by a two-step tone from the flat normal (shading variant B). */
-	tone?: boolean
 	/** Warm the colour towards dawn (the cat has no `colorDawn` attribute). */
 	dawnTint?: boolean
 	/**
@@ -102,32 +91,19 @@ export type PatchOptions = {
 	sleepShift?: boolean
 }
 
-const TONE_VERTEX = /* glsl */ `
-	vWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
-`
-
-const TONE_FRAGMENT = /* glsl */ `
-	{
-		// Flat normal of the visible side, from screen-space derivatives:
-		// no NORMAL attribute needed, and double-sided faces tone correctly.
-		vec3 flatNormal = normalize(cross(dFdx(vWorldPos), dFdy(vWorldPos)));
-		float key = dot(flatNormal, normalize(uKeyDir));
-		float tone = key > uToneSteps.x ? 1.0 : (key > uToneSteps.y ? uToneLevels.x : uToneLevels.y);
-		diffuseColor.rgb *= tone;
-	}
-`
-
 const DAWN_TINT_FRAGMENT = /* glsl */ `
 	diffuseColor.rgb *= mix(vec3(1.0), vec3(1.0, 0.95, 0.9), uDawn);
 `
 
 /**
  * Hooks the scene uniforms into a built-in material: the night/dawn vertex
- * colour mix, the flat two-step tone of shading variant B, the dawn tint.
+ * colour mix, the dawn tint, the eye-outline collapse. (Shading variant B,
+ * a two-step tone from derivative normals, was dropped at Gate 1: the
+ * authored unlit colours stay flat.)
  */
 export function patchMaterial<T extends Material>(
 	material: T,
-	{ uniforms, dawnAttribute, tone, dawnTint, sleepShift }: PatchOptions,
+	{ uniforms, dawnAttribute, dawnTint, sleepShift }: PatchOptions,
 ): T {
 	material.onBeforeCompile = (shader) => {
 		Object.assign(shader.uniforms, uniforms)
@@ -143,23 +119,6 @@ export function patchMaterial<T extends Material>(
 				dawnAttribute === 'vec4'
 					? 'vColor = mix(color, colorDawn, uDawn);'
 					: 'vColor = vec4(mix(color, colorDawn, uDawn), 1.0);',
-			)
-		}
-		if (tone) {
-			vertexHead.push('varying vec3 vWorldPos;')
-			fragmentHead.push(
-				'varying vec3 vWorldPos;',
-				'uniform vec3 uKeyDir;',
-				'uniform vec2 uToneSteps;',
-				'uniform vec2 uToneLevels;',
-			)
-			vertex = vertex.replace(
-				'#include <project_vertex>',
-				`#include <project_vertex>\n${TONE_VERTEX}`,
-			)
-			fragment = fragment.replace(
-				'#include <color_fragment>',
-				`#include <color_fragment>\n${TONE_FRAGMENT}`,
 			)
 		}
 		if (dawnTint)
@@ -181,12 +140,12 @@ export function patchMaterial<T extends Material>(
 		shader.fragmentShader = `${fragmentHead.join('\n')}\n${fragment}`
 	}
 	material.customProgramCacheKey = () =>
-		`cat-room:${dawnAttribute ?? ''}:${tone ? 'tone' : ''}:${dawnTint ? 'tint' : ''}:${sleepShift ? 'shift' : ''}`
+		`cat-room:${dawnAttribute ?? ''}:${dawnTint ? 'tint' : ''}:${sleepShift ? 'shift' : ''}`
 	return material
 }
 
 /** The merged static room: vertex colours, night and dawn. */
-export function createRoomMaterial(uniforms: SceneUniforms, tone: boolean) {
+export function createRoomMaterial(uniforms: SceneUniforms) {
 	// Double-sided: the painted room is a thousand triangles, and large
 	// single quads (walls, the sky, light pools) must show whatever their winding.
 	return patchMaterial(
@@ -194,7 +153,6 @@ export function createRoomMaterial(uniforms: SceneUniforms, tone: boolean) {
 		{
 			uniforms,
 			dawnAttribute: 'vec3',
-			tone,
 		},
 	)
 }

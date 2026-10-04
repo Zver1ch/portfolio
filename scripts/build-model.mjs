@@ -1,7 +1,7 @@
 /**
  * Builds `public/models/cat.glb` from the source avatar (plan §5):
  *
- *   dedup → prune → fix-model-space → meshopt
+ *   dedup → prune → fix-model-space → tuck-stockings → meshopt
  *
  * Intermediate files land in `artifacts/model/` (git-ignored); the output is
  * committed. Only `dedup`, `prune` and `meshopt` of glTF Transform run: the
@@ -45,12 +45,20 @@ const steps = [
 		],
 	],
 	[
+		process.execPath,
+		[
+			'scripts/tuck-stockings.mjs',
+			`${OUT_DIR}/3-space.glb`,
+			`${OUT_DIR}/4-tucked.glb`,
+		],
+	],
+	[
 		'pnpm',
 		[
 			'dlx',
 			CLI,
 			'meshopt',
-			`${OUT_DIR}/3-space.glb`,
+			`${OUT_DIR}/4-tucked.glb`,
 			OUTPUT,
 			'--level',
 			'medium',

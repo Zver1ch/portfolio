@@ -336,14 +336,8 @@ async function gatePackage() {
 			1000,
 		],
 		[
-			'shading-a.png',
-			'view=turntable&cam=quarter&pose=lounge&shading=a',
-			1600,
-			1000,
-		],
-		[
-			'shading-b.png',
-			'view=turntable&cam=quarter&pose=lounge&shading=b',
+			'cat-quarter.png',
+			'view=turntable&cam=quarter&pose=lounge',
 			1600,
 			1000,
 		],

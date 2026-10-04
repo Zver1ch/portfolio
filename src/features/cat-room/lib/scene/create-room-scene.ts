@@ -2,7 +2,7 @@ import { Mesh, PerspectiveCamera, Scene, type WebGLRenderer } from 'three'
 import type { CameraPose } from '@/shared/lib/math/projection'
 import { CAMERA_FAR, CAMERA_NEAR } from '../../config/camera-tracks'
 import { roomColliders } from '../../config/colliders'
-import type { DirectorFrame, ShadingVariant } from '../../model/frame'
+import type { DirectorFrame } from '../../model/frame'
 import { screenWidth } from '../screen-quad'
 import {
 	type CatActor,
@@ -26,7 +26,6 @@ export type RoomSceneOptions = {
 	width: number
 	height: number
 	dpr: number
-	shading: ShadingVariant
 	/** Painted screen instead of the DOM hole (lite mode, posters, lab). */
 	fakeScreen: boolean
 	/** Where the cat's GLB comes from; the lab swaps in the source model. */
@@ -66,7 +65,7 @@ export type RoomScene = {
 export async function createRoomScene(
 	options: RoomSceneOptions,
 ): Promise<RoomScene> {
-	const { canvas, shading, fakeScreen, modelUrl, onProgress } = options
+	const { canvas, fakeScreen, modelUrl, onProgress } = options
 	let { width, height } = options
 	const renderer = createRenderer(canvas, { width, height, dpr: options.dpr })
 	const scene = new Scene()
@@ -78,7 +77,7 @@ export async function createRoomScene(
 	)
 	const uniforms = createSceneUniforms()
 
-	const roomMaterial = createRoomMaterial(uniforms, shading === 'b')
+	const roomMaterial = createRoomMaterial(uniforms)
 	const glowMaterial = createGlowMaterial(uniforms)
 	const room = buildRoom()
 	const roomMesh = new Mesh(room.opaque, roomMaterial)
@@ -98,7 +97,6 @@ export async function createRoomScene(
 		cat = await createCat({
 			url: modelUrl,
 			uniforms,
-			shading,
 			hairSprings: options.hairSprings,
 			onProgress: (fraction) => onProgress?.(0.15 + fraction * 0.75),
 		})

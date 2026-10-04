@@ -4,8 +4,6 @@ import type { PoseName } from '../config/poses'
 
 export type Phase = 'room' | 'inside' | 'finale' | 'off'
 
-export type ShadingVariant = 'a' | 'b'
-
 /** Everything the scene needs for one frame; written by the director, read by `RoomScene.render`. */
 export type DirectorFrame = {
 	phase: Phase
