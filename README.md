@@ -40,6 +40,10 @@ Edit `src/shared/config/profile.ts` — placeholders start with `TODO:`.
 | `pnpm test:coverage` | Run Vitest tests with coverage report |
 | `pnpm test:e2e` | Run Playwright e2e tests |
 | `pnpm run fsd` | Validate FSD layer boundaries |
+| `pnpm assets:model` | Rebuild `public/models/cat.glb` from the source avatar |
+| `pnpm assets:inspect` | Print the model facts; `--write-rig` regenerates `cat-rig.gen.ts` |
+| `pnpm assets:check` | Asset guard: no source models or stray model files under `public/`, rig in sync |
+| `pnpm assets:shots` | Lab screenshots through headless Chromium (`--gate` builds the Gate 1 package) |
 
 ## Project structure
 
@@ -53,7 +57,8 @@ src/
   entities/  — business entities (add when needed)
   shared/    — config (profile, env, routes), lib, ui
 assets/               — source 3D models and their licences (never served, see assets/models/README.md)
-docs/                 — implementation plans (docs/cat-room-plan.md)
+docs/                 — implementation plans (docs/cat-room-plan.md) and look-dev packages (docs/lookdev/)
+scripts/              — asset pipeline: model build, inspect, guard, lab screenshots
 ```
 
 ## E2E tests

@@ -1,0 +1,187 @@
+import { POSES, type PoseName } from '@/features/cat-room/config/poses'
+import { CAT_SPOT, STICKER } from '@/features/cat-room/config/room-layout'
+import type { ShadingVariant } from '@/features/cat-room/model/frame'
+import { clamp, DEG } from '@/shared/lib/math/ease'
+import type { CameraPose } from '@/shared/lib/math/projection'
+import type { Vec3 } from '@/shared/lib/math/vec3'
+
+export type LabView =
+	| 'hero'
+	| 'dive'
+	| 'finale'
+	| 'turntable'
+	| 'face'
+	| 'probe'
+	| 'overlay'
+export type CamPreset =
+	| 'front'
+	| 'side'
+	| 'top'
+	| 'quarter'
+	| 'back'
+	| 'close'
+	| 'face'
+	| 'hero'
+	| 'sticker'
+export type LabModel = 'shipped' | 'source' | 'space'
+
+export type LabParams = {
+	view: LabView
+	/** Scroll progress of the dive or finale track. */
+	p: number
+	dawn: number | null
+	pose: PoseName | null
+	/** Animation time for a deterministic still; null runs the live loop. */
+	t: number | null
+	shading: ShadingVariant
+	stepped: boolean
+	bone: string | null
+	axis: 'x' | 'y' | 'z'
+	deg: number
+	ui: boolean
+	cam: CamPreset
+	yaw: number | null
+	pitch: number | null
+	dist: number | null
+	fov: number | null
+	model: LabModel
+	meow: boolean
+	look: 'camera' | 'none'
+	lite: boolean
+	hair: boolean
+	/** Hide the cat (room look-dev). */
+	nocat: boolean
+}
+
+const VIEWS: LabView[] = [
+	'hero',
+	'dive',
+	'finale',
+	'turntable',
+	'face',
+	'probe',
+	'overlay',
+]
+const CAMS: CamPreset[] = [
+	'front',
+	'side',
+	'top',
+	'quarter',
+	'back',
+	'close',
+	'face',
+	'hero',
+	'sticker',
+]
+
+function pick<T extends string>(
+	value: string | null,
+	allowed: readonly T[],
+	fallback: T,
+): T {
+	return value && (allowed as readonly string[]).includes(value)
+		? (value as T)
+		: fallback
+}
+
+function num(value: string | null): number | null {
+	if (value === null || value === '') return null
+	const parsed = Number(value)
+	return Number.isFinite(parsed) ? parsed : null
+}
+
+export function parseLabParams(search: string): LabParams {
+	const q = new URLSearchParams(search)
+	const pose = q.get('pose')
+	return {
+		view: pick(q.get('view'), VIEWS, 'hero'),
+		p: clamp(num(q.get('p')) ?? 0, 0, 1),
+		dawn: num(q.get('dawn')),
+		pose: pose && pose in POSES ? (pose as PoseName) : null,
+		t: num(q.get('t')),
+		shading: pick(q.get('shading'), ['a', 'b'] as const, 'a'),
+		stepped: q.get('stepped') === '1',
+		bone: q.get('bone'),
+		axis: pick(q.get('axis'), ['x', 'y', 'z'] as const, 'x'),
+		deg: num(q.get('deg')) ?? 30,
+		ui: q.get('ui') === '1',
+		cam: pick(q.get('cam'), CAMS, 'front'),
+		yaw: num(q.get('yaw')),
+		pitch: num(q.get('pitch')),
+		dist: num(q.get('dist')),
+		fov: num(q.get('fov')),
+		model: pick(
+			q.get('model'),
+			['shipped', 'source', 'space'] as const,
+			'shipped',
+		),
+		meow: q.get('meow') === '1',
+		look: pick(q.get('look'), ['camera', 'none'] as const, 'camera'),
+		lite: q.get('lite') === '1',
+		hair: q.get('hair') === '1',
+		nocat: q.get('nocat') === '1',
+	}
+}
+
+export function modelUrl(model: LabModel): string {
+	if (model === 'source') return '/__lab/source.glb'
+	if (model === 'space') return '/__lab/space.glb'
+	return '/models/cat.glb'
+}
+
+type Orbit = {
+	yaw: number
+	pitch: number
+	dist: number
+	fov: number
+	focus: 'cat' | 'head' | 'sticker'
+}
+
+/** Yaw is measured from +Z (the visitor's side) towards +X; the cat lies with its head towards +X. */
+export const CAM_PRESETS: Record<Exclude<CamPreset, 'hero'>, Orbit> = {
+	front: { yaw: 0, pitch: 14, dist: 1.25, fov: 32, focus: 'cat' },
+	side: { yaw: 90, pitch: 18, dist: 1.25, fov: 32, focus: 'cat' },
+	top: { yaw: 10, pitch: 82, dist: 1.25, fov: 32, focus: 'cat' },
+	quarter: { yaw: 38, pitch: 26, dist: 1.2, fov: 32, focus: 'cat' },
+	back: { yaw: 180, pitch: 20, dist: 1.3, fov: 32, focus: 'cat' },
+	close: { yaw: 22, pitch: 8, dist: 0.55, fov: 30, focus: 'head' },
+	face: { yaw: 8, pitch: 10, dist: 0.85, fov: 28, focus: 'head' },
+	sticker: { yaw: 4, pitch: 6, dist: 0.5, fov: 30, focus: 'sticker' },
+}
+
+/** Centre of interest for a focus; `head` is refined by the lab from the live bone position. */
+const LYING_POSES: ReadonlySet<PoseName> = new Set([
+	'lounge',
+	'stretch',
+	'sleep',
+])
+
+export function focusPoint(
+	focus: Orbit['focus'],
+	headWorld: Vec3 | null,
+	pose: PoseName,
+): Vec3 {
+	if (focus === 'sticker') return STICKER.center
+	if (focus === 'head' && headWorld) return headWorld
+	const [x, y, z] = CAT_SPOT.position
+	// A lying cat spans the desk towards +X from its feet-origin; a standing one stands on it.
+	return LYING_POSES.has(pose) ? [x + 0.25, y + 0.12, z] : [x, y + 0.31, z]
+}
+
+export function orbitCamera(
+	params: LabParams,
+	headWorld: Vec3 | null,
+	pose: PoseName,
+): CameraPose {
+	const preset = CAM_PRESETS[params.cam === 'hero' ? 'front' : params.cam]
+	const yaw = (params.yaw ?? preset.yaw) * DEG
+	const pitch = (params.pitch ?? preset.pitch) * DEG
+	const dist = params.dist ?? preset.dist
+	const target = focusPoint(preset.focus, headWorld, pose)
+	const position: Vec3 = [
+		target[0] + Math.sin(yaw) * Math.cos(pitch) * dist,
+		target[1] + Math.sin(pitch) * dist,
+		target[2] + Math.cos(yaw) * Math.cos(pitch) * dist,
+	]
+	return { position, target, fov: params.fov ?? preset.fov }
+}

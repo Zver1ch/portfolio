@@ -148,6 +148,29 @@ to caching with `'use cache'` + `cacheLife(...)`. Anything that must observe
 the environment per request needs `await connection()` (from `next/server`),
 otherwise the value is captured during prerendering.
 
+## 3D scene (cat room)
+
+- `three` is imported only under `src/features/cat-room/lib/scene/**` and
+  `src/pages/lab/**`; a unit test enforces it. Everything else (camera path,
+  portal maths, poses) is three-free tuple maths in `src/shared/lib/math`.
+- `public/models/cat.glb` is the only model the site serves. Rebuild it with
+  `pnpm assets:model` (glTF Transform dedup → prune → `fix-model-space` →
+  meshopt; never the `optimize` preset), then `pnpm assets:inspect --write-rig`
+  to refresh `src/features/cat-room/config/cat-rig.gen.ts`. `pnpm assets:check`
+  (in `verify` and CI) fails on a stale rig file, on any other `.glb`/`.gltf`/
+  `.bin` under `public/`, and on any copy of a source model there. Model facts
+  and the licence rules are in `assets/models/README.md`.
+- Poses are data in `src/features/cat-room/config/poses.ts`: `aim` directions
+  in character space (+Y up, +Z forward, +X the cat's left), `rot` local Euler
+  degrees. `popka*` and `shoulder_*` bones are never animated.
+- Look-dev happens on the dev-only `/lab` route (`app/lab/page.lab.tsx`,
+  enabled through `pageExtensions` in `PHASE_DEVELOPMENT_SERVER` only).
+  `pnpm assets:shots` drives it headlessly with software WebGL
+  (`--view`, `--probe <bone>`, `--pose <name>`, `--sequence`,
+  `--compare-source`, `--gate`); set `CHROME_PATH` where Playwright cannot
+  download Chromium. Screenshots go to `artifacts/` (git-ignored); the Gate 1
+  package lives in `docs/lookdev/gate-1/`.
+
 ## Environment
 
 - Validated via t3-env in `src/shared/config/env.ts`.
