@@ -118,6 +118,10 @@ test.describe('hero', () => {
 })
 
 test.describe('cat', () => {
+	// The face buttons are the static page's pet target; the live room's proxy
+	// has its own tests in room.spec.ts.
+	test.use({ reducedMotion: 'reduce' })
+
 	test('keyboard reaches every face button, each boops with Enter and Space', async ({
 		page,
 	}) => {
@@ -257,7 +261,7 @@ test.describe('sections', () => {
 		await scrollThrough(page)
 		// The dawn poster is lazy: scrolled into view, it must have loaded.
 		const dawn = page.locator('[data-poster="dawn"] img')
-		await expect(dawn).toBeVisible()
+		await expect(dawn).toHaveCount(1)
 		await expect
 			.poll(() =>
 				dawn.evaluate((img: HTMLImageElement) => img.naturalWidth),
@@ -328,8 +332,6 @@ test.describe('narrow viewports', () => {
 			await page.setViewportSize(viewport)
 			await gotoHydrated(page)
 			await expect(page.locator('.pin-spacer')).toHaveCount(0)
-
-			await heroCat(page).click()
 			expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0)
 
 			await scrollThrough(page, async () => {

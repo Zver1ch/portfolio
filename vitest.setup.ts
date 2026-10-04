@@ -14,3 +14,10 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
 			dispatchEvent: () => false,
 		}) as MediaQueryList
 }
+
+// jsdom has no canvas: a quiet null context instead of a "not implemented"
+// error on every WebGL probe, which is what a browser without WebGL returns.
+if (typeof HTMLCanvasElement !== 'undefined') {
+	HTMLCanvasElement.prototype.getContext = (() =>
+		null) as typeof HTMLCanvasElement.prototype.getContext
+}

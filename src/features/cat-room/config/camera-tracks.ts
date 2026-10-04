@@ -43,6 +43,8 @@ export const DIVE = {
 
 /** Finale progress map. */
 export const FINALE = {
+	/** The phase turns `finale` past this progress (full mode). */
+	phaseStart: 0.015,
 	undock: 0.1,
 	pullBackEnd: 0.85,
 	dawnRamp: [0.1, 0.9] as const,

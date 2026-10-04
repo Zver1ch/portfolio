@@ -15,7 +15,7 @@ export function Finale({ children }: { children: ReactNode }) {
 	return (
 		<footer id='finale' className='relative border-t border-border'>
 			<div
-				data-stage
+				data-stage='finale'
 				className='grid room-full:h-lvh room-full:overflow-clip'
 			>
 				<div
@@ -33,7 +33,7 @@ export function Finale({ children }: { children: ReactNode }) {
 						aria-hidden
 						className='absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-ink to-transparent'
 					/>
-					<div className='absolute top-6 right-4 sm:top-10 sm:right-10'>
+					<div className='absolute top-6 right-4 room-full:hidden sm:top-10 sm:right-10'>
 						<CatFaceButton label='Pet the sleeping cat' />
 					</div>
 				</div>

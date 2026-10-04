@@ -1,12 +1,11 @@
 import { ArrowDown } from 'lucide-react'
-import { CatFaceButton } from '@/features/boop-cat/ui/cat-face-button'
 import { profile } from '@/shared/config/profile'
 import { MetaCaption } from '@/shared/ui/meta-caption'
 
 /**
  * Name, role and tagline over the hero. Server-rendered and never hidden:
- * the h1 is the LCP element (plan §3.15). The block itself lets pointer
- * events through to the room; only the face button takes them.
+ * the h1 is the LCP element (plan §3.15). The block lets pointer events
+ * through to the room.
  */
 export function HeroCopy() {
 	return (
@@ -14,14 +13,11 @@ export function HeroCopy() {
 			data-hero-copy
 			className='pointer-events-none absolute inset-x-0 top-0 z-[45] h-svh'
 		>
-			<div className='mx-auto flex h-full max-w-7xl flex-col px-4 pt-20 pb-16 sm:px-6 sm:pb-24'>
-				<div className='pointer-events-auto mb-auto self-end'>
-					<CatFaceButton priority />
-				</div>
+			<div className='mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pt-20 pb-16 sm:px-6 sm:pb-24'>
 				<MetaCaption index='01' as='p'>
 					Role
 				</MetaCaption>
-				<h1 className='mt-4 font-display text-[clamp(2.5rem,7vw,6rem)] leading-[1.02] font-semibold tracking-tight text-balance'>
+				<h1 className='mt-4 max-w-[9ch] font-display text-[clamp(2.5rem,7vw,6rem)] leading-[1.02] font-semibold tracking-tight text-balance'>
 					{profile.name}
 				</h1>
 				<p className='mt-4 text-lg text-lavender sm:text-xl'>

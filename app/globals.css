@@ -166,6 +166,50 @@ body::after {
 	}
 }
 
+/*
+ * The loader veil and the static face button trade places (plan §3.11): the
+ * veil shows while the room may still arrive, the face button when it never
+ * will. <noscript> in the hero swaps them the same way without JS.
+ */
+[data-static-face] {
+	display: none;
+}
+/* Failsafe: a veil that never hears from the scene lifts itself after 20 s. */
+[data-loader-veil] {
+	animation: veil-failsafe 0s linear 20s forwards;
+}
+html[data-room-mode="static"] [data-static-face] {
+	display: block;
+}
+html[data-room-mode="static"] [data-loader-veil] {
+	display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+	[data-loader-veil] {
+		display: none;
+	}
+	[data-static-face] {
+		display: block;
+	}
+}
+/* The first frame: the veil fades, the posters make way for the live room. */
+html[data-scene-ready="true"] [data-loader-veil] {
+	opacity: 0;
+	visibility: hidden;
+	transition:
+		opacity 0.6s ease,
+		visibility 0s linear 0.6s;
+}
+html[data-scene-ready="true"] [data-poster] {
+	visibility: hidden;
+}
+@keyframes veil-failsafe {
+	to {
+		opacity: 0;
+		visibility: hidden;
+	}
+}
+
 html.lenis,
 html.lenis body {
 	height: auto;

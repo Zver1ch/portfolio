@@ -61,7 +61,7 @@ export function Contact() {
 							</li>
 						))}
 					</ul>
-					<div className='mt-14 flex items-center gap-6'>
+					<div className='mt-14 flex items-center gap-6 room-full:hidden'>
 						<CatFaceButton />
 						<p className='max-w-xs text-sm text-muted-foreground'>
 							The cat accepts pets at any time of day.

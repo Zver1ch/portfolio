@@ -75,3 +75,21 @@ export const CHAINS = {
 export const ROOM_TONES = { top: 1, front: 0.9, side: 0.8, away: 0.68 } as const
 
 export const DPR_CAP = { full: 1.75, lite: 1.5 } as const
+
+/** The pixel-ratio governor (plan §3.6). */
+export const GOVERNOR = {
+	windowSeconds: 2.5,
+	lowFps: 40,
+	highFps: 58,
+	maxFlips: 3,
+} as const
+
+/** Loading the room (plan §3.11): give up after this and stay static. */
+export const ROOM_LOAD = {
+	timeoutMs: 15_000,
+	/** Lite mode starts loading once a stage is this close to the viewport. */
+	nearPx: 120,
+} as const
+
+/** The cat looks at the cursor as a point this far in front of the camera, metres. */
+export const POINTER_LOOK_DEPTH = 0.8

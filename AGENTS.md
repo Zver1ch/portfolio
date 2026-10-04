@@ -179,6 +179,19 @@ otherwise the value is captured during prerendering.
   attribute on the black mesh) and grows a stroke over each eye. Measured
   from the loaded model, not hand-placed: keep the eye outline pieces within
   one pupil-size of the pupils if the model is ever re-exported.
+- On the page the room is `src/widgets/cat-stage` → `features/cat-room/ui/room-layer.tsx`:
+  one fixed transparent canvas (`[data-room-layer]`, z-30, `pointer-events:
+  none`, `aria-hidden`) above the page. `model/room-mode.ts` decides
+  `static | lite | full` on the client (the server always renders static) and
+  the layer writes it to `<html data-room-mode>`; `data-scene-ready='true'`
+  follows the first rendered frame. `model/director.ts` is the only per-frame
+  owner (GSAP ticker, after Lenis and ScrollTrigger) and reads the plain
+  mutable `model/timeline.ts`; nothing per-frame is React state. The scene
+  chunk is imported in exactly one place, `lib/load-room-scene.ts`, so three
+  never joins the initial JS (e2e checks it). Any failure (chunk, model,
+  15 s timeout, renderer error, context loss) latches `static` for the visit
+  in `model/room-store.ts`; the loader veil (`ui/loader-veil.tsx`) and the
+  static face button swap by CSS on those attributes.
 - Posters (`public/posters/room-{night,dawn}{,-portrait}.jpg`) and
   `app/apple-icon.png` are rendered from the lab with `pnpm assets:posters`;
   re-run it after any change to the room, the poses or the palette.

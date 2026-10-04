@@ -2,6 +2,7 @@ import { profile } from '@/shared/config/profile'
 import { SmoothScroll } from '@/shared/lib/gsap/smooth-scroll'
 import { Statement } from '@/shared/ui/statement'
 import { About } from '@/widgets/about/ui/about'
+import { CatStage } from '@/widgets/cat-stage/ui/cat-stage'
 import { Contact } from '@/widgets/contact/ui/contact'
 import { Finale } from '@/widgets/finale/ui/finale'
 import { Hero } from '@/widgets/hero/ui/hero'
@@ -20,6 +21,7 @@ export function HomePage() {
 			</a>
 			<SmoothScroll />
 			<SiteHeader />
+			<CatStage />
 			<main>
 				<Hero>
 					<Manifesto />
