@@ -58,6 +58,11 @@ jobs:
       - name: Tests
         run: pnpm exec vitest run --reporter=github-actions
 
+      # No model file but the optimised cat may be served, nothing under
+      # public/ may be a source model, and cat-rig.gen.ts must match the GLB.
+      - name: Asset guard
+        run: pnpm assets:check
+
       - name: Build
         run: pnpm build
 

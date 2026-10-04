@@ -47,3 +47,6 @@ README.md
 # env (never bake env files into the image)
 .env*
 !.env.example
+
+# model pipeline intermediates and lab screenshots
+/artifacts
