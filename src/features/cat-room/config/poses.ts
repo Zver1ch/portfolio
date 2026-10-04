@@ -20,6 +20,12 @@ export type BonePose = {
 	 * +X the cat's left), resolved parent-first by shortest arc.
 	 */
 	aim?: Vec3
+	/**
+	 * The same, but in world space of the placed cat (after `root.rotation`):
+	 * +X along the desk towards the head side, +Y up, +Z towards the visitor.
+	 * Lying poses are far easier to write this way.
+	 */
+	aimWorld?: Vec3
 	/** Roll about the bone axis after `aim`, degrees. */
 	twist?: number
 }
@@ -93,13 +99,15 @@ export const POSES: Record<PoseName, Pose> = {
 			arm_r: { aim: [0.55, -0.2, 0.8] },
 			elbow_r: { aim: [0.5, -0.3, 0.8] },
 			wrist_r: { aim: [0.25, -0.35, 0.9] },
-			// Knees drawn forward and stacked, shins tucked back behind the body.
-			leg_l: { aim: [0.15, -0.6, 0.78] },
-			knee_l: { aim: [0.1, 0.15, -0.98] },
-			foot_l: { aim: [0.3, 0, -0.95] },
-			leg_r: { aim: [-0.05, -0.55, 0.83] },
-			knee_r: { aim: [-0.05, 0.2, -0.98] },
-			foot_r: { aim: [0.2, 0.05, -0.97] },
+			// Knees drawn forward and stacked, bent about 90°: thighs towards the
+			// visitor and down the body, shins back and further down, never
+			// folded into the thighs.
+			leg_l: { aimWorld: [-0.5, -0.12, 0.85] },
+			knee_l: { aimWorld: [-0.8, -0.12, -0.55] },
+			foot_l: { aimWorld: [-0.95, 0.1, -0.3] },
+			leg_r: { aimWorld: [-0.45, 0.04, 0.88] },
+			knee_r: { aimWorld: [-0.78, 0.02, -0.6] },
+			foot_r: { aimWorld: [-0.92, 0.2, -0.3] },
 			// Tail clears the back, then rises in front of the screen (world up is character -X).
 			tailroot: { aim: [-0.6, -0.15, -0.78] },
 			tail: { aim: [-0.97, -0.1, -0.2] },
@@ -141,33 +149,45 @@ export const POSES: Record<PoseName, Pose> = {
 		},
 	},
 
-	/** Curled up at dawn, the face tucked towards the chest behind the arms. */
+	/**
+	 * Asleep at dawn, sprawled on the back the way real cats do: belly up and
+	 * rolled a little towards the visitor, head tipped back, both front paws
+	 * stretched past the head, hind legs long and loose, tail curled away.
+	 * The 180° roll of the eye bones turns the pupils into the head and brings
+	 * the closed lids built on the back of those bones to the front
+	 * (`lib/scene/cat/eyelids.ts`). Look-at is off while this pose is active.
+	 */
 	sleep: {
-		root: LYING_ROOT,
+		root: { position: [0, 0.05, 0], rotation: [-75, 0, -90] },
 		bones: {
-			hips: { aim: [0.05, 0.95, 0.3] },
-			chest: { aim: [-0.1, 0.9, 0.42] },
-			neck: { aim: [0.25, 0.45, 0.85] },
-			head: { aim: [0.45, -0.1, 0.9], twist: 15 },
-			arm_l: { aim: [0.2, 0.3, 0.93] },
-			elbow_l: { aim: [-0.2, 0.9, 0.35] },
-			wrist_l: { aim: [-0.3, 0.9, 0.3] },
-			arm_r: { aim: [0.55, 0.3, 0.78] },
-			elbow_r: { aim: [0.1, 0.95, 0.3] },
-			wrist_r: { aim: [-0.2, 0.9, 0.4] },
-			leg_l: { aim: [0.1, -0.3, 0.95] },
-			knee_l: { aim: [0, -0.7, -0.7] },
-			foot_l: { aim: [0.3, -0.4, -0.85] },
-			leg_r: { aim: [-0.1, -0.25, 0.96] },
-			knee_r: { aim: [-0.1, -0.7, -0.7] },
-			foot_r: { aim: [0.2, -0.4, -0.88] },
-			tailroot: { aim: [-0.3, -0.2, -0.93] },
-			tail: { aim: [-0.2, -0.9, -0.35] },
-			tail001: { aim: [0, -1, 0.1] },
-			tail002: { aim: [0.1, -0.6, 0.8] },
-			tail003: { aim: [0, 0.3, 0.95] },
-			ear_l: { rot: [0, 0, 22] },
-			ear_r: { rot: [0, 0, -22] },
+			hips: { aimWorld: [1, 0.08, 0.02] },
+			chest: { aimWorld: [1, 0.12, -0.05] },
+			neck: { aimWorld: [0.95, -0.1, -0.2] },
+			head: { aimWorld: [0.85, -0.45, -0.25], twist: 25 },
+			// Front paws up past the head; the far one bent at the wrist.
+			arm_l: { aimWorld: [0.85, 0.2, 0.45] },
+			elbow_l: { aimWorld: [0.95, 0.2, 0.2] },
+			wrist_l: { aimWorld: [0.8, 0.5, 0.3] },
+			arm_r: { aimWorld: [0.9, 0.15, -0.4] },
+			elbow_r: { aimWorld: [0.75, 0.55, -0.35] },
+			wrist_r: { aimWorld: [0.2, 0.9, -0.3] },
+			// Hind legs stretched the other way, slightly splayed, toes up.
+			leg_l: { aimWorld: [-0.85, -0.1, 0.5] },
+			knee_l: { aimWorld: [-0.95, 0, 0.3] },
+			foot_l: { aimWorld: [-0.85, 0.45, 0.3] },
+			leg_r: { aimWorld: [-0.85, 0.05, -0.5] },
+			knee_r: { aimWorld: [-0.9, 0.15, -0.4] },
+			foot_r: { aimWorld: [-0.75, 0.6, -0.3] },
+			// Tail out along the desk behind the body, curling towards the head.
+			tailroot: { aimWorld: [-0.5, -0.15, -0.85] },
+			tail: { aimWorld: [-0.1, -0.05, -1] },
+			tail001: { aimWorld: [0.5, 0, -0.85] },
+			tail002: { aimWorld: [0.9, 0.05, -0.4] },
+			tail003: { aimWorld: [1, 0.1, 0.15] },
+			ear_l: { rot: [0, 0, 20] },
+			ear_r: { rot: [0, 0, -20] },
+			lefteye: { rot: [180, 0, 0] },
+			righteye: { rot: [180, 0, 0] },
 		},
 	},
 

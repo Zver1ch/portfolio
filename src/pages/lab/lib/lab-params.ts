@@ -1,5 +1,10 @@
 import { POSES, type PoseName } from '@/features/cat-room/config/poses'
-import { CAT_SPOT, STICKER } from '@/features/cat-room/config/room-layout'
+import {
+	CAT_SPOT,
+	KEYBOARD,
+	LAMP,
+	STICKER,
+} from '@/features/cat-room/config/room-layout'
 import type { ShadingVariant } from '@/features/cat-room/model/frame'
 import { clamp, DEG } from '@/shared/lib/math/ease'
 import type { CameraPose } from '@/shared/lib/math/projection'
@@ -23,6 +28,8 @@ export type CamPreset =
 	| 'face'
 	| 'hero'
 	| 'sticker'
+	| 'lamp'
+	| 'desk'
 export type LabModel = 'shipped' | 'source' | 'space'
 
 export type LabParams = {
@@ -72,6 +79,8 @@ const CAMS: CamPreset[] = [
 	'face',
 	'hero',
 	'sticker',
+	'lamp',
+	'desk',
 ]
 
 function pick<T extends string>(
@@ -134,19 +143,21 @@ type Orbit = {
 	pitch: number
 	dist: number
 	fov: number
-	focus: 'cat' | 'head' | 'sticker'
+	focus: 'cat' | 'head' | 'sticker' | 'lamp' | 'desk'
 }
 
 /** Yaw is measured from +Z (the visitor's side) towards +X; the cat lies with its head towards +X. */
 export const CAM_PRESETS: Record<Exclude<CamPreset, 'hero'>, Orbit> = {
 	front: { yaw: 0, pitch: 14, dist: 1.25, fov: 32, focus: 'cat' },
-	side: { yaw: 90, pitch: 18, dist: 1.25, fov: 32, focus: 'cat' },
+	side: { yaw: 70, pitch: 22, dist: 1.25, fov: 32, focus: 'cat' },
 	top: { yaw: 10, pitch: 82, dist: 1.25, fov: 32, focus: 'cat' },
 	quarter: { yaw: 38, pitch: 26, dist: 1.2, fov: 32, focus: 'cat' },
 	back: { yaw: 180, pitch: 20, dist: 1.3, fov: 32, focus: 'cat' },
 	close: { yaw: 22, pitch: 8, dist: 0.55, fov: 30, focus: 'head' },
 	face: { yaw: 8, pitch: 10, dist: 0.85, fov: 28, focus: 'head' },
 	sticker: { yaw: 4, pitch: 6, dist: 0.5, fov: 30, focus: 'sticker' },
+	lamp: { yaw: -30, pitch: 12, dist: 0.9, fov: 30, focus: 'lamp' },
+	desk: { yaw: -15, pitch: 40, dist: 0.8, fov: 30, focus: 'desk' },
 }
 
 /** Centre of interest for a focus; `head` is refined by the lab from the live bone position. */
@@ -162,6 +173,14 @@ export function focusPoint(
 	pose: PoseName,
 ): Vec3 {
 	if (focus === 'sticker') return STICKER.center
+	if (focus === 'lamp')
+		return [LAMP.head[0], LAMP.head[1] - 0.12, LAMP.head[2] + 0.05]
+	if (focus === 'desk')
+		return [
+			KEYBOARD.center[0] + 0.15,
+			KEYBOARD.center[1] + 0.02,
+			KEYBOARD.center[2],
+		]
 	if (focus === 'head' && headWorld) return headWorld
 	const [x, y, z] = CAT_SPOT.position
 	// A lying cat spans the desk towards +X from its feet-origin; a standing one stands on it.

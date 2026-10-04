@@ -53,6 +53,104 @@ function rotateY([x, y, z]: Vec3, degrees: number, [cx, , cz]: Vec3): Vec3 {
 	]
 }
 
+function sub3(a: Vec3, b: Vec3): Vec3 {
+	return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+}
+
+function dot3(a: Vec3, b: Vec3): number {
+	return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+}
+
+function cross3(a: Vec3, b: Vec3): Vec3 {
+	return [
+		a[1] * b[2] - a[2] * b[1],
+		a[2] * b[0] - a[0] * b[2],
+		a[0] * b[1] - a[1] * b[0],
+	]
+}
+
+function unit(a: Vec3): Vec3 {
+	const len = Math.hypot(a[0], a[1], a[2]) || 1
+	return [a[0] / len, a[1] / len, a[2] / len]
+}
+
+function centroid(points: readonly Vec3[]): Vec3 {
+	const sum: [number, number, number] = [0, 0, 0]
+	for (const p of points) {
+		sum[0] += p[0]
+		sum[1] += p[1]
+		sum[2] += p[2]
+	}
+	return [
+		sum[0] / points.length,
+		sum[1] / points.length,
+		sum[2] / points.length,
+	]
+}
+
+/** Two unit vectors perpendicular to `axis` and to each other. */
+export function frameOf(axis: Vec3): [Vec3, Vec3] {
+	const a = unit(axis)
+	const helper: Vec3 = Math.abs(a[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0]
+	const u = unit(cross3(helper, a))
+	const v = cross3(a, u)
+	return [u, v]
+}
+
+/** Turns a point about the Y axis through `pivot`. */
+export function yawAround(
+	[x, y, z]: Vec3,
+	degrees: number,
+	[cx, , cz]: Vec3,
+): Vec3 {
+	if (!degrees) return [x, y, z]
+	const a = (degrees * Math.PI) / 180
+	const dx = x - cx
+	const dz = z - cz
+	return [
+		cx + dx * Math.cos(a) + dz * Math.sin(a),
+		y,
+		cz - dx * Math.sin(a) + dz * Math.cos(a),
+	]
+}
+
+/** Points of an ellipse around `center` in the plane spanned by `u` and `v`. */
+export function ring(
+	center: Vec3,
+	u: Vec3,
+	v: Vec3,
+	radiusU: number,
+	radiusV: number,
+	segments: number,
+	phase = 0,
+): Vec3[] {
+	const points: Vec3[] = []
+	for (let i = 0; i < segments; i++) {
+		const a = phase + (i / segments) * Math.PI * 2
+		const c = Math.cos(a) * radiusU
+		const d = Math.sin(a) * radiusV
+		points.push([
+			center[0] + u[0] * c + v[0] * d,
+			center[1] + u[1] * c + v[1] * d,
+			center[2] + u[2] * c + v[2] * d,
+		])
+	}
+	return points
+}
+
+const X_AXIS: Vec3 = [1, 0, 0]
+const Z_AXIS: Vec3 = [0, 0, 1]
+
+/** A horizontal ellipse at height `y` (for lofted props standing on a surface). */
+export function flatRing(
+	center: Vec3,
+	radiusX: number,
+	radiusZ: number,
+	segments: number,
+): Vec3[] {
+	return ring(center, X_AXIS, Z_AXIS, radiusX, radiusZ, segments)
+}
+
 /** Accumulates triangles; `alpha` builders write RGBA colours for glow quads. */
 export class Kit {
 	private readonly positions: number[] = []
@@ -230,6 +328,124 @@ export class Kit {
 		this.tri([bl0, t0, br0], paint) // back end
 		this.tri([br1, t1, bl1], paint) // front end
 		this.quad([bl0, br0, br1, bl1], paint, { tone: ROOM_TONES.away }) // bottom
+	}
+
+	/** A quad whose normal points away from `inside` (winding fixed up for the tone). */
+	outwardQuad(
+		corners: readonly [Vec3, Vec3, Vec3, Vec3],
+		inside: Vec3,
+		paint: Paint,
+		tone?: number,
+	) {
+		const [a, b, c, d] = corners
+		const normal = normalOf([a, b, c])
+		const faceCentre = centroid(corners)
+		const ordered: readonly [Vec3, Vec3, Vec3, Vec3] =
+			dot3(normal, sub3(faceCentre, inside)) < 0 ? [d, c, b, a] : corners
+		this.quad(ordered, paint, { tone })
+	}
+
+	/** A fan from `apex` over `ring`, facing away from `awayFrom`. */
+	fan(
+		apex: Vec3,
+		ringPoints: readonly Vec3[],
+		awayFrom: Vec3,
+		paint: Paint,
+		tone?: number,
+	) {
+		const n = ringPoints.length
+		for (let i = 0; i < n; i++) {
+			const j = (i + 1) % n
+			const tri: Tri = [apex, ringPoints[i], ringPoints[j]]
+			const flipped = dot3(normalOf(tri), sub3(apex, awayFrom)) < 0
+			this.tri(
+				flipped ? [apex, ringPoints[j], ringPoints[i]] : tri,
+				paint,
+				{ tone },
+			)
+		}
+	}
+
+	/**
+	 * Connects consecutive rings (same point count) with quads, normals facing
+	 * away from the rings' centre; the ends can be closed with fans.
+	 */
+	loft(
+		rings: readonly (readonly Vec3[])[],
+		paint: Paint,
+		{
+			closeStart = false,
+			closeEnd = true,
+			tone,
+		}: { closeStart?: boolean; closeEnd?: boolean; tone?: number } = {},
+	) {
+		for (let r = 0; r < rings.length - 1; r++) {
+			const a = rings[r]
+			const b = rings[r + 1]
+			const inside = centroid([...a, ...b])
+			for (let i = 0; i < a.length; i++) {
+				const j = (i + 1) % a.length
+				this.outwardQuad([a[i], a[j], b[j], b[i]], inside, paint, tone)
+			}
+		}
+		const first = rings[0]
+		const last = rings[rings.length - 1]
+		if (closeStart)
+			this.fan(centroid(first), first, centroid(last), paint, tone)
+		if (closeEnd)
+			this.fan(centroid(last), last, centroid(first), paint, tone)
+	}
+
+	/** A cylinder or cone between two points, in any orientation. */
+	tube(
+		from: Vec3,
+		to: Vec3,
+		radiusFrom: number,
+		radiusTo: number,
+		segments: number,
+		paint: Paint,
+		{
+			capFrom = false,
+			capTo = false,
+			tone,
+		}: { capFrom?: boolean; capTo?: boolean; tone?: number } = {},
+	) {
+		const [u, v] = frameOf(sub3(to, from))
+		this.loft(
+			[
+				ring(from, u, v, radiusFrom, radiusFrom, segments),
+				ring(to, u, v, radiusTo, radiusTo, segments),
+			],
+			paint,
+			{ closeStart: capFrom, closeEnd: capTo, tone },
+		)
+	}
+
+	/** A low-poly sphere from latitude rings. */
+	sphere(
+		center: Vec3,
+		radius: number,
+		paint: Paint,
+		segments = 8,
+		bands = 4,
+	) {
+		const rings: Vec3[][] = []
+		for (let k = 1; k < bands; k++) {
+			const phi = (k / bands) * Math.PI
+			rings.push(
+				flatRing(
+					[center[0], center[1] + Math.cos(phi) * radius, center[2]],
+					Math.sin(phi) * radius,
+					Math.sin(phi) * radius,
+					segments,
+				),
+			)
+		}
+		const top: Vec3 = [center[0], center[1] + radius, center[2]]
+		const bottom: Vec3 = [center[0], center[1] - radius, center[2]]
+		this.fan(top, rings[0], center, paint)
+		this.loft(rings, paint, { closeStart: false, closeEnd: false })
+		this.fan(bottom, rings[rings.length - 1], center, paint)
 	}
 
 	/** A radial pool of light: full alpha at the centre fading to none at the rim (alpha kits). */

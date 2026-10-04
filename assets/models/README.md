@@ -103,6 +103,15 @@ Compared with the plan (`docs/cat-room-plan.md` §1.3):
   tip (1.753 m), each fraction is about 0.05 lower. In scene metres: knee
   0.386, hip joint 0.731, hips 0.933, chest 1.088, neck 1.327, head 1.380,
   eyes 1.480, shoulder joint 0.125 → wrist 0.651 (x), feet at 0.
+- Eyes: each pupil is 64 vertices of the black mesh skinned to `LeftEye` /
+  `RightEye`, a dome 0.054 × 0.061 m wide and 0.043 m deep in source metres
+  whose centre sits 0.020 m in front of the eye bone along +Y. Each eye's
+  black outline belongs to the head: a ring of 32 vertices (0.082 × 0.055 m,
+  centred 0.009 m outboard of the pupil) and a crease of 32 vertices above
+  it (0.103 m wide, wrapping 0.115 m around the side of the head), both
+  within 0.028 m of the pupil centre; the next black piece, the nose, is
+  0.130 m away. `src/features/cat-room/lib/scene/cat/eyelids.ts` relies on
+  that gap.
 - The tail bones end 0.80 m behind the hips; the pink tail mesh reaches
   1.20 m, so the last 0.4 m of the tuft follows `Tail.003` rigidly.
 - The source stores the body 26.76 times too small for its skin (see Bind

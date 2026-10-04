@@ -40,15 +40,23 @@ export const MONITOR_STAND = {
 } as const
 
 export const KEYBOARD = {
-	center: [0.22, DESK_TOP + 0.011, -0.9] as Vec3,
-	size: [0.42, 0.022, 0.145] as Vec3,
+	/** Centre of the footprint on the desk. */
+	center: [0.22, DESK_TOP, -0.9] as Vec3,
+	/** Width and depth of the footprint. */
+	size: [0.42, 0.145] as const,
+	heightBack: 0.024,
+	heightFront: 0.013,
+	chamfer: 0.006,
 	rows: 5,
 	columns: 14,
+	yawDeg: 3,
 } as const
 
 export const MOUSE = {
-	center: [0.58, DESK_TOP + 0.017, -0.88] as Vec3,
-	size: [0.06, 0.034, 0.1] as Vec3,
+	/** Centre of the footprint on the desk. */
+	center: [0.58, DESK_TOP, -0.88] as Vec3,
+	size: [0.062, 0.036, 0.1] as Vec3,
+	yawDeg: -12,
 } as const
 
 /** A small-form-factor tower standing on the desk, left of the monitor. */
@@ -68,15 +76,18 @@ export const STICKER = {
 	tiltDeg: -9,
 } as const
 
+/** An articulated desk lamp: base, post, two arms with knobs, a bell shade aimed at the desk. */
 export const LAMP = {
 	base: [0.9, DESK_TOP, -1.4] as Vec3,
-	baseRadius: 0.075,
-	armHeight: 0.4,
-	armRadius: 0.012,
-	/** Where the shade points: a pool of light on the desk near the mouse. */
-	headTarget: [0.68, DESK_TOP, -1.12] as Vec3,
+	baseRadius: 0.07,
+	postHeight: 0.07,
+	elbow: [0.82, 1.2, -1.55] as Vec3,
+	head: [0.74, 1.12, -1.3] as Vec3,
+	armRadius: 0.011,
 	shadeRadius: 0.085,
-	shadeHeight: 0.11,
+	shadeLength: 0.13,
+	/** Where the shade points: a pool of light on the desk between the cat and the mouse. */
+	headTarget: [0.66, DESK_TOP, -1.1] as Vec3,
 } as const
 
 export const WINDOW = {

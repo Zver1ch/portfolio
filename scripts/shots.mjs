@@ -107,7 +107,8 @@ async function shoot(query, width, height, path) {
 }
 
 function withTime(query, time = DEFAULT_TIME) {
-	return query.includes('t=') ? query : `${query}&t=${time}`
+	// A real `t` parameter only: `dist=` and `pitch=` also contain "t=".
+	return new URLSearchParams(query).has('t') ? query : `${query}&t=${time}`
 }
 
 async function probe(bone) {
@@ -236,7 +237,13 @@ async function gatePackage() {
 		['finale-dawn-1920x1200.png', 'view=finale&p=1', 1920, 1200],
 		[
 			'sleep-close-up.png',
-			'view=turntable&cam=close&pose=sleep&dawn=1',
+			'view=turntable&cam=close&pose=sleep&dawn=1&yaw=60&pitch=45&dist=0.75',
+			1600,
+			1000,
+		],
+		[
+			'sleep-side.png',
+			'view=turntable&cam=side&pose=sleep&dawn=1',
 			1600,
 			1000,
 		],
@@ -254,6 +261,13 @@ async function gatePackage() {
 		],
 		['face-svg-vs-3d.png', 'view=face&cam=face&pose=lounge', 1600, 900],
 		['sticker.png', 'view=turntable&cam=sticker', 1600, 1000],
+		[
+			'desk-props.png',
+			'view=turntable&cam=desk&dist=0.5&yaw=-25&pitch=35',
+			1600,
+			1000,
+		],
+		['lamp.png', 'view=turntable&cam=lamp', 1600, 1000],
 		['dive-tunnel-p095.png', 'view=dive&p=0.95', 1440, 900],
 		['dive-mid-p065.png', 'view=dive&p=0.65', 1440, 900],
 		['probe-head.png', 'view=probe&bone=head&t=1', 1800, 1000],

@@ -161,8 +161,16 @@ otherwise the value is captured during prerendering.
   `.bin` under `public/`, and on any copy of a source model there. Model facts
   and the licence rules are in `assets/models/README.md`.
 - Poses are data in `src/features/cat-room/config/poses.ts`: `aim` directions
-  in character space (+Y up, +Z forward, +X the cat's left), `rot` local Euler
-  degrees. `popka*` and `shoulder_*` bones are never animated.
+  in character space (+Y up, +Z forward, +X the cat's left), `aimWorld` the
+  same in the placed cat's world (after `root.rotation`; lying poses are
+  written this way), `rot` local Euler degrees. `popka*` and `shoulder_*`
+  bones are never animated.
+- The model has no eyelids. The sleep pose rolls the eye bones 180° and
+  `lib/scene/cat/eyelids.ts` turns that roll into `uEyesClosed`, which
+  collapses the pupils and the black eye outlines (a `sleepShift` vertex
+  attribute on the black mesh) and grows a stroke over each eye. Measured
+  from the loaded model, not hand-placed: keep the eye outline pieces within
+  one pupil-size of the pupils if the model is ever re-exported.
 - Look-dev happens on the dev-only `/lab` route (`app/lab/page.lab.tsx`,
   enabled through `pageExtensions` in `PHASE_DEVELOPMENT_SERVER` only).
   `pnpm assets:shots` drives it headlessly with software WebGL

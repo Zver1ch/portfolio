@@ -13,9 +13,8 @@ import {
 	TOWER,
 	WINDOW,
 } from '../../../config/room-layout'
-import { ROOM_TONES } from '../../../config/tuning'
 import { mixHex, PALETTE as P, paint } from '../materials'
-import { Kit } from './kit'
+import { flatRing, Kit, yawAround } from './kit'
 
 /**
  * The static room as two geometries: the opaque set and the painted light.
@@ -51,8 +50,8 @@ export const PAINTS = {
 	),
 	key: paint(mixHex(P.ink3, P.lavender, 0.34), mixHex(P.ink3, P.blush, 0.52)),
 	mouse: paint(
-		mixHex(P.ink3, P.lavender, 0.26),
-		mixHex(P.ink3, P.blush, 0.42),
+		mixHex(P.ink3, P.lavender, 0.44),
+		mixHex(P.ink3, P.blush, 0.6),
 	),
 	wheel: paint(P.rose, P.rose),
 	lampMetal: paint(
@@ -60,6 +59,7 @@ export const PAINTS = {
 		mixHex(P.ink3, P.blush, 0.36),
 	),
 	lampShade: paint(P.rose, mixHex(P.rose, P.blush, 0.4)),
+	bulb: paint(mixHex(P.orchid, P.snow, 0.55), mixHex(P.blush, P.snow, 0.3)),
 	windowFrame: paint(
 		mixHex(P.ink2, P.lavender, 0.22),
 		mixHex(P.ink3, P.blush, 0.4),
@@ -271,95 +271,188 @@ function buildTower(kit: Kit) {
 
 function buildKeyboard(kit: Kit) {
 	const [cx, cy, cz] = KEYBOARD.center
-	const [w, h, d] = KEYBOARD.size
-	kit.box(KEYBOARD.center, KEYBOARD.size, PAINTS.keyboard)
-	const top = cy + h / 2 + 0.0015
+	const [w, d] = KEYBOARD.size
+	const { heightBack, heightFront, chamfer, yawDeg } = KEYBOARD
+	// A wedge, thinner at the front, with a chamfer around the top edge.
+	const top = (z: number) =>
+		heightBack + ((heightFront - heightBack) * (z + d / 2)) / d
+	const turn = (x: number, y: number, z: number): Vec3 =>
+		yawAround([cx + x, cy + y, cz + z], yawDeg, KEYBOARD.center)
+	const corners: readonly [number, number][] = [
+		[-w / 2, -d / 2],
+		[w / 2, -d / 2],
+		[w / 2, d / 2],
+		[-w / 2, d / 2],
+	]
+	const inset = (x: number, z: number): [number, number] => [
+		x - Math.sign(x) * chamfer,
+		z - Math.sign(z) * chamfer,
+	]
+	kit.loft(
+		[
+			corners.map(([x, z]) => turn(x, 0, z)),
+			corners.map(([x, z]) => turn(x, top(z) - chamfer, z)),
+			corners.map(([x, z]) => {
+				const [ix, iz] = inset(x, z)
+				return turn(ix, top(z), iz)
+			}),
+		],
+		PAINTS.keyboard,
+	)
+	// Keycaps: small frustums standing on the sloped top.
 	const margin = 0.016
 	const gap = 0.004
+	const bevel = 0.0012
+	const keyHeight = 0.0045
 	const keyW =
 		(w - 2 * margin - gap * (KEYBOARD.columns - 1)) / KEYBOARD.columns
 	const keyD = (d - 2 * margin - gap * (KEYBOARD.rows - 1)) / KEYBOARD.rows
 	for (let row = 0; row < KEYBOARD.rows; row++) {
 		for (let col = 0; col < KEYBOARD.columns; col++) {
-			// The bottom row holds a space bar.
-			if (row === KEYBOARD.rows - 1 && col >= 4 && col <= 9) {
-				if (col !== 4) continue
-			}
-			const x0 = cx - w / 2 + margin + col * (keyW + gap)
-			const x1 =
-				row === KEYBOARD.rows - 1 && col === 4
-					? x0 + 6 * keyW + 5 * gap
-					: x0 + keyW
-			const z0 = cz - d / 2 + margin + row * (keyD + gap)
+			const spaceBar = row === KEYBOARD.rows - 1 && col >= 4 && col <= 9
+			if (spaceBar && col !== 4) continue
+			const x0 = -w / 2 + margin + col * (keyW + gap)
+			const x1 = spaceBar ? x0 + 6 * keyW + 5 * gap : x0 + keyW
+			const z0 = -d / 2 + margin + row * (keyD + gap)
 			const z1 = z0 + keyD
-			kit.quad(
-				[
-					[x0, top, z1],
-					[x1, top, z1],
-					[x1, top, z0],
-					[x0, top, z0],
-				],
-				PAINTS.key,
-				{ tone: ROOM_TONES.top },
-			)
+			const base = top((z0 + z1) / 2) + 0.0005
+			const foot: Vec3[] = [
+				turn(x0, base, z0),
+				turn(x1, base, z0),
+				turn(x1, base, z1),
+				turn(x0, base, z1),
+			]
+			const crown: Vec3[] = [
+				turn(x0 + bevel, base + keyHeight, z0 + bevel),
+				turn(x1 - bevel, base + keyHeight, z0 + bevel),
+				turn(x1 - bevel, base + keyHeight, z1 - bevel),
+				turn(x0 + bevel, base + keyHeight, z1 - bevel),
+			]
+			kit.loft([foot, crown], PAINTS.key)
 		}
 	}
 }
 
 function buildMouse(kit: Kit) {
 	const [cx, cy, cz] = MOUSE.center
-	const [, h, d] = MOUSE.size
-	kit.box(MOUSE.center, MOUSE.size, PAINTS.mouse, { yaw: -12 })
-	kit.box(
-		[cx - 0.004, cy + h / 2 + 0.002, cz - d * 0.28],
-		[0.008, 0.005, 0.018],
-		PAINTS.wheel,
-		{ yaw: -12 },
+	const [w, h, d] = MOUSE.size
+	const segments = 12
+	// A domed body lofted from five ellipses, the crown sliding backwards.
+	const level = (y: number, scaleX: number, scaleZ: number, shiftZ: number) =>
+		flatRing(
+			[cx, cy + y, cz + shiftZ],
+			(w / 2) * scaleX,
+			(d / 2) * scaleZ,
+			segments,
+		).map((point) => yawAround(point, MOUSE.yawDeg, MOUSE.center))
+	kit.loft(
+		[
+			level(0.0005, 1, 1, 0),
+			level(h * 0.3, 1, 1, -0.001),
+			level(h * 0.6, 0.9, 0.92, -0.003),
+			level(h * 0.85, 0.7, 0.78, -0.006),
+			level(h, 0.38, 0.5, -0.009),
+		],
+		PAINTS.mouse,
 	)
+	// Scroll wheel across the front slope.
+	const wheelCentre: Vec3 = [cx, cy + h * 0.82, cz - d * 0.3]
+	const from = yawAround(
+		[wheelCentre[0] - 0.004, wheelCentre[1], wheelCentre[2]],
+		MOUSE.yawDeg,
+		MOUSE.center,
+	)
+	const to = yawAround(
+		[wheelCentre[0] + 0.004, wheelCentre[1], wheelCentre[2]],
+		MOUSE.yawDeg,
+		MOUSE.center,
+	)
+	kit.tube(from, to, 0.0055, 0.0055, 8, PAINTS.wheel, {
+		capFrom: true,
+		capTo: true,
+	})
 }
 
 function buildLamp(kit: Kit) {
 	const [bx, by, bz] = LAMP.base
-	kit.cylinder(
+	const r = LAMP.armRadius
+	// Base plate and a short post.
+	kit.tube(
 		[bx, by, bz],
+		[bx, by + 0.02, bz],
 		LAMP.baseRadius,
-		LAMP.baseRadius * 0.9,
-		0.022,
+		LAMP.baseRadius * 0.94,
 		18,
 		PAINTS.lampMetal,
+		{ capTo: true },
 	)
-	kit.cylinder(
-		[bx, by + 0.022, bz],
-		LAMP.armRadius,
-		LAMP.armRadius,
-		LAMP.armHeight,
+	const postTop: Vec3 = [bx, by + 0.02 + LAMP.postHeight, bz]
+	kit.tube(
+		[bx, by + 0.02, bz],
+		postTop,
+		r * 1.2,
+		r * 1.2,
 		10,
 		PAINTS.lampMetal,
-		{ caps: false },
 	)
-	const top = by + 0.022 + LAMP.armHeight
-	const [tx, , tz] = LAMP.headTarget
-	// Boom from the pole towards the target, then the shade hanging from its end.
-	const boomLength = 0.16
-	const dirX = Math.sign(tx - bx) || -1
-	const headX = bx + dirX * boomLength
-	const headZ = bz + (tz - bz) * 0.35
-	kit.box(
-		[(bx + headX) / 2, top, (bz + headZ) / 2],
-		[boomLength + 0.02, 0.018, 0.018],
-		PAINTS.lampMetal,
-		{
-			yaw: ((Math.atan2(headZ - bz, headX - bx) * 180) / Math.PI) * -1,
-		},
-	)
-	kit.cylinder(
-		[headX, top - LAMP.shadeHeight - 0.01, headZ],
+	// Two arms with knobs at the joints.
+	kit.sphere(postTop, 0.02, PAINTS.lampMetal)
+	kit.tube(postTop, LAMP.elbow, r, r, 8, PAINTS.lampMetal)
+	kit.sphere(LAMP.elbow, 0.021, PAINTS.lampMetal)
+	kit.tube(LAMP.elbow, LAMP.head, r, r, 8, PAINTS.lampMetal)
+	kit.sphere(LAMP.head, 0.019, PAINTS.lampMetal)
+	// Bell shade aimed at the desk, with the bulb glowing inside the opening.
+	const direction = unit3(sub3(LAMP.headTarget, LAMP.head))
+	const along = (t: number): Vec3 => [
+		LAMP.head[0] + direction[0] * t,
+		LAMP.head[1] + direction[1] * t,
+		LAMP.head[2] + direction[2] * t,
+	]
+	kit.tube(
+		along(0.015),
+		along(LAMP.shadeLength),
+		0.028,
 		LAMP.shadeRadius,
-		LAMP.shadeRadius * 0.32,
-		LAMP.shadeHeight,
 		18,
 		PAINTS.lampShade,
+		{ capFrom: true },
 	)
+	const bulbCentre = along(LAMP.shadeLength - 0.012)
+	const [u, v] = frameOf3(direction)
+	const bulbRing: Vec3[] = []
+	for (let i = 0; i < 18; i++) {
+		const a = (i / 18) * Math.PI * 2
+		const rr = LAMP.shadeRadius * 0.82
+		bulbRing.push([
+			bulbCentre[0] + (u[0] * Math.cos(a) + v[0] * Math.sin(a)) * rr,
+			bulbCentre[1] + (u[1] * Math.cos(a) + v[1] * Math.sin(a)) * rr,
+			bulbCentre[2] + (u[2] * Math.cos(a) + v[2] * Math.sin(a)) * rr,
+		])
+	}
+	kit.fan(bulbCentre, bulbRing, LAMP.head, PAINTS.bulb, 1)
+}
+
+function sub3(a: Vec3, b: Vec3): Vec3 {
+	return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+}
+
+function unit3(a: Vec3): Vec3 {
+	const len = Math.hypot(a[0], a[1], a[2]) || 1
+	return [a[0] / len, a[1] / len, a[2] / len]
+}
+
+function frameOf3(axis: Vec3): [Vec3, Vec3] {
+	const helper: Vec3 = Math.abs(axis[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0]
+	const ux = helper[1] * axis[2] - helper[2] * axis[1]
+	const uy = helper[2] * axis[0] - helper[0] * axis[2]
+	const uz = helper[0] * axis[1] - helper[1] * axis[0]
+	const u = unit3([ux, uy, uz])
+	const v: Vec3 = [
+		axis[1] * u[2] - axis[2] * u[1],
+		axis[2] * u[0] - axis[0] * u[2],
+		axis[0] * u[1] - axis[1] * u[0],
+	]
+	return [u, v]
 }
 
 function buildSocks(kit: Kit) {

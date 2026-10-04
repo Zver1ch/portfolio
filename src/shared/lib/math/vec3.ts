@@ -60,3 +60,20 @@ export function bezier2(a: Vec3, c: Vec3, b: Vec3, t: number): Vec3 {
 		u * u * a[2] + 2 * u * t * c[2] + t * t * b[2],
 	]
 }
+
+/** Axis-aligned bounds of a 2D point set: `[minX, minY, maxX, maxY]`. */
+export function bounds2(
+	points: readonly Vec2[],
+): [number, number, number, number] {
+	let minX = Infinity
+	let minY = Infinity
+	let maxX = -Infinity
+	let maxY = -Infinity
+	for (const [x, y] of points) {
+		minX = Math.min(minX, x)
+		minY = Math.min(minY, y)
+		maxX = Math.max(maxX, x)
+		maxY = Math.max(maxY, y)
+	}
+	return [minX, minY, maxX, maxY]
+}

@@ -67,6 +67,8 @@ export function toLinear(hex: Hex, tone = 1): [number, number, number] {
 /** Uniforms shared by every patched material of a scene. */
 export type SceneUniforms = {
 	uDawn: IUniform<number>
+	/** 0 awake … 1 asleep: drives the cat's eye outlines and lids (`cat/eyelids.ts`). */
+	uEyesClosed: IUniform<number>
 	uKeyDir: IUniform<[number, number, number]>
 	uToneSteps: IUniform<[number, number]>
 	uToneLevels: IUniform<[number, number]>
@@ -75,6 +77,7 @@ export type SceneUniforms = {
 export function createSceneUniforms(): SceneUniforms {
 	return {
 		uDawn: { value: 0 },
+		uEyesClosed: { value: 0 },
 		uKeyDir: {
 			value: [...SHADING.keyDirection] as [number, number, number],
 		},
@@ -91,6 +94,12 @@ export type PatchOptions = {
 	tone?: boolean
 	/** Warm the colour towards dawn (the cat has no `colorDawn` attribute). */
 	dawnTint?: boolean
+	/**
+	 * Move each vertex by its `sleepShift` attribute (vec3, bind space) times
+	 * `uEyesClosed`: the cat's eye outlines collapse into the head as the
+	 * eyes close. Only for a geometry that carries the attribute.
+	 */
+	sleepShift?: boolean
 }
 
 const TONE_VERTEX = /* glsl */ `
@@ -118,7 +127,7 @@ const DAWN_TINT_FRAGMENT = /* glsl */ `
  */
 export function patchMaterial<T extends Material>(
 	material: T,
-	{ uniforms, dawnAttribute, tone, dawnTint }: PatchOptions,
+	{ uniforms, dawnAttribute, tone, dawnTint, sleepShift }: PatchOptions,
 ): T {
 	material.onBeforeCompile = (shader) => {
 		Object.assign(shader.uniforms, uniforms)
@@ -158,11 +167,21 @@ export function patchMaterial<T extends Material>(
 				'#include <color_fragment>',
 				`#include <color_fragment>\n${DAWN_TINT_FRAGMENT}`,
 			)
+		if (sleepShift) {
+			vertexHead.push(
+				'attribute vec3 sleepShift;',
+				'uniform float uEyesClosed;',
+			)
+			vertex = vertex.replace(
+				'#include <begin_vertex>',
+				'#include <begin_vertex>\ntransformed += sleepShift * uEyesClosed;',
+			)
+		}
 		shader.vertexShader = `${vertexHead.join('\n')}\n${vertex}`
 		shader.fragmentShader = `${fragmentHead.join('\n')}\n${fragment}`
 	}
 	material.customProgramCacheKey = () =>
-		`cat-room:${dawnAttribute ?? ''}:${tone ? 'tone' : ''}:${dawnTint ? 'tint' : ''}`
+		`cat-room:${dawnAttribute ?? ''}:${tone ? 'tone' : ''}:${dawnTint ? 'tint' : ''}:${sleepShift ? 'shift' : ''}`
 	return material
 }
 

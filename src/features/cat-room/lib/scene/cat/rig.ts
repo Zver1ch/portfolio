@@ -177,6 +177,16 @@ export class CatRig {
 	/** Resolves a pose into local quaternions, parent-first. */
 	compile(pose: Pose): CompiledPose {
 		const local = this.restLocal.map((q) => q.clone())
+		const rotation = pose.root?.rotation ?? [0, 0, 0]
+		const rootQuaternion = new Quaternion().setFromEuler(
+			new Euler(
+				rotation[0] * DEG,
+				rotation[1] * DEG,
+				rotation[2] * DEG,
+				'XYZ',
+			),
+		)
+		const rootInverse = rootQuaternion.clone().invert()
 		for (const i of this.order) {
 			const entry = pose.bones[this.keys[i] as keyof typeof pose.bones]
 			if (!entry) continue
@@ -192,6 +202,12 @@ export class CatRig {
 					),
 				)
 			if (entry.aim) this.aim(local, i, entry.aim)
+			if (entry.aimWorld) {
+				const direction = new Vector3(
+					...entry.aimWorld,
+				).applyQuaternion(rootInverse)
+				this.aim(local, i, [direction.x, direction.y, direction.z])
+			}
 			if (entry.twist)
 				local[i].multiply(
 					new Quaternion().setFromAxisAngle(
@@ -200,19 +216,11 @@ export class CatRig {
 					),
 				)
 		}
-		const rotation = pose.root?.rotation ?? [0, 0, 0]
 		return {
 			local,
 			hips: new Vector3(...(pose.hips ?? [0, 0, 0])),
 			rootPosition: new Vector3(...(pose.root?.position ?? [0, 0, 0])),
-			rootQuaternion: new Quaternion().setFromEuler(
-				new Euler(
-					rotation[0] * DEG,
-					rotation[1] * DEG,
-					rotation[2] * DEG,
-					'XYZ',
-				),
-			),
+			rootQuaternion,
 		}
 	}
 
