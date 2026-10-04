@@ -186,9 +186,8 @@ export function focusPoint(
 		]
 	if (focus === 'head' && headWorld) return headWorld
 	const [x, y, z] = CAT_SPOT.position
-	// The sleeper lies along the desk from x = 0; a seated cat's chest is a
-	// little above the spot; a standing one (rest, probes) stands on it.
-	if (pose === 'sleep') return [0.25, y + 0.1, z - 0.3]
+	// A seated cat's chest is a little above the spot; a standing one (rest,
+	// probes) stands on it.
 	return SEATED_POSES.has(pose) ? [x, y + 0.18, z] : [x, y + 0.31, z]
 }
 

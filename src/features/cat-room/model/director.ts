@@ -106,7 +106,8 @@ function riseEnvelope(elapsed: number, duration: number, rise: number): number {
  * and ScrollTrigger, only while a frame is needed, and leaves one cleared
  * frame behind when it idles so the last picture never lingers. The `room`
  * phase is the night room on the dive track; the `finale` phase the dawn
- * room on the pull-back, with the page shrinking back into the monitor;
+ * room on the pull-back with the page shrinking back into the monitor, the
+ * cat sitting as before (the sleeping cat went at Gate 2, round 3);
  * `inside` draws nothing but the gags of plan §3.10, through the overlay.
  */
 export function createDirector(deps: DirectorDeps): Director {
@@ -358,17 +359,16 @@ export function createDirector(deps: DirectorDeps): Director {
 			dive: finale ? 0 : timeline.dive,
 			viewport: timeline.viewport,
 			pointer: timeline.pointer,
-			pose: finale ? 'sleep' : 'sit',
-			lookAt:
-				!finale && timeline.pointer
-					? unprojectPoint(
-							[timeline.pointer.x, timeline.pointer.y],
-							camera,
-							width,
-							height,
-							POINTER_LOOK_DEPTH,
-						)
-					: null,
+			pose: 'sit',
+			lookAt: timeline.pointer
+				? unprojectPoint(
+						[timeline.pointer.x, timeline.pointer.y],
+						camera,
+						width,
+						height,
+						POINTER_LOOK_DEPTH,
+					)
+				: null,
 			// The first frame after idling: the pose switches without a blend.
 			cut: !shown,
 			overlay: null,

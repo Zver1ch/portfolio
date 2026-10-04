@@ -1,15 +1,14 @@
 import { type Camera, Euler, type Group, Quaternion, Vector3 } from 'three'
-import { DEG, smoothstep } from '@/shared/lib/math/ease'
+import { DEG } from '@/shared/lib/math/ease'
 import type { Vec3 } from '@/shared/lib/math/vec3'
 import type { Collider } from '../../../config/colliders'
 import { POSES, type PoseName } from '../../../config/poses'
 import { CAT_SPOT } from '../../../config/room-layout'
-import { CHAINS, EYELIDS, GAGS, PET } from '../../../config/tuning'
+import { CHAINS, GAGS, PET } from '../../../config/tuning'
 import type { DirectorFrame } from '../../../model/frame'
 import { tailFlick } from '../../camera-path'
 import { patchMaterial, type SceneUniforms } from '../materials'
 import { SpringChains } from './chains'
-import { createEyelids } from './eyelids'
 import {
 	applyBreathing,
 	applyEarTwitch,
@@ -112,9 +111,6 @@ export async function createCat({
 	for (const material of model.materials) patchMaterial(material, patch)
 
 	const rig = new CatRig(model)
-	const eyelids = createEyelids(model, rig, patch)
-	const leftEye = rig.indexOf('lefteye')
-	const restEyeInverse = rig.restLocal[leftEye].clone().invert()
 	const mixer = new PoseMixer(rig, POSES, 'rest')
 	const layers = createLayerState()
 	const chains = new SpringChains(rig)
@@ -174,19 +170,6 @@ export async function createCat({
 		const pose = mixer.evaluate(time)
 		const { local } = pose
 
-		// How far the eyes have rolled shut (the sleep pose rolls them 180°),
-		// before the look-at layer adds its small turn.
-		const rolled = new Vector3(0, 1, 0).applyQuaternion(
-			restEyeInverse.clone().multiply(local[leftEye]),
-		)
-		const closed = smoothstep(
-			EYELIDS.rollEdges[0],
-			EYELIDS.rollEdges[1],
-			(1 - rolled.y) / 2,
-		)
-		uniforms.uEyesClosed.value = closed
-		eyelids.setClosed(closed)
-
 		for (const [key, rot] of Object.entries(overrides)) {
 			const i = rig.indexOf(key)
 			local[i].multiply(
@@ -207,15 +190,7 @@ export async function createCat({
 		const lookCharacter = lookWorld
 			.sub(root.position)
 			.applyQuaternion(root.quaternion.clone().invert())
-		// A sleeping cat does not track the visitor.
-		applyLookAt(
-			rig,
-			local,
-			layers,
-			frame.pose === 'sleep' ? null : lookCharacter,
-			model.scale,
-			dt,
-		)
+		applyLookAt(rig, local, layers, lookCharacter, model.scale, dt)
 		applyEarTwitch(rig, local, layers, time)
 		applyJaw(rig, local, layers, time)
 
@@ -297,11 +272,9 @@ export async function createCat({
 			if (event.type === 'pet') {
 				const base = mixer.basePose
 				const reaction =
-					base === 'sleep'
-						? PET.asleep
-						: base === 'peek' || base === 'reach'
-							? PET.peeking
-							: PET.awake
+					base === 'peek' || base === 'reach'
+						? PET.peeking
+						: PET.awake
 				mixer.play(reaction.pose, lastTime, {
 					fadeIn: reaction.fadeIn,
 					hold: reaction.hold,
@@ -370,7 +343,6 @@ export async function createCat({
 				.sort((a, b) => b.depth - a.depth)
 		},
 		dispose() {
-			eyelids.dispose()
 			model.dispose()
 		},
 	}

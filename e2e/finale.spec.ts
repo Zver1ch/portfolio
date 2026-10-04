@@ -15,8 +15,8 @@ test.describe.configure({ mode: 'serial', timeout: 90_000 })
 const html = (page: Page) => page.locator('html')
 const finalePortal = (page: Page) =>
 	page.locator('[data-stage="finale"] [data-portal]')
-const sleepingCat = (page: Page) =>
-	page.getByRole('button', { name: 'Pet the sleeping cat', exact: true })
+/** The live room's pet target; the static face buttons are hidden while it runs. */
+const liveCat = (page: Page) => page.locator('[data-pet-proxy]')
 
 async function waitForRoom(page: Page, mode: 'full' | 'lite') {
 	await gotoHydrated(page)
@@ -37,7 +37,7 @@ async function scrollToEnd(page: Page) {
 test.describe('full mode', () => {
 	test.use({ viewport: DESKTOP })
 
-	test('the finale pulls back out of the monitor into the dawn room, with the credits and the sleeping cat', async ({
+	test('the finale pulls back out of the monitor into the dawn room, with the credits and the cat', async ({
 		page,
 	}) => {
 		const problems = collectProblems(page)
@@ -62,8 +62,8 @@ test.describe('full mode', () => {
 			'licensed under CC BY 4.0',
 		)
 
-		// The sleeper takes a pet: counter and meow.
-		const cat = sleepingCat(page)
+		// The cat takes a pet: counter and meow.
+		const cat = liveCat(page)
 		await expect(cat).toBeVisible()
 		await expect(cat).toBeEnabled()
 		await cat.click()
@@ -83,7 +83,7 @@ test.describe('full mode', () => {
 test.describe('lite mode', () => {
 	test.use({ viewport: { width: 390, height: 844 } })
 
-	test('the dawn room fades in under the credits and the sleeper can be petted', async ({
+	test('the dawn room fades in under the credits and the cat can be petted', async ({
 		page,
 	}) => {
 		const problems = collectProblems(page)
@@ -100,13 +100,13 @@ test.describe('lite mode', () => {
 			page.getByRole('link', { name: 'CC BY 4.0' }),
 		).toBeInViewport()
 
-		// With the dawn room on screen the sleeper is the pet target.
+		// With the dawn room on screen the live cat is the pet target.
 		await page
 			.locator('[data-stage="finale"] [data-slot]')
 			.evaluate((node) => node.scrollIntoView({ block: 'start' }))
 		await waitForScrollToSettle(page)
 		await page.waitForTimeout(600)
-		const cat = sleepingCat(page)
+		const cat = liveCat(page)
 		await expect(cat).toBeVisible()
 		await cat.click()
 		await expect(page.getByTestId('boop-count')).toHaveText('1')

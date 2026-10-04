@@ -49,8 +49,6 @@ export type PoseName =
 	| 'sit'
 	| 'sit-boop'
 	| 'stretch'
-	| 'sleep'
-	| 'sleep-stretch'
 	| 'peek'
 	| 'peek-boop'
 	| 'reach'
@@ -58,9 +56,9 @@ export type PoseName =
 
 /*
  * Character space: +Y up, +Z forward (the face), +X the cat's own left.
- * The sitting poses keep the root upright and facing the visitor; the sleep
- * pose turns the whole cat with `root.rotation`, so its limbs are written in
- * `aimWorld`.
+ * The sitting poses keep the root upright and facing the visitor; a pose
+ * that turns the whole cat with `root.rotation` would write its limbs in
+ * `aimWorld` (the sleeping cat did, until Gate 2 round 3 dropped it).
  *
  * Bone axes (rest pose, character space): spine chain +Y; thighs and shins
  * -Y; upper arms and forearms ±X (T-pose, left arm +X); tail chain -Z then
@@ -180,98 +178,6 @@ export const POSES: Record<PoseName, Pose> = {
 			tail005: { aim: [0, 0.2, 0.98] },
 			ear_l: { rot: [0, 0, -14] },
 			ear_r: { rot: [0, 0, 14] },
-		},
-	},
-
-	/**
-	 * Asleep on the desk in front of the monitor (Gate 2, round 1): curled on
-	 * the left side, back to the monitor, belly to the visitor, head towards the
-	 * lamp. Written in character space, which lying on the left side maps to
-	 * the world as: +Y along the desk towards the head (+X world), +Z to the
-	 * visitor, +X down into the desk. The spine bends gently towards the
-	 * belly, so the face turns along the desk towards the dawn camera; the
-	 * forearms fold under the chin; the thighs come up towards the belly with
-	 * the shins folded back; the tail trails behind and curls round the feet.
-	 */
-	sleep: {
-		root: { position: [-0.7, 0.1, -0.34], rotation: [-20, 0, -90] },
-		bones: {
-			hips: { aim: [0, 1, 0.1] },
-			chest: { aim: [0, 0.95, 0.3] },
-			neck: { aim: [0, 0.9, 0.44] },
-			head: { aim: [0, 0.78, 0.63], post: [0, 0, 60] },
-			// Upper arms along the chest towards the chin, forearms folded in
-			// front of it, paws tucked under the chin (the `post` raise is what
-			// the lab's sliders found): the lower (left) arm on the desk, the
-			// right one over it. The forearm twists turn the palms towards each
-			// other, the lower one up and the upper one down (measured from the
-			// pad vertices in the lab, Gate 2 round 2).
-			arm_l: { aim: [0.5, 0.75, 0.45], post: [40, 0, 0] },
-			elbow_l: { aim: [0.2, 0.3, 0.93], twist: -85 },
-			wrist_l: { aim: [0, 0.5, 0.86] },
-			arm_r: { aim: [-0.1, 0.8, 0.6], post: [40, 0, 0] },
-			elbow_r: { aim: [0.1, 0.2, 0.97], twist: 100 },
-			wrist_r: { aim: [0, 0.4, 0.9] },
-			// Thighs up towards the belly, shins folded back, the right leg lying
-			// on the left one.
-			leg_l: { aim: [0.15, 0.45, 0.88] },
-			knee_l: { aim: [0.05, -0.95, 0.3] },
-			foot_l: { aim: [0, -0.8, 0.6] },
-			leg_r: { aim: [0.05, 0.45, 0.88] },
-			knee_r: { aim: [0, -0.95, 0.3] },
-			foot_r: { aim: [0, -0.8, 0.6] },
-			// The tail trails behind along the desk and curls round the feet.
-			tailroot: { aim: [0.1, -0.8, -0.6] },
-			tail: { aim: [0.1, -1, -0.1] },
-			tail001: { aim: [0.1, -0.9, 0.4] },
-			tail002: { aim: [0.1, -0.6, 0.8] },
-			tail003: { aim: [0.1, -0.2, 1] },
-			tail004: { aim: [0.05, 0.2, 0.98] },
-			tail005: { aim: [0.05, 0.5, 0.86] },
-			ear_l: { rot: [0, 0, 20] },
-			ear_r: { rot: [0, 0, -20] },
-			lefteye: { rot: [180, 0, 0] },
-			righteye: { rot: [180, 0, 0] },
-		},
-	},
-
-	/**
-	 * The pet reaction of the sleeper, played over `sleep` (same root, eyes
-	 * still shut): the front legs push out along the desk past the head, the
-	 * back arches, the hind legs straighten with the toes spread, the head
-	 * lifts a little, the ears come up, the tail straightens behind. The jaw
-	 * layer adds the yawn. Character space, as `sleep`.
-	 */
-	'sleep-stretch': {
-		root: { position: [-0.7, 0.1, -0.34], rotation: [-20, 0, -90] },
-		bones: {
-			hips: { aim: [0, 1, -0.05] },
-			chest: { aim: [0, 0.95, -0.2] },
-			neck: { aim: [0, 0.95, 0.1] },
-			head: { aim: [0, 0.9, 0.4], post: [0, 0, 45] },
-			arm_l: { aim: [0.05, 0.95, 0.3] },
-			elbow_l: { aim: [0, 0.95, 0.3] },
-			wrist_l: { aim: [0, 0.9, 0.44] },
-			arm_r: { aim: [-0.2, 0.9, 0.4] },
-			elbow_r: { aim: [0, 0.95, 0.3] },
-			wrist_r: { aim: [0, 0.9, 0.44] },
-			leg_l: { aim: [0.05, -0.9, 0.42] },
-			knee_l: { aim: [0.05, -0.95, 0.3] },
-			foot_l: { aim: [0, -0.7, 0.7] },
-			leg_r: { aim: [-0.1, -0.85, 0.5] },
-			knee_r: { aim: [-0.05, -0.95, 0.3] },
-			foot_r: { aim: [0, -0.6, 0.8] },
-			tailroot: { aim: [0.1, -0.9, -0.4] },
-			tail: { aim: [0.1, -1, -0.1] },
-			tail001: { aim: [0.1, -1, 0.1] },
-			tail002: { aim: [0.1, -0.95, 0.3] },
-			tail003: { aim: [0.05, -0.9, 0.44] },
-			tail004: { aim: [0.05, -0.85, 0.5] },
-			tail005: { aim: [0, -0.8, 0.6] },
-			ear_l: { rot: [0, 0, 6] },
-			ear_r: { rot: [0, 0, -6] },
-			lefteye: { rot: [180, 0, 0] },
-			righteye: { rot: [180, 0, 0] },
 		},
 	},
 

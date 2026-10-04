@@ -125,7 +125,7 @@ export const SOCKS = {
 /**
  * Where the cat's character origin sits: on the desk top at the seat of the
  * sitting pose, 5 cm behind the front edge so the calves clear it, between
- * the mouse and the lamp. The sleep pose offsets itself from here.
+ * the mouse and the lamp.
  */
 export const CAT_SPOT = {
 	position: [0.7, DESK_TOP, -0.84] as Vec3,

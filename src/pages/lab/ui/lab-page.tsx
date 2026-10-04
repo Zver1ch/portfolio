@@ -46,7 +46,6 @@ const SETTLE_MAX_STEPS = 240
 
 function basePose(params: LabParams): PoseName {
 	if (params.pose) return params.pose
-	if (params.view === 'finale') return 'sleep'
 	if (params.view === 'probe') return 'rest'
 	if (params.view === 'overlay') return 'peek'
 	return 'sit'

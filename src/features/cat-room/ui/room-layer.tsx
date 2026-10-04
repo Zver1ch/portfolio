@@ -37,7 +37,7 @@ const SECTIONS = 'main section[id], [data-manifesto]'
  */
 export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 	const mode = useRoomMode()
-	const { status, phase } = useRoomState()
+	const { status } = useRoomState()
 	const layerRef = useRef<HTMLDivElement>(null)
 	const proxyRef = useRef<HTMLButtonElement>(null)
 	const gagProxyRef = useRef<HTMLButtonElement>(null)
@@ -289,11 +289,6 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 				<>
 					<PetProxy
 						ref={proxyRef}
-						label={
-							phase === 'finale'
-								? 'Pet the sleeping cat'
-								: 'Pet the cat'
-						}
 						disabled={status !== 'ready'}
 						onPet={(origin) => {
 							onPet(origin)

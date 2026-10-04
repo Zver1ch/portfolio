@@ -131,11 +131,10 @@ describe('RoomLayer', () => {
 		expect(onPet).toHaveBeenCalledTimes(1)
 		expect(scene.trigger).toHaveBeenCalledWith({ type: 'pet' })
 
-		// The same button is the finale's pet target, named for the sleeper.
+		// The same button is the finale's pet target, under the same name.
 		act(() => setRoomPhase('finale'))
-		expect(proxy).toHaveAttribute('aria-label', 'Pet the sleeping cat')
-		act(() => setRoomPhase('room'))
 		expect(proxy).toHaveAttribute('aria-label', 'Pet the cat')
+		act(() => setRoomPhase('room'))
 
 		// A scroll handler writing the timeline wakes an idle director.
 		director.wake.mockClear()

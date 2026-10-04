@@ -17,7 +17,7 @@ Working agreement:
 1. A 3D hero: a developer's room at night, the cat lounging on the desk in front of the monitor.
 2. The camera dives into the monitor and the screen becomes the page.
 3. Clean 2D sections with huge typography, with the cat intruding from the viewport edges.
-4. The camera pulls back out of the monitor into the room at dawn, the cat asleep, then credits.
+4. The camera pulls back out of the monitor into the room at dawn, the cat still sitting there, then credits. (Gate 2, round 3: the sleeping cat was dropped after two rounds of pose work; the cat sits as in the hero.)
 
 **Non-goals.** Projects section, Russian locale, light theme, custom cursor, PS1 pixelation or vertex jitter, runtime lights, shadows, post-processing, physics engines, external animation files, WebGPU, Open Graph image.
 
@@ -31,7 +31,7 @@ Working agreement:
 | 2 | Structure: 3D hero with a scroll-driven camera, 2D sections with huge type, a second 3D moment at the end, credits. |
 | 3 | Dark only, existing palette tokens, no `dark:` variants. |
 | 4 | The cat gets in the way of work: sitting on the front edge of the desk next to the mouse, legs dangling over the edge, one paw on the mouse, facing the visitor (Gate 1 decision: the side-lying pose of the first drafts was rejected); gibberish (`asdfghjkl`) gets typed; on click he stretches and meows. Wholesome, lazy, cat-like, no pin-up staging. The pose render is approved by the owner before anything is built on it. |
-| 5 | Dive into the monitor until the screen fills the viewport and is the page. Finale: pull back out of the monitor; dawn; cat asleep. |
+| 5 | Dive into the monitor until the screen fills the viewport and is the page. Finale: pull back out of the monitor; dawn; the cat sits as before (no sleeping cat since Gate 2, round 3). |
 | 6 | In 2D sections the cat stays outside the screen and intrudes from the edges (ears, paw swatting the cursor, tail sweep, face against the glass, `asdfgh` typed). A click drops a fish and a paw snatches it. Clicking the cat meows. No walking mini-cat. |
 | 7 | Style: clean flat low-poly, flat palette colours, light painted with colour, full resolution. |
 | 8 | The character GLB is used as authored: bow tie and stockings stay, proportions untouched, `popka` bones never animated. |
@@ -104,7 +104,7 @@ Modes (decided on the client; the server always renders `static`):
 | Stack | Table: skill and status. `profile.skills` are "In use", `profile.learning` are "Learning". Note: "Learning rows move up with the first live demo." | Same. | Same. |
 | Contact | "Looking for": `profile.lookingFor`; giant links from `profile.links`; `profile.now`. | Same, plus a 2D face button. | Same, plus a 2D face button. |
 | Edge intrusions | Ears and eyes peek from the bottom edge; a paw swats near the cursor; the tail sweeps on section change; rarely the face against the glass; `asdfgh` typed in a small line. Clicking an empty page area (or "Feed the cat" in the header) drops a fish and a paw snatches it. Clicking the head meows. | None. | None. |
-| Finale | The finale stage pins for 1.8 viewport heights. The page (showing `profile.footerStatement`) undocks and shrinks into the monitor as the camera pulls back; dawn light warms; the cat sleeps. Credits roll in at the end. Click on the cat: sleepy stretch (`sleep-stretch` over `sleep`) and meow. | No pin. The canvas fades in over the finale spacer showing the dawn room; credits overlaid. | Footer statement, dawn poster, credits, face button. |
+| Finale | The finale stage pins for 1.8 viewport heights. The page (showing `profile.footerStatement`) undocks and shrinks into the monitor as the camera pulls back; dawn light warms; the cat sits as in the hero and follows the pointer. Credits roll in at the end. Click on the cat: the face reaction and meow. | No pin. The canvas fades in over the finale spacer showing the dawn room; credits overlaid. | Footer statement, dawn poster, credits, face button. |
 
 ## 3. Technical design
 
@@ -148,7 +148,7 @@ Rules:
 |---|---|---|---|---|---|
 | `room` | full: `dive < 0.985` and hero stage on screen; lite: hero on screen | Perspective, dive track | Night | Sit plus idle layers | Every frame |
 | `inside` | full only, between the two stages | Orthographic overlay in CSS px | Hidden | Gag poses | Only while a gag or fish is active |
-| `finale` | full: `finale > 0.015`; lite: finale spacer on screen | Perspective, finale track | Dawn | Sleep plus breathing | Every frame |
+| `finale` | full: `finale > 0.015`; lite: finale spacer on screen | Perspective, finale track | Dawn | Sit plus idle layers | Every frame |
 | `off` | static, hidden tab, nothing on screen | none | none | none | Stopped |
 
 - `model/timeline.ts`: a plain mutable object (`dive`, `finale`, `layerOpacity`, `pointer`, `viewport`). ScrollTriggers write it and the director reads it. It is never React state.
@@ -201,7 +201,7 @@ ScrollTrigger.create({
 
 - No `scrub` smoothing: Lenis already smooths on fine pointers.
 - Dive progress map: 0–0.08 hold; 0.08–0.90 camera travel (`easeInOutCubic`); 0.55–0.80 tail flick off the screen; 0.90–1.00 dock; the phase becomes `inside` at 0.985.
-- Finale progress map: 0–0.10 undock (the docking lerp of §3.5 run backwards, `finaleUndock`); 0.10–0.85 pull back; dawn factor `0.55 + 0.45 * smoothstep(0.1, 0.9, p)`. The credits block is absolutely positioned at the footer's bottom edge in full mode, so it rolls in from the bottom over the last stretch of the pin (about the last 30% for its height) and sits fully in view exactly at p = 1, the end of the document; a left column, so the sleeping cat stays uncovered.
+- Finale progress map: 0–0.10 undock (the docking lerp of §3.5 run backwards, `finaleUndock`); 0.10–0.85 pull back; dawn factor `0.55 + 0.45 * smoothstep(0.1, 0.9, p)`. The credits block is absolutely positioned at the footer's bottom edge in full mode, so it rolls in from the bottom over the last stretch of the pin (about the last 30% for its height) and sits fully in view exactly at p = 1, the end of the document; a left column, so the cat on the right stays uncovered.
 - Hero copy fades with a scrubbed tween over the first 0.45 viewport heights.
 - Set `history.scrollRestoration = 'manual'`. After the first refresh, scroll to `location.hash` if present.
 
@@ -236,7 +236,7 @@ World (metres, +Y up, camera looks toward −Z). Starting values in `config/room
 | Dive | Position: quadratic Bézier from hero through `[0.55, 1.26, -0.05]` to the end position; target: lerp to the screen centre, complete at t = 0.7 |
 | End camera | On the screen normal at distance `0.34 / (2 * tan(fov / 2)) * 0.985` (0.593 m at fov 32 before the 1.5% overshoot that hides the bezel) |
 | Lite | Hero position scaled away from the target by `max(1, 1.35 / aspect)` |
-| Dawn camera | Position `[-0.35, 1.48, 0.95]`, target `[0.05, 1.02, -1.25]`, fov 34 |
+| Dawn camera | Position `[-0.15, 1.46, 1.0]`, target `[0.4, 1.0, -1.22]`, fov 34 (re-aimed at Gate 2 round 3 to frame the monitor and the cat sitting to its right; the pull-back control point moved to `[0, 1.3, 0.1]`) |
 
 With these values the screen quad at 1440×900 is about 400×270 px at rest and exactly `[0,0]–[1440,900]` at the end.
 
@@ -343,7 +343,7 @@ export type Pose = {
 - `aim`: desired direction of the bone in character space (+Y up, +Z forward), resolved parent-first by shortest arc, then `twist` degrees about the bone axis; `aimWorld` is the same in the placed cat's world; `post` is a local Euler offset applied last, the same thing the lab's overrides do (Gate 2, round 1).
 - `cat/rig.ts` compiles each pose once into local quaternions.
 - `cat/pose-mixer.ts` slerps between compiled poses with eased weights. An optional stepped clock (`floor(t * 12) / 12`) is a lab toggle for Gate 1.
-- Poses: `rest`, `sit`, `stretch`, `sleep`, `sleep-stretch`, `peek`, `reach`, `tail-up`.
+- Poses: `rest`, `sit`, `sit-boop` (the face-only pet reaction, masked), `stretch` (lab only), `peek`, `peek-boop`, `reach`, `tail-up`. The `sleep` and `sleep-stretch` poses and the eyelid machinery were removed at Gate 2 round 3.
 
 Procedural layers, applied after the mixer in this order:
 1. Breathing: chest pitch ±1° at 0.28 Hz.
@@ -353,7 +353,7 @@ Procedural layers, applied after the mixer in this order:
 5. Spring chains for tail, ears and hair (`cat/chains.ts`): verlet tip follow at fixed 1/120 s sub-steps, at most 4 per frame; hair chains auto-detected from keys starting with `hair`.
 6. Two-bone IK (`lib/ik.ts`, pure; `cat/limb-ik.ts` applies it) for `arm → elbow → wrist`, with clamped reach and a pole hint.
 
-There are no eyelids and no morph targets, so the cat cannot blink; the sleep pose hides the face in the crook of the arm.
+There are no eyelids and no morph targets, so the cat cannot blink; it stays awake on every stage.
 
 Shading variants for Gate 1:
 - A: authored unlit.
@@ -583,7 +583,7 @@ Fallbacks:
   - `projects` stays in the type and stays empty.
   - The owner confirms the wording at Gate 2.
 - `app/layout.tsx`: `lang='en'`, font subsets `['latin']`.
-- Labels: "Sound", "Sections", "Pet the cat", "Pet the sleeping cat", "Feed the cat", "Enable sound", "Building the room…", counter "boops: N", skip link "Skip to content".
+- Labels: "Sound", "Sections", "Pet the cat" (the same name on every stage), "Feed the cat", "Enable sound", "Building the room…", counter "boops: N", skip link "Skip to content".
 - Remove the heart label text in `stamp-hearts.ts`; translate the warning in `cat-sound.ts`.
 - Micro-copy:
   - Captions "(01) Role", "(02) About", "(03) Stack", "(04) Contact".

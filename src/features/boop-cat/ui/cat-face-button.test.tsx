@@ -27,9 +27,9 @@ describe('CatFaceButton', () => {
 	})
 
 	it('takes a place-specific label', () => {
-		render(<CatFaceButton label='Pet the sleeping cat' />)
+		render(<CatFaceButton label='Pet the other cat' />)
 		expect(
-			screen.getByRole('button', { name: 'Pet the sleeping cat' }),
+			screen.getByRole('button', { name: 'Pet the other cat' }),
 		).toBeInTheDocument()
 	})
 })

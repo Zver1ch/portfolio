@@ -18,14 +18,15 @@ export const DIVE_CONTROL: Vec3 = [0.55, 1.26, -0.05]
 /** The dive stops 1.5% closer than the exact fit, so the bezel is never seen. */
 export const END_OVERSHOOT = 0.985
 
+/** Frames the monitor and the cat sitting to its right, from a little left of centre (Gate 2, round 3). */
 export const DAWN_CAMERA: CameraPose = {
-	position: [-0.35, 1.48, 0.95],
-	target: [0.05, 1.02, -1.25],
+	position: [-0.15, 1.46, 1.0],
+	target: [0.4, 1.0, -1.22],
 	fov: 34,
 }
 
 /** Control point of the pull-back from the screen to the dawn camera. */
-export const FINALE_CONTROL: Vec3 = [-0.12, 1.3, 0.1]
+export const FINALE_CONTROL: Vec3 = [0, 1.3, 0.1]
 
 /** Lite mode pushes the hero camera away on narrow viewports: `max(1, LITE_PULLBACK / aspect)`. */
 export const LITE_PULLBACK = 1.0

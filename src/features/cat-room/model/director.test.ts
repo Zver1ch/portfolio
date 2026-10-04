@@ -138,7 +138,7 @@ describe('createDirector', () => {
 		const frame = frames.at(-1) as DirectorFrame
 		expect(frame).toMatchObject({
 			phase: 'finale',
-			pose: 'sleep',
+			pose: 'sit',
 			dive: 0,
 			lookAt: null,
 			cut: true,
@@ -185,7 +185,7 @@ describe('createDirector', () => {
 		expect(director?.phase).toBe('finale')
 		const frame = frames.at(-1) as DirectorFrame
 		expect(frame.dawn).toBe(1)
-		expect(frame.pose).toBe('sleep')
+		expect(frame.pose).toBe('sit')
 		expect(frame.camera).toEqual(
 			liteFinaleCamera(VIEWPORT.width / VIEWPORT.height),
 		)

@@ -12,7 +12,7 @@ import { Credits } from './credits'
  * Stacked in the static layout, overlaid once the full room runs, where the
  * stage pins and the credits are a sibling of it, never a child: pinned at
  * the footer's bottom edge they roll in over the last stretch of the
- * pull-back, as a column on the left so the sleeping cat stays in reach.
+ * pull-back, as a column on the left so the cat stays in reach.
  */
 export function Finale({ children }: { children: ReactNode }) {
 	return (
@@ -40,7 +40,7 @@ export function Finale({ children }: { children: ReactNode }) {
 						data-static-face
 						className='absolute top-6 right-4 sm:top-10 sm:right-10'
 					>
-						<CatFaceButton label='Pet the sleeping cat' />
+						<CatFaceButton />
 					</div>
 				</div>
 			</PortalStage>

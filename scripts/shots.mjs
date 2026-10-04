@@ -27,7 +27,7 @@ const OUT_DIR = 'artifacts/shots'
 const GATE_DIR = 'docs/lookdev/gate-1'
 /** Vertices of the cat inside the furniture, deeper than this, are a problem. */
 const CLIP_TOLERANCE = 0.003
-const CLIP_POSES = ['sit', 'sleep', 'stretch', 'sleep-stretch']
+const CLIP_POSES = ['sit', 'stretch']
 const DEFAULT_TIME = 2.4
 
 const args = process.argv.slice(2)
@@ -318,18 +318,6 @@ async function gatePackage() {
 			1000,
 		],
 		['finale-dawn-1920x1200.png', 'view=finale&p=1', 1920, 1200],
-		[
-			'sleep-close-up.png',
-			'view=turntable&cam=close&pose=sleep&dawn=1&yaw=60&pitch=45&dist=0.75',
-			1600,
-			1000,
-		],
-		[
-			'sleep-side.png',
-			'view=turntable&cam=side&pose=sleep&dawn=1',
-			1600,
-			1000,
-		],
 		['cat-quarter.png', 'view=turntable&cam=quarter&pose=sit', 1600, 1000],
 		['sticker.png', 'view=turntable&cam=sticker', 1600, 1000],
 		[

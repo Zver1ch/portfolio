@@ -170,20 +170,17 @@ otherwise the value is captured during prerendering.
   and the licence rules are in `assets/models/README.md`.
 - Poses are data in `src/features/cat-room/config/poses.ts`: `aim` directions
   in character space (+Y up, +Z forward, +X the cat's left), `aimWorld` the
-  same in the placed cat's world (after `root.rotation`), `rot` local Euler
-  degrees, `twist` a roll about the bone after `aim`, `post` a local Euler
-  offset applied last (exactly what the lab's `bone/axis/deg` and sliders do,
-  so a value found there bakes in as it is). `popka*` and `shoulder_*` bones
-  are never animated. The arm IK (`lib/scene/cat/limb-ik.ts`) aims the upper
+  same in the placed cat's world (after `root.rotation`; unused since the
+  sleeping cat went at Gate 2 round 3, kept for a pose that turns the root),
+  `rot` local Euler degrees, `twist` a roll about the bone after `aim`,
+  `post` a local Euler offset applied last (exactly what the lab's
+  `bone/axis/deg` and sliders do, so a value found there bakes in as it is).
+  The pet reaction (`PET` in `config/tuning.ts`) is `sit-boop` masked to neck,
+  head and ears: the paws and the tail never move on a click (Gate 2,
+  round 2). `popka*` and `shoulder_*` bones are never animated. The arm IK (`lib/scene/cat/limb-ik.ts`) aims the upper
   arm and the forearm by shortest arc, which leaves the forearm's roll
   arbitrary: its `twistDeg` rolls it afterwards, and the wrist's own `post`
   in the pose decides how the paw curls.
-- The model has no eyelids. The sleep pose rolls the eye bones 180° and
-  `lib/scene/cat/eyelids.ts` turns that roll into `uEyesClosed`, which
-  collapses the pupils and the black eye outlines (a `sleepShift` vertex
-  attribute on the black mesh) and grows a stroke over each eye. Measured
-  from the loaded model, not hand-placed: keep the eye outline pieces within
-  one pupil-size of the pupils if the model is ever re-exported.
 - On the page the room is `src/widgets/cat-stage` → `features/cat-room/ui/room-layer.tsx`:
   one fixed transparent canvas (`[data-room-layer]`, z-30, `pointer-events:
   none`, `aria-hidden`) above the page. `model/room-mode.ts` decides
@@ -213,15 +210,16 @@ otherwise the value is captured during prerendering.
   footer statement is the `[data-portal]` of the finale stage. Past
   `data-room-phase='finale'` the director undocks it with the dive's docking
   run backwards (`finaleUndock` in `lib/camera-path.ts`) and the camera pulls
-  back to the dawn camera; the room turns to dawn through `dawnFactor`, the
-  cat sleeps, a pet plays `sleep-stretch` over `sleep` (`PET` in
-  `config/tuning.ts`). The credits block is a sibling of the stage, absolute
+  back to the dawn camera; the room turns to dawn through `dawnFactor` and
+  the cat keeps sitting, following the pointer, with the same pet reaction
+  as in the hero (the sleeping cat, its eyelids and the `sleep-stretch`
+  reaction were removed at Gate 2 round 3). The credits block is a sibling of the stage, absolute
   at the footer's bottom edge in full mode, so it rolls in over the last
   stretch of the pin as a left column that leaves the cat in reach; its
-  scrim is a CSS gradient that is invisible on the ink page. The pet proxy's
-  label follows the phase from `model/room-store.ts` ("Pet the sleeping
-  cat"); the 2D face button in the finale slot is `[data-static-face]`,
-  shown only when no room will come.
+  scrim is a CSS gradient that is invisible on the ink page. The pet proxy
+  is "Pet the cat" in every phase (`model/room-store.ts` still mirrors the
+  phase for the ambient's mood); the 2D face button in the finale slot is
+  `[data-static-face]`, shown only when no room will come.
 - Inside the monitor (`data-room-phase='inside'`, full mode only) the cat
   intrudes from the bottom edge through an orthographic overlay laid out in
   CSS px (`lib/overlay.ts`; the cat keeps its world spot, the room meshes are
@@ -276,7 +274,7 @@ otherwise the value is captured during prerendering.
 - The cat must not enter the furniture. `src/features/cat-room/config/colliders.ts`
   describes the room's solids; `scene.penetration()` runs every skinned vertex
   of the posed cat through them, and `pnpm assets:shots --clip` (also part of
-  `--gate`) fails above 3 mm for `sit`, `sleep`, `stretch` and `sleep-stretch`. After moving
+  `--gate`) fails above 3 mm for `sit` and `stretch`. After moving
   a prop or editing a pose, run it; `--verbose` prints bone positions.
 
 ## Environment

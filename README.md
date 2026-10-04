@@ -64,7 +64,7 @@ decided on the client (the server always renders the static page):
   through a hole in the canvas; between the stages the cat peeks from the
   bottom edge, a tap on an empty spot (or "Feed the cat" in the header) drops
   a fish, Escape stops the gags; the finale pulls back out of the monitor into
-  the dawn room with the cat asleep and the credits rolling in.
+  the dawn room, the cat still sitting on the desk, and the credits rolling in.
 - **lite** (phones, narrow viewports): the same room with a painted screen,
   no pins, no gags; the canvas fades over the hero and the finale.
 - **static** (reduced motion, no WebGL, Save-Data, or any failure while

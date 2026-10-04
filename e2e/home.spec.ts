@@ -150,10 +150,10 @@ test.describe('cat', () => {
 			visited.push(focused.label)
 		}
 		expect(visited[0]).toBe('Skip to content')
+		// The hero, the contact section and the finale each have a face button.
 		expect(visited.filter((label) => label === 'Pet the cat')).toHaveLength(
-			2,
+			3,
 		)
-		expect(visited).toContain('Pet the sleeping cat')
 
 		const cat = heroCat(page)
 		await cat.focus()
@@ -373,16 +373,17 @@ test.describe('narrow viewports', () => {
 				page.getByRole('link', { name: 'Back to top' }),
 			).toBeInViewport()
 
-			// The sleeper is petted with the dawn room on screen: at the very
-			// end the credits lie over it (the lite room's proxy, or the static
-			// face button in the slot).
+			// The finale's cat is petted with the dawn room on screen: at the
+			// very end the credits lie over it (the lite room's proxy, or the
+			// static face button in the slot).
 			await page
 				.locator('[data-stage="finale"] [data-slot]')
 				.evaluate((node) => node.scrollIntoView({ block: 'start' }))
 			await waitForScrollToSettle(page)
 			await page.waitForTimeout(600)
 			await page
-				.getByRole('button', { name: 'Pet the sleeping cat' })
+				.getByRole('button', { name: 'Pet the cat', exact: true })
+				.last()
 				.click()
 			await page.waitForTimeout(300)
 			expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0)

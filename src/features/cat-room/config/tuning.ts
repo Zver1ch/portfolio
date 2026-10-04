@@ -25,8 +25,7 @@ export const MEOW = { jawDeg: 18, durationMs: 350 } as const
 
 /**
  * The pet reaction (plan §2): the overlay pose played over the base pose,
- * its envelope in seconds and the delay before the jaw opens. The sleeper
- * stretches slower and yawns later.
+ * its envelope in seconds and the delay before the jaw opens.
  */
 export const PET = {
 	/** Seated: only the face reacts (Gate 2, round 2), the paws and the tail stay put. */
@@ -38,13 +37,6 @@ export const PET = {
 		jawDelay: 0.08,
 		bones: ['neck', 'head', 'ear_l', 'ear_r'],
 	},
-	asleep: {
-		pose: 'sleep-stretch',
-		fadeIn: 0.55,
-		hold: 1.1,
-		fadeOut: 0.9,
-		jawDelay: 0.45,
-	},
 	/** Peeking from the edge: only neck, head and ears react. */
 	peeking: {
 		pose: 'peek-boop',
@@ -53,33 +45,6 @@ export const PET = {
 		fadeOut: 0.4,
 		jawDelay: 0.05,
 		bones: ['neck', 'head', 'ear_l', 'ear_r'],
-	},
-} as const
-
-/**
- * Closed eyes of the sleep pose (`lib/scene/cat/eyelids.ts`): the black eye
- * outlines collapse into the head and a `︶` stroke grows over each eye,
- * both driven by how far the eye bones have rolled.
- */
-export const EYELIDS = {
-	/** Head-bound black pieces this close to a pupil (in pupil sizes) are the eye's outline. */
-	reach: 1,
-	/** Where the outline collapses and the stroke grows from: this many pupil sizes behind the pupil. */
-	hide: 1.5,
-	/** The stroke floats this far off the eye surface, metres. */
-	lift: 0.0025,
-	/** Roll fractions of the eye bones between which the eyes count as closing. */
-	rollEdges: [0.2, 0.8],
-	line: {
-		/** Span as a share of the outline's width (its outer part wraps around the head). */
-		width: 0.68,
-		/** Height of the line ends above the outline's centre, share of its height. */
-		top: 0.1,
-		/** How far the middle sags below the ends, share of the outline's height. */
-		sag: 0.22,
-		/** Thickness at the middle, share of the outline's height; the ends taper. */
-		thickness: 0.09,
-		segments: 16,
 	},
 } as const
 
