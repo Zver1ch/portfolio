@@ -40,27 +40,46 @@ test.describe('full mode', () => {
 	}) => {
 		const problems = collectProblems(page)
 		await enterTheMonitor(page)
-		await scrollTo(page, '#about')
+		// No settling wait: the peek lasts a few seconds from the moment the
+		// section crosses the middle, and every moment of it counts below.
+		await page
+			.locator('#about')
+			.evaluate((node) => node.scrollIntoView({ block: 'start' }))
 		await expect(html(page)).toHaveAttribute('data-room-gag', 'peek', {
 			timeout: 5000,
 		})
-		// The head breathes, so it is never "stable" for an actionability
-		// check: click it where it is, right away, before the peek is over.
+		// Under software rendering, with the rest of the suite in parallel, a
+		// round trip to the page can take half a second: read the peek's state
+		// in one go, click the measured point directly (the head breathes, so
+		// it is never "stable" for an actionability check) and leave only the
+		// click's own effect to be checked afterwards.
 		const head = page.locator('[data-gag-proxy]')
+		const layer = page.locator('[data-room-layer]')
 		await expect(head).toBeVisible()
-		const box = await head.boundingBox()
+		const [box, layerVisible, ariaHidden, tabindex] = await Promise.all([
+			head.boundingBox(),
+			layer.isVisible(),
+			head.getAttribute('aria-hidden'),
+			head.getAttribute('tabindex'),
+		])
 		expect(box).not.toBeNull()
-		await head.click({ force: true })
+		const { x, y, width, height } = box as {
+			x: number
+			y: number
+			width: number
+			height: number
+		}
+		await page.mouse.click(x + width / 2, y + height * 0.3)
 		await expect(page.getByTestId('boop-count')).toHaveText('1')
-		await expect(page.locator('[data-room-layer]')).toBeVisible()
-		await expect(head).toHaveAttribute('aria-hidden', 'true')
-		await expect(head).toHaveAttribute('tabindex', '-1')
+		expect(layerVisible).toBe(true)
+		expect(ariaHidden).toBe('true')
+		expect(tabindex).toBe('-1')
 		// Drawn only in the bottom band of the viewport.
-		expect((box as { y: number }).y).toBeGreaterThan(DESKTOP.height * 0.6)
+		expect(y).toBeGreaterThan(DESKTOP.height * 0.6)
 
 		await page.keyboard.press('Escape')
 		await expect(html(page)).not.toHaveAttribute('data-room-gag', /./)
-		await expect(page.locator('[data-room-layer]')).toBeHidden()
+		await expect(layer).toBeHidden()
 		await expect(head).toBeHidden()
 		expect(problems).toEqual([])
 	})

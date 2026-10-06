@@ -49,6 +49,8 @@ vi.mock('../model/director', () => ({
 	}),
 }))
 
+import { ROOM_LOAD } from '../config/tuning'
+import { createDirector, type Director } from '../model/director'
 import { requestFeed } from '../model/feed-bus'
 import { getRoomState, resetRoomStore, setRoomPhase } from '../model/room-store'
 import { resetTimeline, touchTimeline } from '../model/timeline'
@@ -140,6 +142,39 @@ describe('RoomLayer', () => {
 		director.wake.mockClear()
 		touchTimeline()
 		expect(director.wake).toHaveBeenCalledTimes(1)
+	})
+
+	it('keeps the room when nothing on screen draws the first frame before the load timeout', async () => {
+		let deps: Parameters<typeof createDirector>[0] | null = null
+		vi.mocked(createDirector).mockImplementationOnce((given) => {
+			deps = given
+			return director as unknown as Director
+		})
+		try {
+			// Only the load timeout is faked: the idle callback stub must stay.
+			vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+			render(<RoomLayer onPet={vi.fn()} />)
+			await act(() => vi.advanceTimersByTimeAsync(0))
+			// The scene exists: ready, even though no stage has been drawn yet.
+			expect(getRoomState()).toMatchObject({
+				status: 'ready',
+				failed: false,
+			})
+			expect(document.documentElement.dataset.sceneReady).toBeUndefined()
+			// A deep link or a background tab: the timeout must not fire.
+			await act(() =>
+				vi.advanceTimersByTimeAsync(ROOM_LOAD.timeoutMs + 1000),
+			)
+			expect(getRoomState()).toMatchObject({
+				status: 'ready',
+				failed: false,
+			})
+			// The first drawn frame still swaps the veil and the posters.
+			act(() => deps?.onFirstFrame())
+			expect(document.documentElement.dataset.sceneReady).toBe('true')
+		} finally {
+			vi.useRealTimers()
+		}
 	})
 
 	it('drops a fish on a clean tap in main, never on a link or a drag, and on request; Escape cancels', async () => {

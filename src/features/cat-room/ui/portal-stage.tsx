@@ -55,6 +55,7 @@ export function PortalStage({
 			const triggers: ScrollTrigger[] = []
 			const tweens: gsap.core.Tween[] = []
 
+			let restoreScroll = () => {}
 			if (mode === 'full') {
 				if (!scrollRestorationSet) {
 					scrollRestorationSet = true
@@ -70,6 +71,11 @@ export function PortalStage({
 						}
 					}
 					ScrollTrigger.addEventListener('refresh', onRefresh)
+					restoreScroll = () => {
+						ScrollTrigger.removeEventListener('refresh', onRefresh)
+						history.scrollRestoration = 'auto'
+						scrollRestorationSet = false
+					}
 				}
 				const write = (self: ScrollTrigger) => {
 					timeline[track] = self.progress
@@ -87,10 +93,15 @@ export function PortalStage({
 						width,
 						height,
 					)
+					// At rest the stylesheet owns the veil, so its fade on the
+					// first frame still runs; the inline value takes over in the dive.
 					if (veil)
-						veil.style.opacity = String(
-							1 - smoothstep(0.6, 0.9, self.progress),
-						)
+						veil.style.opacity =
+							self.progress > 0
+								? String(
+										1 - smoothstep(0.6, 0.9, self.progress),
+									)
+								: ''
 				}
 				triggers.push(
 					ScrollTrigger.create({
@@ -165,6 +176,7 @@ export function PortalStage({
 					tween.kill()
 				}
 				for (const trigger of triggers) trigger.kill(true)
+				restoreScroll()
 				unregister()
 				portal?.dock()
 				if (veil) veil.style.removeProperty('opacity')

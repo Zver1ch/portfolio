@@ -25,8 +25,13 @@ import { type PetOrigin, PetProxy } from './pet-proxy'
 /** A tap on any of these is not a request for a fish (plan §3.10). */
 const NO_FISH =
 	'a, button, input, select, textarea, label, summary, [data-no-fish], [data-pet-proxy], [data-gag-proxy]'
-/** Sections whose arrival in the middle of the viewport may start a gag. */
-const SECTIONS = 'main section[id], [data-manifesto]'
+/**
+ * Sections whose arrival in the middle of the viewport may start a gag. The
+ * manifesto is the dive's landing: whether it crossed the middle before or
+ * after the phase turned `inside` was a matter of timing, so it never counts
+ * and the first peek is always in the first section scrolled to.
+ */
+const SECTIONS = 'main section[id]'
 
 /**
  * The fixed transparent canvas above the page (plan §3.2, §3.11). Decides
@@ -208,12 +213,20 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 				gagProxy: gagProxyRef.current,
 				governor,
 				onFishCaught: () => void playChomp(),
+				// The veil and the posters make way once something is drawn.
 				onFirstFrame: () => {
-					window.clearTimeout(timeout)
-					roomReady()
 					html.dataset.sceneReady = 'true'
 				},
+				onError: (error) =>
+					fail(
+						error instanceof Error ? error.message : String(error),
+					),
 			})
+			// The scene exists, so the load can no longer time out, whether or
+			// not a stage is on screen (a deep link, a background tab): the
+			// director draws its first frame when one comes into view.
+			window.clearTimeout(timeout)
+			roomReady()
 		}
 		const start = () => {
 			build().catch((error: unknown) =>

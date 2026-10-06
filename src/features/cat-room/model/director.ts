@@ -50,6 +50,8 @@ export type DirectorDeps = {
 	governor: DprGovernor
 	/** The animation frame after the first render. */
 	onFirstFrame(): void
+	/** The per-frame tick threw; the director has already disposed itself. */
+	onError?(error: unknown): void
 	/** A fish was snatched (the chomp, plan §3.12). */
 	onFishCaught?(): void
 	/** Wall-clock seconds for the gag scheduler; injectable for tests. */
@@ -398,8 +400,18 @@ export function createDirector(deps: DirectorDeps): Director {
 		if (dpr !== null) scene.resize(width, height, dpr)
 	}
 
-	const tick = (_time: number, deltaMs: number) => {
-		if (disposed) return
+	const teardown = () => {
+		disposed = true
+		stop()
+		if (proxy) proxy.style.display = 'none'
+		if (gagProxy) gagProxy.style.display = 'none'
+		delete html.dataset.roomPhase
+		delete html.dataset.roomGag
+		delete html.dataset.fishCount
+		setRoomPhase('off')
+	}
+
+	const step = (deltaMs: number) => {
 		setPhase(resolvePhase(phaseInput()))
 		const dt = Math.min(Math.max(deltaMs / 1000, 0), 0.1)
 		if (phase === 'inside') {
@@ -423,6 +435,18 @@ export function createDirector(deps: DirectorDeps): Director {
 			requestAnimationFrame(() => {
 				if (!disposed) deps.onFirstFrame()
 			})
+		}
+	}
+
+	const tick = (_time: number, deltaMs: number) => {
+		if (disposed) return
+		try {
+			step(deltaMs)
+		} catch (error) {
+			// A frame that throws would throw again on the next one: stop the
+			// loop here and let the layer degrade to static.
+			teardown()
+			deps.onError?.(error)
 		}
 	}
 
@@ -474,15 +498,6 @@ export function createDirector(deps: DirectorDeps): Director {
 			setGagAttribute(null)
 			start()
 		},
-		dispose() {
-			disposed = true
-			stop()
-			if (proxy) proxy.style.display = 'none'
-			if (gagProxy) gagProxy.style.display = 'none'
-			delete html.dataset.roomPhase
-			delete html.dataset.roomGag
-			delete html.dataset.fishCount
-			setRoomPhase('off')
-		},
+		dispose: teardown,
 	}
 }

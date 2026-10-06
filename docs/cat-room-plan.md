@@ -412,7 +412,7 @@ M6 notes: the scheduler counts "entry" per IntersectionObserver event of a secti
 
 - `ui/loader-veil.tsx` is server-rendered inside the hero slot: `CatFaceButton`, label, `role='progressbar'`. It is `pointer-events:none` except the face button.
 - CSS hides the veil under `prefers-reduced-motion: reduce`, under `<noscript>`, when `data-room-mode='static'`, and through a failsafe animation after 20 s.
-- Progress: 0.05 start; 0.30 chunk loaded; 0.30–0.80 GLB bytes (`lib/fetch-with-progress.ts` against the byte size in `cat-rig.gen.ts`); 0.90 scene built; 1.0 first frame. Loading is abandoned after 15 s, giving `static`.
+- Progress: 0.05 start; 0.30 chunk loaded; 0.30–0.90 model bytes (the loader's progress events in `lib/scene/cat/load-cat.ts`); 0.90 scene built; 1.0 as soon as the scene exists, whether or not a stage is on screen. Loading is abandoned after 15 s, giving `static`. The veil and the posters make way on the first drawn frame.
 - Until the first frame the 2D face button stays live and the hero proxy stays disabled. After it, the face button is removed and `ui/pet-proxy.tsx` (a real button, "Pet the cat") tracks `scene.measure().cat`.
 - If the visitor scrolls before the scene is ready, the pin and DOM warp already work; the veil stays over the stage with opacity `1 - smoothstep(0.6, 0.9, dive)`.
 - Scene load timing: on idle after hydration in `full`; in `lite` only once the hero or finale has been within 120 px of the viewport (`useInView`, Appendix A.4).
@@ -489,11 +489,11 @@ Shared:
 - `config/room-layout.ts`, `camera-tracks.ts`, `tuning.ts`, `poses.ts`, `cat-rig.gen.ts` (generated).
 - `model/room-store.ts`, `room-mode.ts`, `phase.ts`, `timeline.ts`, `director.ts`.
 - `lib/render-mode.ts`, `scene-time.ts`, `tap-gesture.ts`, `use-in-view.ts` (Appendix).
-- `lib/camera-path.ts`, `screen-quad.ts`, `portal.ts`, `dpr-governor.ts`, `gags.ts`, `ik.ts`, `bone-names.ts`, `fetch-with-progress.ts`, `load-room-scene.ts`.
+- `lib/camera-path.ts`, `screen-quad.ts`, `portal.ts`, `dpr-governor.ts`, `gags.ts`, `ik.ts`, `bone-names.ts`, `load-room-scene.ts`.
 - `lib/scene/create-room-scene.ts`, `renderer.ts`, `materials.ts`.
 - `lib/scene/room/kit.ts`, `build-room.ts`, `monitor.ts`.
 - `lib/scene/cat/load-cat.ts`, `rig.ts`, `pose-mixer.ts`, `layers.ts`, `chains.ts`, `limb-ik.ts`.
-- `lib/scene/overlay/intrusions.ts`, `fish.ts`.
+- `lib/overlay.ts`, `lib/fish.ts`, `lib/scene/overlay/fish.ts`.
 - `ui/room-layer.tsx`, `portal-stage.tsx`, `loader-veil.tsx`, `pet-proxy.tsx`, `typing-line.tsx`, `scene-error-boundary.tsx`.
 
 Widgets (a widget never imports another widget; the page passes portal content as `children`):
@@ -510,7 +510,7 @@ Pages and app:
 Scripts, assets and docs:
 - `scripts/inspect-model.mjs`, `check-assets.mjs`, `shots.mjs`, `capture-posters.mjs`, `lib/browser.mjs`, `lib/dev-server.mjs`, `lib/glb.mjs`.
 - `CREDITS.md`, `docs/lookdev/gate-1/`.
-- `public/models/cat.glb`, `public/posters/room-{night,dawn}{,-portrait}.png`. (`public/stickers/cat-sticker.png` already exists.)
+- `public/models/cat.glb`, `public/posters/room-{night,dawn}{,-portrait}.jpg`. (`public/stickers/cat-sticker.png` already exists.)
 
 ### 4.2 Change
 
@@ -633,7 +633,7 @@ Unit (Vitest, no three):
 - `gags` (seeded: gaps, caps, exclusions).
 - `bone-names` (name table).
 - `poses` integrity: keys exist in `cat-rig.gen.ts`, none is `popka*` or `shoulder_*`, values finite.
-- `room-store`, `fetch-with-progress`.
+- `room-store`.
 - `sound-enabled` opt-in; `ambient` graph on a fake context.
 - The asset guard function.
 - The three import boundary.

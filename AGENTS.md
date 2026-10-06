@@ -2,7 +2,7 @@
 
 ## Commands
 
-- `pnpm verify` — `lint:ci` + `tsc` + `fsd` + `test` in one shot. Takes a few
+- `pnpm verify` — `lint:ci` + `tsc` + `fsd` + `test` + `assets:check` in one shot. Takes a few
   seconds; run it before reporting work as done.
 - `pnpm lint` — Biome check **+ auto-fix (writes files)**. To check without
   writing, use `pnpm lint:ci`. `pnpm lint-unsafe` also applies unsafe fixes.

@@ -298,6 +298,36 @@ describe('createDirector', () => {
 		expect(roomGag()).toBeUndefined()
 	})
 
+	it('a frame that throws disposes the director and reports the error', () => {
+		const fake = fakeScene()
+		const error = new Error('lost the plot')
+		fake.calls.render.mockImplementation(() => {
+			throw error
+		})
+		const onError = vi.fn()
+		timeline.heroInView = true
+		director = createDirector({
+			scene: fake.scene,
+			timeline,
+			mode: 'full',
+			layer,
+			proxy,
+			gagProxy,
+			governor: createDprGovernor(1),
+			onFirstFrame: vi.fn(),
+			onError,
+			now: () => wallClock.now,
+		})
+		expect(() => gsap.ticker.tick()).not.toThrow()
+		expect(onError).toHaveBeenCalledWith(error)
+		expect(getRoomState().phase).toBe('off')
+		expect(proxy.style.display).toBe('none')
+		// Disposed: the next tick renders nothing more.
+		const rendered = fake.calls.render.mock.calls.length
+		gsap.ticker.tick()
+		expect(fake.calls.render.mock.calls.length).toBe(rendered)
+	})
+
 	it('dispose hides the proxy and clears the phase', () => {
 		start('full')
 		gsap.ticker.tick()

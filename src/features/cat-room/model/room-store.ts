@@ -36,8 +36,13 @@ export function getRoomState(): RoomState {
 }
 
 export function startRoom() {
-	if (state.failed || state.status === 'ready') return
-	emit({ status: 'loading', progress: Math.max(state.progress, 0.05) })
+	if (state.failed) return
+	// A mode change rebuilds the scene: the room is loading again.
+	emit({
+		status: 'loading',
+		progress:
+			state.status === 'ready' ? 0.05 : Math.max(state.progress, 0.05),
+	})
 }
 
 export function setRoomProgress(progress: number) {
