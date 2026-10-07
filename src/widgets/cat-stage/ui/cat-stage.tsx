@@ -32,7 +32,7 @@ export function CatStage() {
 			/>
 			<AmbientSound />
 			{status === 'ready' ? (
-				<SoundPrompt className='fixed top-[7.5rem] left-4 z-50 sm:right-6 sm:left-auto' />
+				<SoundPrompt className='fixed top-[7.5rem] left-4 z-50 sm:right-6 sm:left-auto phone-c:right-4 phone-c:left-auto' />
 			) : null}
 		</SceneErrorBoundary>
 	)

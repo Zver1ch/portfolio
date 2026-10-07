@@ -5,7 +5,7 @@ const { boop, stampHearts } = vi.hoisted(() => ({
 	boop: vi.fn(() => 1),
 	stampHearts: vi.fn(),
 }))
-vi.mock('../model/boop', () => ({ boop }))
+vi.mock('../model/boop', () => ({ boop, usePrefetchMeow: () => {} }))
 vi.mock('../lib/stamp-hearts', () => ({ stampHearts }))
 
 import { CatFaceButton } from './cat-face-button'

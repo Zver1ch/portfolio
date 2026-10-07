@@ -11,7 +11,7 @@ export function Manifesto() {
 	return (
 		<div
 			data-manifesto
-			className='relative flex min-h-svh flex-col justify-between bg-ink px-4 py-24 sm:px-6'
+			className='relative flex min-h-svh flex-col justify-between bg-ink px-4 py-24 sm:px-6 phone-a:border-t phone-a:border-border'
 		>
 			<div className='mx-auto flex w-full max-w-7xl justify-between font-mono text-xs tracking-[0.25em] text-muted-foreground uppercase'>
 				<span>{profile.handle}</span>

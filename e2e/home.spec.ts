@@ -169,7 +169,7 @@ test.describe('cat', () => {
 		await expect(counter).toHaveText('2')
 	})
 
-	test('the first boop fetches the meow and plays it; muted boops stay silent', async ({
+	test('the meow is fetched before the first boop, which plays it; muted boops stay silent', async ({
 		page,
 	}) => {
 		await page.addInitScript(() => {
@@ -187,14 +187,21 @@ test.describe('cat', () => {
 					(window as unknown as { __audio: { starts: number } })
 						.__audio.starts,
 			)
-		await gotoHydrated(page)
-
+		let requests = 0
+		page.on('request', (request) => {
+			if (request.url().endsWith('/sounds/cat-click.mp3')) requests += 1
+		})
 		const sound = page.waitForResponse((response) =>
 			response.url().endsWith('/sounds/cat-click.mp3'),
 		)
-		await heroCat(page).click()
+		await gotoHydrated(page)
+
+		// Prefetched on idle after hydration, with no click and no context yet.
 		expect((await sound).status()).toBe(200)
+		expect(await starts()).toBe(0)
+		await heroCat(page).click()
 		await expect.poll(starts).toBe(1)
+		expect(requests).toBe(1)
 
 		const soundToggle = page.getByRole('button', { name: 'Sound' })
 		await expect(soundToggle).toHaveAttribute('aria-pressed', 'true')

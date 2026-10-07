@@ -201,11 +201,11 @@ describe('createAmbientGraph', () => {
 			),
 		)
 		const loops = ctx.bufferSources.filter((source) => source.loop)
-		expect(loops).toHaveLength(2)
+		expect(loops).toHaveLength(1)
 		expect(loops.every((source) => source.startedAt === 0)).toBe(true)
 		expect(pads(ctx)).toHaveLength(0)
-		// The LFOs: cutoff drift, tape wow and the two gusts.
-		expect(ctx.oscillators.filter((o) => o.wave === null)).toHaveLength(4)
+		// The LFOs: cutoff drift and tape wow.
+		expect(ctx.oscillators.filter((o) => o.wave === null)).toHaveLength(2)
 	})
 
 	it('opens on the night tonic and plays the felt piano from its chord tones', () => {
@@ -243,15 +243,15 @@ describe('createAmbientGraph', () => {
 		expect(birds(ctx)).toHaveLength(0)
 	})
 
-	it('at dawn opens on the major tonic, eases the rain at once and lets the birds call', () => {
+	it('at dawn opens on the major tonic, eases the room tone at once and lets the birds call', () => {
 		const { ctx, graph } = build()
-		const rain = ctx.gains.find((g) => g.gain.value === AMBIENT.rain.gain)
-		expect(rain).toBeDefined()
+		const room = ctx.gains.find((g) => g.gain.value === AMBIENT.room.gain)
+		expect(room).toBeDefined()
 		graph.setMood(1)
-		expect(rain?.gain.value).toBeCloseTo(
-			AMBIENT.rain.gain * AMBIENT.rain.dawnShare,
+		expect(room?.gain.value).toBeCloseTo(
+			AMBIENT.room.gain * AMBIENT.room.dawnShare,
 		)
-		expect(rain?.gain.events).toHaveLength(0)
+		expect(room?.gain.events).toHaveLength(0)
 		graph.schedule(10)
 		const tonic = HARMONY.dawn.chords[HARMONY.dawn.tonic]
 		const pitches = [
@@ -270,15 +270,15 @@ describe('createAmbientGraph', () => {
 		const { ctx, graph } = build()
 		graph.schedule(2.5)
 		ctx.currentTime = 5
-		const rain = ctx.gains.find((g) => g.gain.value === AMBIENT.rain.gain)
+		const room = ctx.gains.find((g) => g.gain.value === AMBIENT.room.gain)
 		graph.setMood(1)
-		expect(rain?.gain.events.map((e) => e.method)).toEqual([
+		expect(room?.gain.events.map((e) => e.method)).toEqual([
 			'cancel',
 			'set',
 			'linear',
 		])
-		expect(rain?.gain.events[2].args).toEqual([
-			AMBIENT.rain.gain * AMBIENT.rain.dawnShare,
+		expect(room?.gain.events[2].args).toEqual([
+			AMBIENT.room.gain * AMBIENT.room.dawnShare,
 			5 + AMBIENT.moodSeconds,
 		])
 		graph.schedule(30)
@@ -576,17 +576,17 @@ describe('createAmbientGraph', () => {
 		}
 	})
 
-	it('returns from dawn to night: the minor tonic comes, the rain swells, the birds stop', () => {
+	it('returns from dawn to night: the minor tonic comes, the room tone swells, the birds stop', () => {
 		const { ctx, graph } = build()
 		graph.setMood(1)
 		graph.schedule(10)
 		ctx.currentTime = 10
-		const rain = ctx.gains.find(
-			(g) => g.gain.value === AMBIENT.rain.gain * AMBIENT.rain.dawnShare,
+		const room = ctx.gains.find(
+			(g) => g.gain.value === AMBIENT.room.gain * AMBIENT.room.dawnShare,
 		)
 		graph.setMood(0)
-		expect(rain?.gain.events[2].args).toEqual([
-			AMBIENT.rain.gain,
+		expect(room?.gain.events[2].args).toEqual([
+			AMBIENT.room.gain,
 			10 + AMBIENT.moodSeconds,
 		])
 		graph.schedule(40)

@@ -21,6 +21,28 @@ export type Portal = {
 	dock(): void
 }
 
+/** The screen quad docking to the viewport: its corners lerped over the last stretch of the dive (plan §3.5). */
+export function dockedQuad(
+	quad: Quad,
+	p: number,
+	width: number,
+	height: number,
+): Quad {
+	const t = clamp01(unlerp(DIVE.dock, 1, p))
+	const viewport: Quad = [
+		[0, 0],
+		[width, 0],
+		[width, height],
+		[0, height],
+	]
+	return quad.map(
+		(corner, i): Vec2 => [
+			corner[0] + (viewport[i][0] - corner[0]) * t,
+			corner[1] + (viewport[i][1] - corner[1]) * t,
+		],
+	) as unknown as Quad
+}
+
 /** Plan §3.5: the DOM warp of one portal element, `transform-origin: 0 0`. */
 export function createPortal(element: HTMLElement): Portal {
 	element.style.transformOrigin = '0 0'
@@ -40,20 +62,11 @@ export function createPortal(element: HTMLElement): Portal {
 				return
 			}
 			if (!quad) return
-			const t = clamp01(unlerp(DIVE.dock, 1, p))
-			const viewport: Quad = [
-				[0, 0],
-				[width, 0],
-				[width, height],
-				[0, height],
-			]
-			const corners = quad.map(
-				(corner, i): Vec2 => [
-					corner[0] + (viewport[i][0] - corner[0]) * t,
-					corner[1] + (viewport[i][1] - corner[1]) * t,
-				],
-			) as unknown as Quad
-			const matrix = quadToMatrix3d(corners, width, height)
+			const matrix = quadToMatrix3d(
+				dockedQuad(quad, p, width, height),
+				width,
+				height,
+			)
 			if (!matrix) return
 			docked = false
 			element.style.transform = matrix3dValue(matrix)

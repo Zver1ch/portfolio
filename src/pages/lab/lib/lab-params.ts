@@ -56,6 +56,8 @@ export type LabParams = {
 	meow: boolean
 	look: 'camera' | 'none'
 	lite: boolean
+	/** Gate 2 round 6: a phone variant's cameras and monitor on the lite views (`lite=1` implied). */
+	phone: 'a' | 'b' | 'c' | null
 	hair: boolean
 	/** Hide the cat (room look-dev). */
 	nocat: boolean
@@ -129,7 +131,13 @@ export function parseLabParams(search: string): LabParams {
 		),
 		meow: q.get('meow') === '1',
 		look: pick(q.get('look'), ['camera', 'none'] as const, 'camera'),
-		lite: q.get('lite') === '1',
+		lite: q.get('lite') === '1' || q.get('phone') !== null,
+		phone: (() => {
+			const phone = q.get('phone')
+			return phone === 'a' || phone === 'b' || phone === 'c'
+				? phone
+				: null
+		})(),
 		hair: q.get('hair') === '1',
 		nocat: q.get('nocat') === '1',
 		twist: num(q.get('twist')),

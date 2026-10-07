@@ -4,20 +4,29 @@ import { type ReactNode, useRef } from 'react'
 import { pinEnd } from '@/shared/lib/gsap/ranges'
 import { gsap, ScrollTrigger, useGSAP } from '@/shared/lib/gsap/register'
 import { smoothstep } from '@/shared/lib/math/ease'
-import { cameraAt, type Track } from '../lib/camera-path'
-import { createPortal } from '../lib/portal'
-import { projectScreen } from '../lib/screen-quad'
+import { PHONE_TRAITS, usePhoneVariant } from '../config/phone-variant'
+import {
+	cameraAt,
+	phoneCardProgress,
+	phoneDiveCamera,
+	type Track,
+} from '../lib/camera-path'
+import { createPortal, type Portal } from '../lib/portal'
+import { projectColumn, projectScreen } from '../lib/screen-quad'
 import { registerPortal } from '../model/portals'
 import { useRoomMode } from '../model/room-mode'
 import { timeline, touchTimeline } from '../model/timeline'
 
 /** Pinned scroll length of each stage, in viewport heights (plan §3.4). */
 const PIN_HEIGHTS: Record<Track, number> = { dive: 2.2, finale: 1.8 }
-/** The hero copy fades over the first part of the dive. */
-const HERO_COPY_FADE = 0.45
+/** The hero copy fades over the first part of the dive; the phone variants' tracks are short, so theirs is quicker. */
+const HERO_COPY_FADE = { default: 0.45, phone: 0.3 } as const
 
 /** The hero copy fades out over the first stretch of the dive, in both modes. */
-function fadeHeroCopy(section: HTMLElement): gsap.core.Tween | null {
+function fadeHeroCopy(
+	section: HTMLElement,
+	share: number,
+): gsap.core.Tween | null {
 	const copy = section.querySelector('[data-hero-copy]')
 	if (!copy) return null
 	return gsap.to(copy, {
@@ -26,7 +35,7 @@ function fadeHeroCopy(section: HTMLElement): gsap.core.Tween | null {
 		scrollTrigger: {
 			trigger: section,
 			start: 'top top',
-			end: () => `+=${Math.round(window.innerHeight * HERO_COPY_FADE)}`,
+			end: () => `+=${Math.round(window.innerHeight * share)}`,
 			scrub: true,
 		},
 	})
@@ -53,6 +62,9 @@ export function PortalStage({
 	children: ReactNode
 }) {
 	const mode = useRoomMode()
+	const chosen = usePhoneVariant()
+	// The phone variants (Gate 2 round 6) are lite's alone.
+	const variant = mode === 'lite' ? chosen : 'default'
 	const stage = useRef<HTMLDivElement>(null)
 
 	useGSAP(
@@ -71,32 +83,58 @@ export function PortalStage({
 			const triggers: ScrollTrigger[] = []
 			const tweens: gsap.core.Tween[] = []
 
+			/**
+			 * The warp before the scene, the same maths the director uses: the
+			 * hero's page onto the projected screen in full mode, onto the page
+			 * column in the phone variants that show the real page (`b`, `c`).
+			 */
+			const warp = (page: Portal, progress: number) => {
+				const { width, height } = timeline.viewport
+				const aspect = width / height
+				if (mode === 'full')
+					page.apply(
+						projectScreen(
+							cameraAt('dive', progress, aspect),
+							width,
+							height,
+						),
+						progress,
+						width,
+						height,
+					)
+				else if (variant !== 'default')
+					page.apply(
+						projectColumn(
+							phoneDiveCamera(variant, progress, aspect),
+							width,
+							height,
+						),
+						PHONE_TRAITS[variant].card
+							? phoneCardProgress('dive', progress)
+							: progress,
+						width,
+						height,
+					)
+				// At rest the stylesheet owns the veil, so its fade on the
+				// first frame still runs; the inline value takes over in the dive.
+				if (veil)
+					veil.style.opacity =
+						progress > 0
+							? String(1 - smoothstep(0.6, 0.9, progress))
+							: ''
+			}
+			const warps =
+				track === 'dive' &&
+				portal &&
+				(mode === 'full' || PHONE_TRAITS[variant].domPage)
+					? portal
+					: null
+
 			if (mode === 'full') {
 				const write = (self: ScrollTrigger) => {
 					timeline[track] = self.progress
 					touchTimeline()
-					if (track !== 'dive' || !portal) return
-					// The warp before the scene: the same maths the director uses.
-					const { width, height } = timeline.viewport
-					portal.apply(
-						projectScreen(
-							cameraAt('dive', self.progress, width / height),
-							width,
-							height,
-						),
-						self.progress,
-						width,
-						height,
-					)
-					// At rest the stylesheet owns the veil, so its fade on the
-					// first frame still runs; the inline value takes over in the dive.
-					if (veil)
-						veil.style.opacity =
-							self.progress > 0
-								? String(
-										1 - smoothstep(0.6, 0.9, self.progress),
-									)
-								: ''
+					if (warps) warp(warps, self.progress)
 				}
 				triggers.push(
 					ScrollTrigger.create({
@@ -116,6 +154,7 @@ export function PortalStage({
 				const write = (self: ScrollTrigger) => {
 					timeline[track] = self.progress
 					touchTimeline()
+					if (warps) warp(warps, self.progress)
 				}
 				triggers.push(
 					ScrollTrigger.create({
@@ -133,7 +172,12 @@ export function PortalStage({
 				)
 			}
 			if (track === 'dive') {
-				const fade = fadeHeroCopy(section)
+				const fade = fadeHeroCopy(
+					section,
+					variant === 'default'
+						? HERO_COPY_FADE.default
+						: HERO_COPY_FADE.phone,
+				)
 				if (fade) tweens.push(fade)
 			}
 
@@ -151,7 +195,11 @@ export function PortalStage({
 		},
 		// Revert on every mode change: a pin from the full mode must not survive
 		// a fall to static (useGSAP only reverts on unmount by default).
-		{ scope: stage, dependencies: [mode, track], revertOnUpdate: true },
+		{
+			scope: stage,
+			dependencies: [mode, track, variant],
+			revertOnUpdate: true,
+		},
 	)
 
 	return (

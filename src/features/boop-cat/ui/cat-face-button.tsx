@@ -5,7 +5,7 @@ import { useRef, useState } from 'react'
 import { CAT_STICKER_SRC } from '@/shared/config/stickers'
 import { cn } from '@/shared/lib/utils'
 import { stampHearts } from '../lib/stamp-hearts'
-import { boop } from '../model/boop'
+import { boop, usePrefetchMeow } from '../model/boop'
 
 /**
  * The 2D face as a button: pets the cat (meow, hearts, counter). It stands
@@ -25,6 +25,7 @@ export function CatFaceButton({
 	const button = useRef<HTMLButtonElement>(null)
 	// Remounting the face restarts its pop animation on every click.
 	const [pops, setPops] = useState(0)
+	usePrefetchMeow()
 
 	const onClick = () => {
 		boop()

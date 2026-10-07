@@ -8,6 +8,8 @@ import {
 	HERO_CAMERA,
 	LITE_FRAMING,
 	LITE_PULLBACK,
+	PHONE_CAMERAS,
+	PHONE_CARD,
 } from '../config/camera-tracks'
 import { DESK_TOP, SCREEN } from '../config/room-layout'
 import {
@@ -21,11 +23,17 @@ import {
 	liteFade,
 	liteFinaleCamera,
 	liteHeroCamera,
+	phoneCardProgress,
+	phoneDawnCamera,
+	phoneDiveCamera,
+	phoneFinaleCamera,
+	phoneHeroCamera,
 } from './camera-path'
 import {
 	columnWidth,
 	projectColumn,
 	projectScreen,
+	screenAspect,
 	screenWidth,
 } from './screen-quad'
 
@@ -241,5 +249,87 @@ describe('finaleUndock', () => {
 		expect(finaleUndock(FINALE.undock)).toBe(DIVE.dock)
 		expect(finaleUndock(0.5)).toBe(DIVE.dock)
 		expect(finaleUndock(1)).toBe(DIVE.dock)
+	})
+})
+
+describe('phone variants (Gate 2 round 6)', () => {
+	const PHONE = 390 / 844
+
+	it('a and c hold their hero camera through the dive and their dawn camera through the finale', () => {
+		for (const variant of ['a', 'c'] as const) {
+			for (const p of [0, 0.3, 0.9, 1]) {
+				expect(phoneDiveCamera(variant, p, PHONE)).toEqual(
+					PHONE_CAMERAS[variant].hero,
+				)
+				expect(phoneFinaleCamera(variant, p, PHONE)).toEqual(
+					PHONE_CAMERAS[variant].dawn,
+				)
+			}
+		}
+	})
+
+	it('b flies straight from its hero camera to the exact fit and pulls back from it to its dawn camera', () => {
+		expect(phoneDiveCamera('b', 0, PHONE)).toEqual(PHONE_CAMERAS.b.hero)
+		expect(phoneDiveCamera('b', DIVE.hold, PHONE)).toEqual(
+			PHONE_CAMERAS.b.hero,
+		)
+		expect(phoneDiveCamera('b', 1, PHONE)).toEqual(liteEndCamera())
+		let previous = phoneDiveCamera('b', DIVE.hold, PHONE).position[2]
+		for (let p = DIVE.hold; p <= 1; p += 0.05) {
+			const z = phoneDiveCamera('b', p, PHONE).position[2]
+			expect(z).toBeLessThanOrEqual(previous + 1e-9)
+			previous = z
+		}
+		expect(phoneFinaleCamera('b', 0, PHONE)).toEqual(liteEndCamera())
+		expect(phoneFinaleCamera('b', 1, PHONE)).toEqual(PHONE_CAMERAS.b.dawn)
+		const mid = phoneFinaleCamera('b', 0.5, PHONE)
+		expect(mid.fov).toBeGreaterThan(liteEndCamera().fov)
+		expect(mid.fov).toBeLessThan(PHONE_CAMERAS.b.dawn.fov)
+	})
+
+	it('keeps the stock cameras on landscape viewports and blends towards them past a portrait one', () => {
+		for (const variant of ['a', 'b', 'c'] as const) {
+			expect(phoneHeroCamera(variant, 1.6)).toEqual(HERO_CAMERA)
+			expect(phoneDawnCamera(variant, 1.6)).toEqual(DAWN_CAMERA)
+			expect(phoneHeroCamera(variant, PHONE)).toEqual(
+				PHONE_CAMERAS[variant].hero,
+			)
+			const between = phoneHeroCamera(variant, 0.9).fov
+			expect(between).toBeGreaterThan(HERO_CAMERA.fov)
+			expect(between).toBeLessThan(PHONE_CAMERAS[variant].hero.fov)
+		}
+	})
+
+	it('the card grows out of the screen over the dive and is back in it before the finale ends', () => {
+		expect(phoneCardProgress('dive', 0)).toBe(DIVE.dock)
+		expect(phoneCardProgress('dive', DIVE.hold)).toBe(DIVE.dock)
+		expect(phoneCardProgress('dive', 1)).toBe(1)
+		let previous: number = DIVE.dock
+		for (let p = 0; p <= 1; p += 0.05) {
+			const q = phoneCardProgress('dive', p)
+			expect(q).toBeGreaterThanOrEqual(previous - 1e-9)
+			previous = q
+		}
+		expect(phoneCardProgress('finale', 0)).toBe(1)
+		expect(
+			phoneCardProgress('finale', PHONE_CARD.finaleEnd / 2),
+		).toBeCloseTo(1 - (1 - DIVE.dock) / 2)
+		expect(phoneCardProgress('finale', PHONE_CARD.finaleEnd)).toBe(
+			DIVE.dock,
+		)
+		expect(phoneCardProgress('finale', 1)).toBe(DIVE.dock)
+	})
+
+	it('a lowered aspect floor turns the screen portrait without touching the page column', () => {
+		expect(screenAspect(PHONE)).toBe(SCREEN.aspectRange[0])
+		expect(screenAspect(PHONE, PHONE_CARD.screenAspectFloor)).toBe(
+			PHONE_CARD.screenAspectFloor,
+		)
+		expect(screenAspect(2, 0.5)).toBe(2)
+		expect(screenAspect(5, 0.5)).toBe(SCREEN.aspectRange[1])
+		expect(screenWidth(PHONE, PHONE_CARD.screenAspectFloor)).toBeCloseTo(
+			SCREEN.height * PHONE_CARD.screenAspectFloor,
+		)
+		expect(columnWidth(PHONE)).toBeCloseTo(SCREEN.height * PHONE)
 	})
 })

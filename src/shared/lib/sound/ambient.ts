@@ -1,10 +1,10 @@
 /**
  * Code-generated ambient (plan §3.12): a calm night in the room. Warm pads
  * walk a slow chord cycle in A minor, a felt piano drops sparse notes from
- * the chord, rain patters on the window over a low room tone, and all of it
- * goes through one short generated reverb with a hint of tape wow. At dawn
- * the rain eases off, the harmony lifts to A major in higher voicings, the
- * pads open up and a distant bird calls now and then. Built on any
+ * the chord over a low room tone, and all of it goes through one short
+ * generated reverb with a hint of tape wow. At dawn the room tone eases off,
+ * the harmony lifts to A major in higher voicings, the pads open up and a
+ * distant bird calls now and then. Built on any
  * BaseAudioContext, so the same graph renders through an OfflineAudioContext
  * for the loudness check.
  *
@@ -86,17 +86,6 @@ export const AMBIENT = {
 		/** The lowest key, night and dawn; the range spans 21 semitones. */
 		lowMidi: { night: 60, dawn: 67 },
 		send: 0.8,
-	},
-	rain: {
-		loopSeconds: 5,
-		dropsPerSecond: 1000,
-		bandHz: 1800,
-		q: 0.6,
-		cutoffHz: 4200,
-		gain: 0.45,
-		/** The rain at dawn, as a share of the night level. */
-		dawnShare: 0.12,
-		gust: { hz: [0.031, 0.077], depth: 0.25 },
 	},
 	room: {
 		loopSeconds: 4,
@@ -329,46 +318,6 @@ function roomBuffer(ctx: BaseAudioContext, rng: Rng): AudioBuffer {
 }
 
 /**
- * Rain as it is: a shower of tiny bursts, a few of them louder taps,
- * spread across the stereo field. Bursts that run past the loop wrap to its
- * head, so the loop is seamless.
- */
-function rainBuffer(ctx: BaseAudioContext, rng: Rng): AudioBuffer {
-	const rate = ctx.sampleRate
-	const length = Math.floor(rate * AMBIENT.rain.loopSeconds)
-	const buffer = ctx.createBuffer(2, length, rate)
-	const left = buffer.getChannelData(0)
-	const right = buffer.getChannelData(1)
-	const drops = Math.floor(
-		AMBIENT.rain.dropsPerSecond * AMBIENT.rain.loopSeconds,
-	)
-	let peak = 0
-	for (let d = 0; d < drops; d++) {
-		const at = Math.floor(random(rng) * length)
-		const amplitude = random(rng) ** 3
-		const samples = Math.floor(rate * (0.001 + random(rng) * 0.004))
-		const pan = random(rng)
-		const toLeft = Math.sqrt(1 - pan)
-		const toRight = Math.sqrt(pan)
-		for (let k = 0; k < samples; k++) {
-			const envelope = (1 - k / samples) ** 2
-			const sample = (random(rng) * 2 - 1) * amplitude * envelope
-			const i = (at + k) % length
-			left[i] += sample * toLeft
-			right[i] += sample * toRight
-		}
-	}
-	for (let i = 0; i < length; i++)
-		peak = Math.max(peak, Math.abs(left[i]), Math.abs(right[i]))
-	const norm = peak > 0 ? 1 / peak : 1
-	for (let i = 0; i < length; i++) {
-		left[i] *= norm
-		right[i] *= norm
-	}
-	return buffer
-}
-
-/**
  * The reverb's impulse: decorrelated stereo noise under an exponential
  * decay, low-passed with a cutoff that falls as the tail dies, after a
  * short pre-delay.
@@ -420,7 +369,7 @@ function balance(buffer: AudioBuffer): AudioBuffer {
 	return buffer
 }
 
-type Buffers = { room: AudioBuffer; rain: AudioBuffer; reverb: AudioBuffer }
+type Buffers = { room: AudioBuffer; reverb: AudioBuffer }
 
 const bufferCache = new WeakMap<BaseAudioContext, Map<number, Buffers>>()
 
@@ -439,7 +388,6 @@ function buffers(ctx: BaseAudioContext, seed: number): Buffers {
 		const rng = stream(seed, 0)
 		found = {
 			reverb: balance(reverbBuffer(ctx, rng)),
-			rain: balance(rainBuffer(ctx, rng)),
 			room: roomBuffer(ctx, rng),
 		}
 		perSeed.set(seed, found)
@@ -452,11 +400,7 @@ export function createAmbientGraph(
 	out: AudioNode,
 	seed = 7,
 ): AmbientGraph {
-	const {
-		room: roomNoise,
-		rain: rainNoise,
-		reverb: impulse,
-	} = buffers(ctx, seed)
+	const { room: roomNoise, reverb: impulse } = buffers(ctx, seed)
 	const rngChords = stream(seed, 1)
 	const rngKeys = stream(seed, 2)
 	const rngBirds = stream(seed, 3)
@@ -541,36 +485,6 @@ export function createAmbientGraph(
 	keySend.gain.value = AMBIENT.keys.send
 	keyFilter.connect(master)
 	keyFilter.connect(keySend).connect(send)
-
-	// Rain on the window, under two slow gusts.
-	const rain = track(ctx.createBufferSource())
-	rain.buffer = rainNoise
-	rain.loop = true
-	const rainBand = ctx.createBiquadFilter()
-	rainBand.type = 'bandpass'
-	rainBand.frequency.value = AMBIENT.rain.bandHz
-	rainBand.Q.value = AMBIENT.rain.q
-	const rainTone = ctx.createBiquadFilter()
-	rainTone.type = 'lowpass'
-	rainTone.frequency.value = AMBIENT.rain.cutoffHz
-	const rainGust = ctx.createGain()
-	rainGust.gain.value = 1 - AMBIENT.rain.gust.depth
-	const rainLevel = ctx.createGain()
-	rainLevel.gain.value = AMBIENT.rain.gain
-	rain.connect(rainBand)
-		.connect(rainTone)
-		.connect(rainGust)
-		.connect(rainLevel)
-		.connect(master)
-	rain.start()
-	for (const hz of AMBIENT.rain.gust.hz) {
-		const gust = track(ctx.createOscillator())
-		gust.frequency.value = hz
-		const depth = ctx.createGain()
-		depth.gain.value = AMBIENT.rain.gust.depth / 2
-		gust.connect(depth).connect(rainGust.gain)
-		gust.start()
-	}
 
 	// Room tone: brown noise kept between the floor and the cutoff.
 	const room = track(ctx.createBufferSource())
@@ -953,20 +867,16 @@ export function createAmbientGraph(
 	}
 
 	const setTextures = (seconds: number) => {
-		const rain =
-			AMBIENT.rain.gain * (1 - mood * (1 - AMBIENT.rain.dawnShare))
 		const room =
 			AMBIENT.room.gain * (1 - mood * (1 - AMBIENT.room.dawnShare))
 		const { night, dawn: day } = AMBIENT.pads.cutoffHz
 		const cutoff = night * (day / night) ** mood
 		if (seconds <= 0) {
-			rainLevel.gain.value = rain
 			roomLevel.gain.value = room
 			padFilter.frequency.value = cutoff
 			birdLevel.gain.value = mood
 			return
 		}
-		ramp(rainLevel.gain, rain, seconds)
 		ramp(roomLevel.gain, room, seconds)
 		ramp(padFilter.frequency, cutoff, seconds, true)
 		ramp(birdLevel.gain, mood, seconds / 2)

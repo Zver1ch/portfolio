@@ -71,6 +71,8 @@ export function createMonitor(
 	roomMaterial: Material,
 	viewportAspect: number,
 	fakeScreen: boolean,
+	/** The narrow end of the screen's aspect range (phone variant `c` lowers it to the viewport's). */
+	aspectFloor?: number,
 ): Monitor {
 	const group = new Group()
 	const holeMaterial = createHoleMaterial()
@@ -98,7 +100,7 @@ export function createMonitor(
 		dispose(fake)
 		dispose(hole)
 		dispose(column)
-		const w = screenWidth(aspect)
+		const w = screenWidth(aspect, aspectFloor)
 		const h = SCREEN.height
 		const [cx, cy, cz] = SCREEN.center
 		const b = SCREEN.bezel

@@ -2,7 +2,9 @@
 
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { playChomp, playPlop } from '@/shared/lib/sound/sfx'
+import { PHONE_CARD } from '../config/camera-tracks'
 import { CAT_GLB } from '../config/cat-rig.gen'
+import { PHONE_TRAITS, usePhoneVariant } from '../config/phone-variant'
 import { DPR_CAP, ROOM_LOAD } from '../config/tuning'
 import { createDprGovernor } from '../lib/dpr-governor'
 import { loadRoomScene } from '../lib/load-room-scene'
@@ -50,6 +52,9 @@ const SECTIONS = 'main section[id]'
  */
 export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 	const mode = useRoomMode()
+	const chosen = usePhoneVariant()
+	// The phone variants (Gate 2 round 6) are lite's alone.
+	const variant = mode === 'lite' ? chosen : 'default'
 	const { status } = useRoomState()
 	const layerRef = useRef<HTMLDivElement>(null)
 	const proxyRef = useRef<HTMLButtonElement>(null)
@@ -60,8 +65,11 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 	// mode's CSS (the lite spacers, the full-mode stage boxes) is in place
 	// before a stage measures itself for its ScrollTrigger.
 	useLayoutEffect(() => {
-		document.documentElement.dataset.roomMode = mode
-	}, [mode])
+		const html = document.documentElement
+		html.dataset.roomMode = mode
+		if (variant === 'default') delete html.dataset.phoneVariant
+		else html.dataset.phoneVariant = variant
+	}, [mode, variant])
 
 	// At hydration, before the first mode's layout: a reader already scrolling
 	// keeps their place and gets no restore; the place is saved on the way
@@ -89,6 +97,10 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 		const layer = layerRef.current
 		if (mode === 'static' || !layer) return
 		const html = document.documentElement
+		const traits = PHONE_TRAITS[variant]
+		// The round-5 lite paints the sections for the monitor; the variants
+		// showing the real page through a hole (`b`, `c`) have nothing to paint.
+		const paints = mode === 'lite' && !traits.domPage
 		let cancelled = false
 		let director: Director | null = null
 		let timeout = 0
@@ -110,7 +122,7 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 		const pageDpr = governor.dpr
 		let repaint = 0
 		const paintPages = (scene: RoomScene) => {
-			if (mode !== 'lite') return
+			if (!paints) return
 			// A line still being typed would be painted half-way: once it is whole.
 			if (
 				document.querySelector(
@@ -268,7 +280,10 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 				width,
 				height,
 				dpr: governor.dpr,
-				fakeScreen: mode === 'lite',
+				fakeScreen: paints,
+				screenAspectFloor: traits.portraitMonitor
+					? PHONE_CARD.screenAspectFloor
+					: undefined,
 				modelUrl: `${CAT_GLB.url}?v=${CAT_GLB.sha256}`,
 				onProgress: (fraction) => setRoomProgress(0.3 + fraction * 0.6),
 			})
@@ -279,7 +294,7 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 			sceneRef.current = scene
 			setRoomProgress(0.9)
 			// The painted pages need the web fonts, which have long arrived by now.
-			if (mode === 'lite' && document.fonts) {
+			if (paints && document.fonts) {
 				await document.fonts.ready
 				if (cancelled) return
 			}
@@ -288,6 +303,7 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 				scene,
 				timeline,
 				mode,
+				variant,
 				layer,
 				proxy: proxyRef.current,
 				gagProxy: gagProxyRef.current,
@@ -371,7 +387,7 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 			layer.style.removeProperty('opacity')
 			delete html.dataset.sceneReady
 		}
-	}, [mode])
+	}, [mode, variant])
 
 	return (
 		<>

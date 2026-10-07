@@ -26,10 +26,17 @@ import {
 	HERO_CAMERA,
 	LITE_FRAMING,
 	LITE_PULLBACK,
+	PHONE_BOW,
+	PHONE_CAMERAS,
+	PHONE_CARD,
 } from '../config/camera-tracks'
+import type { PhoneVariant } from '../config/phone-variant'
 import { DESK_TOP, SCREEN } from '../config/room-layout'
 
 export type Track = 'dive' | 'finale'
+
+/** The phone variants with cameras of their own (Gate 2 round 6). */
+export type PhoneCameraVariant = Exclude<PhoneVariant, 'default'>
 
 /**
  * The camera at the end of the dive: on the screen normal, at the distance
@@ -149,6 +156,114 @@ export function liteFade(track: Track, p: number): number {
 	return track === 'dive'
 		? 1 - smoothstep(DIVE.dock, 1, p)
 		: smoothstep(0, FINALE.undock, p)
+}
+
+/**
+ * Phone variants (Gate 2 round 6, `config/phone-variant.ts`): a variant's
+ * own stage pose on portrait viewports, the stock pose on landscape ones,
+ * blended between `LITE_FRAMING.portraitTo` and `portraitFrom`.
+ */
+function phoneStageCamera(
+	pose: CameraPose,
+	stock: CameraPose,
+	aspect: number,
+): CameraPose {
+	const portrait =
+		1 -
+		smoothstep(LITE_FRAMING.portraitTo, LITE_FRAMING.portraitFrom, aspect)
+	if (portrait <= 0) return stock
+	if (portrait >= 1) return pose
+	return {
+		position: lerp(stock.position, pose.position, portrait),
+		target: lerp(stock.target, pose.target, portrait),
+		fov: mix(stock.fov, pose.fov, portrait),
+	}
+}
+
+export function phoneHeroCamera(
+	variant: PhoneCameraVariant,
+	aspect: number,
+): CameraPose {
+	return phoneStageCamera(PHONE_CAMERAS[variant].hero, HERO_CAMERA, aspect)
+}
+
+export function phoneDawnCamera(
+	variant: PhoneCameraVariant,
+	aspect: number,
+): CameraPose {
+	return phoneStageCamera(PHONE_CAMERAS[variant].dawn, DAWN_CAMERA, aspect)
+}
+
+/**
+ * The hero stage of a phone variant: `a` and `c` hold their hero camera; `b`
+ * flies straight from it to the exact fit on the dive's map, the path bowed
+ * away from the cat, the field of view narrowing to the fit's.
+ */
+export function phoneDiveCamera(
+	variant: PhoneCameraVariant,
+	p: number,
+	aspect: number,
+): CameraPose {
+	const start = phoneHeroCamera(variant, aspect)
+	if (variant !== 'b') return start
+	const end = liteEndCamera()
+	if (p <= DIVE.hold) return start
+	if (p >= DIVE.travelEnd) return end
+	const t = easeInOutCubic(unlerp(DIVE.hold, DIVE.travelEnd, p))
+	return {
+		position: bezier2(
+			start.position,
+			add(lerp(start.position, end.position, 0.5), PHONE_BOW.dive),
+			end.position,
+			t,
+		),
+		target: lerp(start.target, end.target, clamp01(t / DIVE.targetLock)),
+		fov: mix(start.fov, end.fov, t),
+	}
+}
+
+/** The finale stage of a phone variant: `a` and `c` hold their dawn camera; `b` pulls back from the exact fit to it. */
+export function phoneFinaleCamera(
+	variant: PhoneCameraVariant,
+	p: number,
+	aspect: number,
+): CameraPose {
+	const end = phoneDawnCamera(variant, aspect)
+	if (variant !== 'b') return end
+	const start = liteEndCamera()
+	if (p <= FINALE.undock) return start
+	if (p >= FINALE.pullBackEnd) return end
+	const t = easeInOutCubic(unlerp(FINALE.undock, FINALE.pullBackEnd, p))
+	return {
+		position: bezier2(
+			start.position,
+			add(lerp(start.position, end.position, 0.5), PHONE_BOW.finale),
+			end.position,
+			t,
+		),
+		target: lerp(start.target, end.target, t),
+		fov: mix(start.fov, end.fov, t),
+	}
+}
+
+/**
+ * Variant `c`: the page card's progress in the portal's docking terms
+ * (`DIVE.dock` is the bare screen quad, 1 the viewport). On the dive it
+ * grows out of the screen after the hold and fills the viewport at the end
+ * of the track; on the finale it is the viewport at the start and is back in
+ * the screen by `PHONE_CARD.finaleEnd`.
+ */
+export function phoneCardProgress(track: Track, p: number): number {
+	if (track === 'dive') {
+		if (p >= 1) return 1
+		return mix(
+			DIVE.dock,
+			1,
+			easeInOutCubic(clamp01(unlerp(DIVE.hold, 1, p))),
+		)
+	}
+	if (p <= 0) return 1
+	return mix(1, DIVE.dock, easeInOutCubic(clamp01(p / PHONE_CARD.finaleEnd)))
 }
 
 /** Camera pose for a scroll progress on a track. The aspect is kept for symmetry with the DOM warp. */

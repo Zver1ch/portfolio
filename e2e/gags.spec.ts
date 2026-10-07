@@ -1,11 +1,19 @@
 import { expect, type Page, test } from '@playwright/test'
-import { collectProblems, DESKTOP, gotoHydrated } from './helpers'
+import { collectProblems, gotoHydrated } from './helpers'
 
 const READY_TIMEOUT = 80_000
 /** The hero stage pins for this many viewport heights (plan §3.4). */
 const DIVE_HEIGHTS = 2.2
 
-test.describe.configure({ mode: 'serial', timeout: 90_000 })
+/**
+ * The smallest comfortable full-mode viewport: software WebGL renders every
+ * pixel on the CPU, and with the rest of the suite in parallel the page's
+ * main thread is what a click has to wait for. Fewer pixels, quicker clicks.
+ */
+const GAG_VIEWPORT = { width: 1120, height: 720 }
+
+// The peek lasts 3.2 s of wall time: one retry absorbs a stalled renderer.
+test.describe.configure({ mode: 'serial', timeout: 90_000, retries: 1 })
 
 const html = (page: Page) => page.locator('html')
 
@@ -33,7 +41,7 @@ async function scrollTo(page: Page, selector: string) {
 }
 
 test.describe('full mode', () => {
-	test.use({ viewport: DESKTOP })
+	test.use({ viewport: GAG_VIEWPORT })
 
 	test('the first section entry peeks from the bottom edge, pointer-only; the head meows; Escape stops it', async ({
 		page,
@@ -45,44 +53,62 @@ test.describe('full mode', () => {
 		await page
 			.locator('#about')
 			.evaluate((node) => node.scrollIntoView({ block: 'start' }))
-		await expect(html(page)).toHaveAttribute('data-room-gag', 'peek', {
-			timeout: 5000,
-		})
 		// Under software rendering, with the rest of the suite in parallel, a
-		// round trip to the page can take half a second: read the peek's state
-		// in one go, click the measured point directly (the head breathes, so
-		// it is never "stable" for an actionability check) and leave only the
-		// click's own effect to be checked afterwards.
+		// round trip to the page can take half a second and the peek lasts a
+		// few seconds: the page itself watches, frame by frame, for the peek
+		// and its placed head, and hands back everything to check in one go.
+		// The click then goes to the measured point directly (the head
+		// breathes, so it is never "stable" for an actionability check).
 		const head = page.locator('[data-gag-proxy]')
 		const layer = page.locator('[data-room-layer]')
-		await expect(head).toBeVisible()
-		const [box, layerVisible, ariaHidden, tabindex] = await Promise.all([
-			head.boundingBox(),
-			layer.isVisible(),
-			head.getAttribute('aria-hidden'),
-			head.getAttribute('tabindex'),
-		])
-		expect(box).not.toBeNull()
-		const { x, y, width, height } = box as {
-			x: number
-			y: number
-			width: number
-			height: number
-		}
+		const peek = await page
+			.waitForFunction(
+				() => {
+					const root = document.documentElement
+					if (root.getAttribute('data-room-gag') !== 'peek')
+						return null
+					const proxy =
+						document.querySelector<HTMLElement>('[data-gag-proxy]')
+					if (!proxy || proxy.style.display === 'none') return null
+					const rect = proxy.getBoundingClientRect()
+					// Enough of the head on screen for a point to click.
+					if (rect.width < 1 || rect.y > window.innerHeight - 24)
+						return null
+					const roomLayer =
+						document.querySelector('[data-room-layer]')
+					return {
+						x: rect.x,
+						y: rect.y,
+						width: rect.width,
+						height: rect.height,
+						layerVisible:
+							roomLayer !== null &&
+							getComputedStyle(roomLayer).visibility !== 'hidden',
+						ariaHidden: proxy.getAttribute('aria-hidden'),
+						tabindex: proxy.getAttribute('tabindex'),
+					}
+				},
+				null,
+				{ timeout: 5000, polling: 'raf' },
+			)
+			.then((handle) => handle.jsonValue())
+		// Resolved only on a truthy result; the type is wider than that.
+		if (!peek) throw new Error('the peek never came')
+		const { x, y, width, height, layerVisible, ariaHidden, tabindex } = peek
 		// The proxy appears as soon as the head's top crosses the bottom edge,
 		// with most of its box still below the viewport: on a quick machine
 		// the point a third of the way down may not be on screen yet, so the
 		// click stays inside the viewport, on the part of the head that shows.
 		await page.mouse.click(
 			x + width / 2,
-			Math.min(y + height * 0.3, DESKTOP.height - 2),
+			Math.min(y + height * 0.3, GAG_VIEWPORT.height - 12),
 		)
 		await expect(page.getByTestId('boop-count')).toHaveText('1')
 		expect(layerVisible).toBe(true)
 		expect(ariaHidden).toBe('true')
 		expect(tabindex).toBe('-1')
 		// Drawn only in the bottom band of the viewport.
-		expect(y).toBeGreaterThan(DESKTOP.height * 0.6)
+		expect(y).toBeGreaterThan(GAG_VIEWPORT.height * 0.6)
 
 		await page.keyboard.press('Escape')
 		await expect(html(page)).not.toHaveAttribute('data-room-gag', /./)

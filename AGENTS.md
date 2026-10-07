@@ -296,7 +296,14 @@ otherwise the value is captured during prerendering.
 - Sound (`src/shared/lib/sound`): one shared `AudioContext`
   (`audio-context.ts`); the meow and the synthesised effects (`sfx.ts`: tick,
   plop, chomp) play unless muted, and only the plop, which always follows a
-  gesture, may create the context. The code-generated ambient lives in
+  gesture, may create the context. The meow (`cat-sound.ts`) is fetched and
+  decoded ahead of the first boop, at an idle moment after hydration while
+  sound is on (`usePrefetchMeow` in `features/boop-cat/model/boop.ts`, called
+  by every `CatFaceButton`), in an `OfflineAudioContext`, so no context
+  exists before a gesture; a boop only resumes the context and starts a
+  source, past the file's leading silence (from the first sample within
+  −34 dB of the peak, less 10 ms), and one that beats the prefetch plays
+  the meow on arrival only within 250 ms. The code-generated ambient lives in
   `ambient.ts`, a module that imports nothing on purpose: the e2e loudness
   test strips its types with `node:module` and renders it through an
   `OfflineAudioContext` in the browser (40 s of stereo at the page's seed:
@@ -304,17 +311,17 @@ otherwise the value is captured during prerendering.
   and flipping to dawn mid-way); its gains are tuned to that window. It is a
   calm night in the room: warm
   pads walk a seeded chord cycle in A minor (one chord per 14–22 s, linear
-  crossfades), a felt piano drops sparse phrases from the chord under it,
-  rain patters on the window over a low room tone, all through one
-  generated-impulse convolver with a touch of tape wow. Dawn (mood > 0.5)
-  lifts the next chord to A major in higher voicings, opens the pads, eases
-  the rain off and lets a distant bird call now and then. Every draw is
+  crossfades), a felt piano drops sparse phrases from the chord under it
+  over a low room tone (no rain, no purr: the owner asked for neither), all
+  through one generated-impulse convolver with a touch of tape wow. Dawn
+  (mood > 0.5) lifts the next chord to A major in higher voicings, opens the
+  pads, eases the room tone and lets a distant bird call now and then. Every draw is
   mulberry32 on the seed, one stream per concern, and `schedule` works in
   time order, so a render repeats exactly whatever the lookahead, as long
   as no mood change is in flight. A flip brings the new set's tonic at
   the next chord change (no earlier than 3 s, never inside the sounding
   chord's attack: up to about 8 s on the page), cuts the tail before last so never more than two chords sound
-  (33 live sources at most, measured over hundreds of flips) and takes
+  (30 live sources at most over hundreds of flips) and takes
   back the phrase notes decided for the old chord; a call that comes late
   (a stalled main thread) drops the notes and birds it has passed and
   restarts the harmony at the clock. The unit tests check all of it on a
@@ -322,7 +329,7 @@ otherwise the value is captured during prerendering.
   second; a mute fades the master out and then, once the context has
   reached the end of the fade, releases the graph (the sources and the
   master disconnected, the rest left to the collector; the generated
-  buffers, about 3.7 MB at 48 kHz, stay cached per context for a quick
+  buffers, about 1.8 MB at 48 kHz, stay cached per context for a quick
   return), so a muted page costs no audio processing; it never closes or
   suspends the context the meow and the effects share. `features/cat-room/ui/ambient-sound.tsx`
   starts it only after the explicit opt-in (`getSoundOptIn()`, the stored

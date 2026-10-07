@@ -30,6 +30,7 @@ import {
 	createRoomMaterial,
 	createSceneUniforms,
 } from './materials'
+import { createCardHole } from './overlay/card-hole'
 import { createFishMesh } from './overlay/fish'
 import { createRenderer, resizeRenderer } from './renderer'
 import { buildRoom } from './room/build-room'
@@ -43,6 +44,8 @@ export type RoomSceneOptions = {
 	dpr: number
 	/** Painted screen instead of the DOM hole (lite mode, posters, lab). */
 	fakeScreen: boolean
+	/** Phone variant `c`: the screen may be as narrow as the viewport (a portrait panel). */
+	screenAspectFloor?: number
 	/** Where the cat's GLB comes from; the lab swaps in the source model. */
 	modelUrl: string
 	/** Omit the cat (room look-dev). */
@@ -105,8 +108,16 @@ export async function createRoomScene(
 	glowMesh.renderOrder = 10
 	scene.add(roomMesh, glowMesh)
 
-	const monitor = createMonitor(roomMaterial, width / height, fakeScreen)
+	const monitor = createMonitor(
+		roomMaterial,
+		width / height,
+		fakeScreen,
+		options.screenAspectFloor,
+	)
 	scene.add(monitor.group)
+	// Phone variant `c`: the hole that follows the page card over the room.
+	const cardHole = createCardHole()
+	scene.add(cardHole.mesh)
 
 	const sticker = await createSticker()
 	scene.add(sticker.mesh)
@@ -185,6 +196,12 @@ export async function createRoomScene(
 		}
 		uniforms.uDawn.value = frame.dawn
 		monitor.showPage(frame.phase === 'finale' ? 'finale' : 'dive')
+		cardHole.set(
+			overlay ? null : (frame.hole ?? null),
+			frame.camera,
+			width,
+			height,
+		)
 		cat?.update(frame, dt, activeCamera)
 		placeFish(frame)
 	}
@@ -253,6 +270,7 @@ export async function createRoomScene(
 		dispose() {
 			cat?.dispose()
 			fish.dispose()
+			cardHole.dispose()
 			sticker.dispose()
 			monitor.dispose()
 			room.opaque.dispose()

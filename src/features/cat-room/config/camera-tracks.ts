@@ -46,6 +46,70 @@ export const LITE_FRAMING = {
 	diveBow: [-0.2, 0, -0.15] as Vec3,
 } as const
 
+/**
+ * Gate 2 round 6 (`config/phone-variant.ts`): the stage cameras of the three
+ * phone variants, composed for a portrait frame from close by instead of
+ * backing the stock cameras off. Each is blended to the stock pose on
+ * landscape viewports over `LITE_FRAMING.portraitTo..portraitFrom`.
+ */
+export const PHONE_CAMERAS = {
+	/** The still: the cat from its right, the monitor over its shoulder; the dawn one leaves the bottom half to the credits. */
+	a: {
+		hero: {
+			position: [1.5, 1.05, 0.54],
+			target: [0.7, 0.8, -0.84],
+			fov: 55,
+		},
+		dawn: {
+			position: [1.45, 1.0, 0.55],
+			target: [0.65, 0.88, -0.85],
+			fov: 48,
+		},
+	},
+	/** The short dive: the stock hero framing with a phone's field of view, so the monitor is in the shot to fly into. */
+	b: {
+		hero: {
+			position: [1.15, 1.35, 0.8],
+			target: [0.52, 0.9, -1.1],
+			fov: 52,
+		},
+		dawn: {
+			position: [0.0, 1.4, 0.9],
+			target: [0.5, 0.72, -1.0],
+			fov: 50,
+		},
+	},
+	/** The card: frontal and level, the cat in the lower half under the name, the portrait monitor beside it. */
+	c: {
+		hero: {
+			position: [0.95, 1.18, 0.75],
+			target: [0.55, 1.18, -0.9],
+			fov: 55,
+		},
+		dawn: {
+			position: [1.0, 1.0, 0.8],
+			target: [0.55, 0.85, -0.9],
+			fov: 50,
+		},
+	},
+} as const satisfies Record<string, { hero: CameraPose; dawn: CameraPose }>
+
+/** Variant b: the dive is a straight push-in; the pull-back bows forward, around the desk, to the dawn camera. Offsets from the midpoint. */
+export const PHONE_BOW = {
+	dive: [0, 0, 0] as Vec3,
+	finale: [0.1, 0.1, 0.35] as Vec3,
+} as const
+
+/**
+ * Variant c: the monitor is a vertical panel, 9:16 at the narrowest (a coder's
+ * second screen turned portrait); the page card grows out of it over the
+ * whole dive track and is back in it by `finaleEnd` of the finale's.
+ */
+export const PHONE_CARD = {
+	screenAspectFloor: 0.5625,
+	finaleEnd: 0.45,
+} as const
+
 /** Dive progress map (0..1 of the pinned scroll). */
 export const DIVE = {
 	hold: 0.08,

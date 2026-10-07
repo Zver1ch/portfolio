@@ -67,7 +67,7 @@ test.describe('full mode', () => {
 
 		await prompt.click()
 		await expect(prompt).toHaveCount(0)
-		// The rain, the room tone, the LFOs and the opening chord start at
+		// The room tone, the LFOs and the opening chord start at
 		// once; the first felt-piano phrase is scheduled within seconds.
 		await expect
 			.poll(async () => (await audioState(page)).starts)

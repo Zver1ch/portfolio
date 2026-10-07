@@ -27,13 +27,13 @@ export function Finale({ children }: { children: ReactNode }) {
 			>
 				<div
 					data-portal
-					className='relative z-10 flex min-h-svh items-center bg-ink px-4 py-24 sm:px-6 room-full:col-start-1 room-full:row-start-1 room-full:h-lvh room-lite:sticky room-lite:top-0'
+					className='relative z-10 flex min-h-svh items-center bg-ink px-4 py-24 sm:px-6 room-full:col-start-1 room-full:row-start-1 room-full:h-lvh room-lite:sticky room-lite:top-0 phone-a:static phone-b:col-start-1 phone-b:row-start-1 phone-c:col-start-1 phone-c:row-start-1'
 				>
 					<div className='mx-auto w-full max-w-7xl'>{children}</div>
 				</div>
 				<div
 					data-slot
-					className='relative h-svh room-full:col-start-1 room-full:row-start-1 room-full:h-lvh'
+					className='relative h-svh room-full:col-start-1 room-full:row-start-1 room-full:h-lvh phone-b:col-start-1 phone-b:row-start-1 phone-c:col-start-1 phone-c:row-start-1'
 				>
 					<RoomPoster variant='dawn' />
 					<div
@@ -50,7 +50,7 @@ export function Finale({ children }: { children: ReactNode }) {
 				<div
 					data-stage-spacer
 					aria-hidden
-					className='hidden room-lite:block room-lite:h-[80svh]'
+					className='hidden room-lite:block room-lite:h-[80svh] phone-a:hidden phone-b:h-[80svh] phone-c:h-[50svh]'
 				/>
 			</PortalStage>
 			<div
