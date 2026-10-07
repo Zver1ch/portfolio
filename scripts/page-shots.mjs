@@ -84,9 +84,10 @@ try {
 		await shot(page, '05-about-peek')
 		await page.keyboard.press('Escape')
 		await scrollIntoView(page, '#stack', 500)
+		// Below the "Enable sound" chip under the header.
 		const spot = await page.locator('#stack').evaluate((node) => {
 			const rect = node.getBoundingClientRect()
-			return { x: rect.right - 60, y: Math.max(rect.top + 60, 140) }
+			return { x: rect.right - 60, y: Math.max(rect.top + 60, 200) }
 		})
 		await page.mouse.click(spot.x, spot.y)
 		await page.waitForTimeout(450)
@@ -113,19 +114,43 @@ try {
 		await shot(page, '11-finale-credits')
 	})
 
-	await session({ width: 390, height: 844 }, async (page, { height }) => {
-		await shot(page, '12-lite-hero-390x844')
-		await scrollTo(page, height * 0.6)
-		await shot(page, '13-lite-hero-fade')
+	// The phone (Gate 2, round 5): lite runs the dive and the pull-back on
+	// its stages' extra height, with the portal stuck under the room.
+	await session({ width: 390, height: 844 }, async (page) => {
+		const track = (stage) =>
+			page.evaluate((name) => {
+				const node = document.querySelector(`[data-stage="${name}"]`)
+				const portal = node?.querySelector('[data-portal]')
+				if (!node || !portal) throw new Error(`no ${name} stage`)
+				return {
+					top: node.getBoundingClientRect().top + window.scrollY,
+					length: node.offsetHeight - portal.offsetHeight,
+				}
+			}, stage)
+		await shot(page, 'r5-phone-01-hero')
+		const dive = await track('hero')
+		await scrollTo(page, dive.top + 0.5 * dive.length)
+		await shot(page, 'r5-phone-02-dive-p050')
+		await scrollTo(page, dive.top + 0.85 * dive.length)
+		await shot(page, 'r5-phone-03-dive-p085')
+		await scrollTo(page, dive.top + 0.95 * dive.length)
+		await shot(page, 'r5-phone-04-dive-p095-crossfade')
+		await scrollTo(page, dive.top + dive.length)
+		await shot(page, 'r5-phone-05-landing')
 		await scrollIntoView(page, '#stack', 600)
-		await shot(page, '14-lite-stack')
-		await scrollIntoView(page, '[data-stage="finale"] [data-slot]', 1200)
-		await shot(page, '15-lite-finale')
+		await shot(page, 'r5-phone-06-stack')
+		const finale = await track('finale')
+		await scrollTo(page, finale.top + 0.06 * finale.length)
+		await shot(page, 'r5-phone-07-finale-p006-fade-in')
+		await scrollTo(page, finale.top + 0.4 * finale.length)
+		await shot(page, 'r5-phone-08-finale-p040')
+		await scrollTo(page, finale.top + finale.length)
+		await shot(page, 'r5-phone-09-finale-dawn')
 		await page.evaluate(() =>
 			window.scrollTo(0, document.documentElement.scrollHeight),
 		)
 		await page.waitForTimeout(1000)
-		await shot(page, '16-lite-credits')
+		await shot(page, 'r5-phone-10-credits')
 	})
 } finally {
 	await browser.close()

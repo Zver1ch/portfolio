@@ -11,6 +11,7 @@ import type { CameraPose } from '@/shared/lib/math/projection'
 import { CAMERA_FAR, CAMERA_NEAR } from '../../config/camera-tracks'
 import { roomColliders } from '../../config/colliders'
 import type { DirectorFrame } from '../../model/frame'
+import type { Track } from '../camera-path'
 import {
 	type OverlayPlacement,
 	overlayCameraPosition,
@@ -63,6 +64,11 @@ export type RoomScene = {
 	update(frame: DirectorFrame, dt: number): void
 	/** Draws the last updated state. */
 	draw(): void
+	/**
+	 * Lite mode (plan §3.4): the page section a track lands on, painted for
+	 * the monitor's page column; null shows the bars again.
+	 */
+	setScreenPage(track: Track, image: HTMLCanvasElement | null): void
 	/** Draws several frames side by side in one canvas (probe sheets). */
 	renderPanes(
 		panes: { frame: DirectorFrame; rect: PaneRect }[],
@@ -178,6 +184,7 @@ export async function createRoomScene(
 			activeCamera = camera
 		}
 		uniforms.uDawn.value = frame.dawn
+		monitor.showPage(frame.phase === 'finale' ? 'finale' : 'dive')
 		cat?.update(frame, dt, activeCamera)
 		placeFish(frame)
 	}
@@ -200,6 +207,9 @@ export async function createRoomScene(
 		},
 		update,
 		draw,
+		setScreenPage(track, image) {
+			monitor.setPage(track, image)
+		},
 		renderPanes(panes, dt, clear = true) {
 			renderer.setScissorTest(false)
 			if (clear) renderer.clear()

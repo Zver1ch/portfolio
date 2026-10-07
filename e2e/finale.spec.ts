@@ -1,9 +1,11 @@
 import { expect, type Page, test } from '@playwright/test'
+import { profile } from '../src/shared/config/profile'
 import {
 	collectProblems,
 	countMeows,
 	DESKTOP,
 	gotoHydrated,
+	HEADER_HEIGHT,
 	meows,
 	waitForScrollToSettle,
 } from './helpers'
@@ -83,31 +85,84 @@ test.describe('full mode', () => {
 test.describe('lite mode', () => {
 	test.use({ viewport: { width: 390, height: 844 } })
 
-	test('the dawn room fades in under the credits and the cat can be petted', async ({
+	/** Scrolls the finale's track to `p`: the stage's top plus its height beyond the stuck statement. */
+	const liteFinaleTo = async (page: Page, p: number) => {
+		await page.evaluate((progress) => {
+			const stage = document.querySelector<HTMLElement>(
+				'[data-stage="finale"]',
+			)
+			const portal = stage?.querySelector<HTMLElement>('[data-portal]')
+			if (!stage || !portal) throw new Error('no finale stage')
+			const top = stage.getBoundingClientRect().top + window.scrollY
+			window.scrollTo(
+				0,
+				Math.round(
+					top + progress * (stage.offsetHeight - portal.offsetHeight),
+				),
+			)
+		}, p)
+		await page.waitForTimeout(600)
+	}
+	const layerOpacity = (page: Page) =>
+		page
+			.locator('[data-room-layer]')
+			.evaluate((node) => Number((node as HTMLElement).style.opacity))
+
+	test('the statement sticks, the dawn room fades in over it and pulls back; the credits roll in under the cat', async ({
 		page,
 	}) => {
 		const problems = collectProblems(page)
 		await waitForRoom(page, 'lite')
+		await expect(page.locator('.pin-spacer')).toHaveCount(0)
+
+		// The statement arrives as a page section: nothing is drawn yet.
+		await liteFinaleTo(page, 0)
+		await expect(html(page)).toHaveAttribute('data-room-phase', 'off')
+		await expect(page.locator('[data-room-layer]')).toBeHidden()
+		await expect(page.getByText(profile.footerStatement)).toBeInViewport()
+		await expect(finalePortal(page)).toHaveCSS('position', 'sticky')
+
+		// A little further: the room fades in over the stuck statement.
+		await liteFinaleTo(page, 0.05)
+		await expect(html(page)).toHaveAttribute('data-room-phase', 'finale')
+		await expect(page.locator('[data-room-layer]')).toBeVisible()
+		const fading = await layerOpacity(page)
+		expect(fading).toBeGreaterThan(0.05)
+		expect(fading).toBeLessThan(0.95)
+		expect(
+			await finalePortal(page).evaluate(
+				(node) => node.getBoundingClientRect().top,
+			),
+		).toBe(0)
+		await expect(finalePortal(page)).toHaveCSS('transform', 'none')
+
+		// The end of the page: the dawn room with the cat above the credits.
 		await scrollToEnd(page)
 		await expect(html(page)).toHaveAttribute('data-room-phase', 'finale')
-		await expect(page.locator('.pin-spacer')).toHaveCount(0)
-		await expect(finalePortal(page)).toHaveCSS('transform', 'none')
-		const opacity = await page
-			.locator('[data-room-layer]')
-			.evaluate((node) => Number((node as HTMLElement).style.opacity))
-		expect(opacity).toBeGreaterThan(0.95)
-		await expect(
-			page.getByRole('link', { name: 'CC BY 4.0' }),
-		).toBeInViewport()
-
-		// With the dawn room on screen the live cat is the pet target.
-		await page
-			.locator('[data-stage="finale"] [data-slot]')
-			.evaluate((node) => node.scrollIntoView({ block: 'start' }))
-		await waitForScrollToSettle(page)
-		await page.waitForTimeout(600)
+		expect(await layerOpacity(page)).toBe(1)
+		const ccBy = page.getByRole('link', { name: 'CC BY 4.0' })
+		await expect(ccBy).toBeInViewport()
+		await expect(ccBy).toHaveAttribute(
+			'href',
+			'https://creativecommons.org/licenses/by/4.0/',
+		)
 		const cat = liveCat(page)
 		await expect(cat).toBeVisible()
+		await expect(cat).toBeEnabled()
+		const [catBox, creditsBox] = await Promise.all([
+			cat.boundingBox(),
+			page.locator('[data-credits-roll]').boundingBox(),
+		])
+		expect(catBox).not.toBeNull()
+		expect(creditsBox).not.toBeNull()
+		// The credits start below the cat's middle: its face stays in reach.
+		expect((catBox as { y: number; height: number }).y).toBeGreaterThan(
+			HEADER_HEIGHT,
+		)
+		expect(
+			(catBox as { y: number; height: number }).y +
+				(catBox as { y: number; height: number }).height / 2,
+		).toBeLessThan((creditsBox as { y: number }).y)
 		await cat.click()
 		await expect(page.getByTestId('boop-count')).toHaveText('1')
 		expect(problems).toEqual([])

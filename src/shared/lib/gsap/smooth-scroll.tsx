@@ -4,6 +4,7 @@ import Lenis from 'lenis'
 import { useEffect } from 'react'
 import { FINE_POINTER_QUERY } from '@/shared/config/motion'
 import { gsap, ScrollTrigger } from './register'
+import { registerScrollJumper } from './scroll-jump'
 
 export type InPageAnchor = { hash: string; element: Element }
 
@@ -54,6 +55,7 @@ export function SmoothScroll() {
 		const stop = () => {
 			if (tick) gsap.ticker.remove(tick)
 			if (onClick) document.removeEventListener('click', onClick)
+			registerScrollJumper(null)
 			lenis?.destroy()
 			lenis = undefined
 			tick = undefined
@@ -72,7 +74,8 @@ export function SmoothScroll() {
 				const target = inPageAnchor(event)
 				if (!target) return
 				event.preventDefault()
-				// Lenis honours the target's scroll-margin itself.
+				// Lenis honours the target's scroll-margin itself. The hash is
+				// written only on arrival: a scroll a wheel interrupts writes none.
 				instance.scrollTo(target.element as HTMLElement, {
 					onComplete: () => {
 						// Already there, so the browser's own fragment scroll moves nothing.
@@ -82,6 +85,18 @@ export function SmoothScroll() {
 				})
 			}
 			document.addEventListener('click', click)
+			// A layout change under the scroll (a room mode switch): a native
+			// scrollBy would be undone by the next Lenis frame. Whatever Lenis
+			// was doing (a nav scroll, wheel momentum) ends here: the page is
+			// measured again (its old height would clamp the jump) and jumps
+			// at once to the corrected position.
+			registerScrollJumper((delta) => {
+				instance.resize()
+				instance.scrollTo(instance.actualScroll + delta, {
+					immediate: true,
+					force: true,
+				})
+			})
 			lenis = instance
 			tick = raf
 			onClick = click

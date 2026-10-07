@@ -61,7 +61,7 @@ export function Credits() {
 			>
 				Credits
 			</h2>
-			<ul className='mt-6 max-w-3xl space-y-4 text-sm leading-relaxed text-muted-foreground'>
+			<ul className='mt-6 max-w-3xl space-y-4 text-sm leading-relaxed text-muted-foreground room-lite:mt-4 room-lite:space-y-3'>
 				{credits.map((credit) => (
 					<CreditLine key={credit.id} credit={credit} />
 				))}

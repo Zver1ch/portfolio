@@ -118,6 +118,28 @@
 
 /* Layout that only applies while the live room runs in full mode (`data-room-mode` on <html>, see motion.ts). */
 @custom-variant room-full (&:where([data-room-mode="full"] *));
+/* ...and in lite mode: the stages grow a spacer and their portal sticks under the canvas (plan §3.4). */
+@custom-variant room-lite (&:where([data-room-mode="lite"] *));
+/* A phone on its side: the hero copy has to fit under the header. */
+@custom-variant short (@media (max-height: 30rem));
+
+/*
+ * Lite mode: the room is opaque over the page and the director crossfades the
+ * layer with the page at the end of the dive and the start of the finale, so
+ * the layer carries the page's own ink wherever the room draws nothing.
+ */
+html[data-room-mode="lite"] [data-room-layer] {
+	background: var(--ink);
+}
+/* The name over the lite room: a scrim of its own, the canvas sits above the slot's. */
+html[data-room-mode="lite"] [data-hero-copy] {
+	background: linear-gradient(
+		to top,
+		var(--ink) 0%,
+		color-mix(in oklch, var(--ink) 78%, transparent) 34%,
+		transparent 64%
+	);
+}
 
 /* Film grain over the whole page (Gate 1 decision 9); opacity only, blend modes would re-composite on every scroll frame. */
 body::after {
@@ -194,7 +216,7 @@ html[data-room-mode="static"] [data-loader-veil] {
 }
 /* The typing line's caret blinks like a prompt waiting for input; it holds while the paw types. */
 @media (prefers-reduced-motion: no-preference) {
-	[data-typing-line]:not([data-busy])::after {
+	[data-typing-line]:not([data-busy]) [data-caret] {
 		animation: caret-blink 1.1s steps(1, end) infinite;
 	}
 }

@@ -373,12 +373,22 @@ test.describe('narrow viewports', () => {
 				page.getByRole('link', { name: 'Back to top' }),
 			).toBeInViewport()
 
-			// The finale's cat is petted with the dawn room on screen: at the
-			// very end the credits lie over it (the lite room's proxy, or the
-			// static face button in the slot).
-			await page
-				.locator('[data-stage="finale"] [data-slot]')
-				.evaluate((node) => node.scrollIntoView({ block: 'start' }))
+			// The finale's cat is petted with the dawn room held on screen, at
+			// the end of the pull-back (the lite room's proxy, or the static
+			// face button in the slot when no room came).
+			await page.evaluate(() => {
+				const stage = document.querySelector<HTMLElement>(
+					'[data-stage="finale"]',
+				)
+				const portal =
+					stage?.querySelector<HTMLElement>('[data-portal]')
+				if (!stage || !portal) return
+				const top = stage.getBoundingClientRect().top + window.scrollY
+				window.scrollTo(
+					0,
+					top + stage.offsetHeight - portal.offsetHeight,
+				)
+			})
 			await waitForScrollToSettle(page)
 			await page.waitForTimeout(600)
 			await page

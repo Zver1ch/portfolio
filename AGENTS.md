@@ -204,8 +204,62 @@ otherwise the value is captured during prerendering.
   is a hole in the canvas, so what shows on it is the real page. Zero-size
   `[data-portal-corner]` markers at the portal's corners exist for the e2e
   alignment check (`e2e/dive.spec.ts`), which reads screenshot pixels with
-  the tiny PNG reader in `e2e/png.ts`. Lite mode never pins: the hero
-  trigger pushes the camera a third of the way in and fades the layer.
+  the tiny PNG reader in `e2e/png.ts`. Lite mode never pins (the mobile URL
+  bar and touch momentum make pins jump): each stage grows a `room-lite:`
+  spacer and its portal is `position: sticky; top: 0`, so the section holds
+  at the top of the viewport under the opaque canvas (`[data-room-layer]`
+  carries the page's ink in lite) for the track's scroll length, the stage's
+  height beyond the portal's, which the trigger writes as the progress. The
+  monitor shows the section painted (`lib/page-snapshot.ts` measures its
+  text from the DOM and draws it into a canvas; `lib/scene/room/monitor.ts`
+  maps it onto a centred column of the screen in the viewport's aspect), the
+  camera flies there on `liteDiveCamera` and ends at `endCamera(1)`, where
+  the column is the viewport exactly, and the director crossfades the layer
+  to the real section over the last 10 % (`liteFade`); the finale fades in
+  the same way and pulls back on `liteFinaleCamera`. The portrait framing
+  (`liteStageCamera`, `LITE_FRAMING`) backs the stock cameras off and aims
+  them lower, so the desk sits high and the bottom is free for the name or
+  the credits. The page is laid out only after hydration (pins, lite
+  spacers), so the browser's scroll restoration is off
+  (`ScrollTrigger.clearScrollMemory('manual')`, which ScrollTrigger keeps
+  across its refreshes) and the layer restores by hand once per page load
+  (`lib/scroll-restore.ts`), in the effect after the first non-static
+  layout, pins included: a reload or back/forward navigation returns to the
+  place saved on `pagehide` or a hidden tab (a landmark and its offset in
+  `sessionStorage`), anything else goes to the hash target, and a reader
+  who scrolled before hydration gets neither and keeps their place across
+  the first layout instead; never again on a later mode change. Back and
+  Forward between nav-pushed hashes scroll to the target on `hashchange`.
+  A mode switch mid-visit (full ↔ lite on a resize, lite → static on a
+  failure) keeps the reader's place: `lib/scroll-anchor.ts` follows the
+  landmark the reader is in (`main section[id]`, the footer, the credits:
+  the last one starting in the upper third of the viewport or above, or a
+  landmark nested in it and showing, as the credits over the footer) on
+  every scroll, a frame behind, and holds that last place from the event
+  that changes the mode (a resize has already moved the `svh` layout by
+  then) (`model/room-mode.ts` watches the full and
+  reduced-motion queries from module load, once per page, so its lists fire
+  before the ones React subscribes to; `failRoom` holds it), ahead of
+  React's commit and its pin teardown, and puts it back on the frame after
+  the commit (ScrollTrigger's refreshes during the commit restore a stale,
+  clamped position). The correction goes through
+  `@/shared/lib/gsap/scroll-jump`: a running Lenis re-measures the page and
+  jumps at once to the corrected position, ending whatever scroll it was
+  animating (a nav scroll a wheel interrupts writes no hash either); a
+  native `scrollBy` would be undone by its next frame. `e2e/scroll-place.spec.ts`
+  covers all of it with `overflow-anchor: none` (Chromium would hide the
+  bug by itself) and a touch context for the phone cases (no Lenis). The
+  layer's resize reaches the canvas through
+  `director.resize()`, applied under no drawn frame. The painted page places
+  every glyph (grapheme, by `Intl.Segmenter`) at its measured position
+  (kerning and letter-spacing come from the DOM, nothing from the canvas
+  engine) and paints the typing line's caret, a real `[data-caret]` element;
+  the typing itself waits for the lite dive to have landed (`landed` in the
+  room store, set by the director) and holds while the room is back over
+  the line, since under the opaque room it would type unseen, and a line
+  being typed is never painted. A director's `dispose` and the layer's
+  cleanup leave the layer hidden and unfaded, so the next mode's director
+  starts clean.
 - The finale (`src/widgets/finale`, the `finale` branch of the director): the
   footer statement is the `[data-portal]` of the finale stage. Past
   `data-room-phase='finale'` the director undocks it with the dive's docking
@@ -216,7 +270,10 @@ otherwise the value is captured during prerendering.
   reaction were removed at Gate 2 round 3). The credits block is a sibling of the stage, absolute
   at the footer's bottom edge in full mode, so it rolls in over the last
   stretch of the pin as a left column that leaves the cat in reach; its
-  scrim is a CSS gradient that is invisible on the ink page. The pet proxy
+  scrim is a CSS gradient that is invisible on the ink page. In lite mode
+  the credits follow the stage in the flow, tighter, and roll in over the
+  held dawn room, whose camera keeps the cat above them on phones from
+  about 740 px tall (the shortest ones reach its lower body). The pet proxy
   is "Pet the cat" in every phase (`model/room-store.ts` still mirrors the
   phase for the ambient's mood); the 2D face button in the finale slot is
   `[data-static-face]`, shown only when no room will come.
@@ -227,8 +284,9 @@ otherwise the value is captured during prerendering.
   4 s cap, 6 s gap, the first section entry always peeks, Escape silences
   for 60 s); the director runs it on wall time, draws only while a gag runs
   and writes `data-room-gag` and `data-fish-count` on `<html>`. Section
-  entries come from an IntersectionObserver on `main section[id]` and the
-  manifesto; a clean tap on `main` (travel ≤ 6 px, nothing interactive or
+  entries come from an IntersectionObserver on `main section[id]` (not the
+  manifesto: it is the dive's landing, so the first peek is always in the
+  first section scrolled to); a clean tap on `main` (travel ≤ 6 px, nothing interactive or
   `[data-no-fish]` under it, no selection) or the header's "Feed the cat"
   (`model/feed-bus.ts`) drops a fish (`lib/fish.ts`, the mesh in
   `lib/scene/overlay/fish.ts`) that the left paw reaches for with the
@@ -241,14 +299,41 @@ otherwise the value is captured during prerendering.
   gesture, may create the context. The code-generated ambient lives in
   `ambient.ts`, a module that imports nothing on purpose: the e2e loudness
   test strips its types with `node:module` and renders it through an
-  `OfflineAudioContext` in the browser (RMS −34…−26 dBFS, peak ≤ −9 dBFS);
-  its gains are tuned to that window, not to the plan's first numbers.
-  `ambient-engine.ts` runs it on the page; `features/cat-room/ui/ambient-sound.tsx`
+  `OfflineAudioContext` in the browser (40 s of stereo at the page's seed:
+  each channel's RMS −34…−26 dBFS, the peak ≤ −9 dBFS, at night, at dawn
+  and flipping to dawn mid-way); its gains are tuned to that window. It is a
+  calm night in the room: warm
+  pads walk a seeded chord cycle in A minor (one chord per 14–22 s, linear
+  crossfades), a felt piano drops sparse phrases from the chord under it,
+  rain patters on the window over a low room tone, all through one
+  generated-impulse convolver with a touch of tape wow. Dawn (mood > 0.5)
+  lifts the next chord to A major in higher voicings, opens the pads, eases
+  the rain off and lets a distant bird call now and then. Every draw is
+  mulberry32 on the seed, one stream per concern, and `schedule` works in
+  time order, so a render repeats exactly whatever the lookahead, as long
+  as no mood change is in flight. A flip brings the new set's tonic at
+  the next chord change (no earlier than 3 s, never inside the sounding
+  chord's attack: up to about 8 s on the page), cuts the tail before last so never more than two chords sound
+  (33 live sources at most, measured over hundreds of flips) and takes
+  back the phrase notes decided for the old chord; a call that comes late
+  (a stalled main thread) drops the notes and birds it has passed and
+  restarts the harmony at the clock. The unit tests check all of it on a
+  fake context. `ambient-engine.ts` runs it on the page, 2.5 s ahead every
+  second; a mute fades the master out and then, once the context has
+  reached the end of the fade, releases the graph (the sources and the
+  master disconnected, the rest left to the collector; the generated
+  buffers, about 3.7 MB at 48 kHz, stay cached per context for a quick
+  return), so a muted page costs no audio processing; it never closes or
+  suspends the context the meow and the effects share. `features/cat-room/ui/ambient-sound.tsx`
   starts it only after the explicit opt-in (`getSoundOptIn()`, the stored
   value exactly `'true'`), while the room is ready and the tab visible, dawn
   mood in the finale. `features/toggle-sound/ui/sound-prompt.tsx` is the
-  "Enable sound" chip, mounted by `widgets/cat-stage` once the room runs and
-  gone once any choice is stored; the toggle mutes everything.
+  "Enable sound" chip, mounted by `widgets/cat-stage` once the room runs,
+  fixed under the header (`top: 7.5rem`, below the first section's corner
+  captions and clear of the bottom band, where the gags play and the credits
+  end): at the right under the toggle from `sm` up, at the left on phones,
+  where the lite dawn framing puts the cat's head under the header on the
+  right; gone once any choice is stored; the toggle mutes everything.
 - Smooth scrolling (`src/shared/lib/gsap/smooth-scroll.tsx`): Lenis runs on
   fine pointers only and is ticked from the GSAP ticker ahead of
   ScrollTrigger. In-page links are scrolled by Lenis alone: the component

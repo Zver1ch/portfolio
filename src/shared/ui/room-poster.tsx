@@ -40,13 +40,14 @@ export function RoomPoster({
 		width: 1920,
 		height: 1200,
 	})
+	// A phone's own aspect (19.5:9), so the stand-in frames the room like the lite camera does.
 	const {
 		props: { srcSet: portrait },
 	} = getImageProps({
 		...common,
 		src: POSTERS[variant].portrait,
 		width: 1080,
-		height: 1920,
+		height: 2340,
 	})
 	return (
 		<picture

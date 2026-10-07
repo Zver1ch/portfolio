@@ -67,16 +67,17 @@ test.describe('full mode', () => {
 
 		await prompt.click()
 		await expect(prompt).toHaveCount(0)
-		// The room tone, the tremolo, the two hum sines and the first pluck
-		// (scheduled at once, two seconds ahead); the next pluck 5 to 11 s later.
+		// The rain, the room tone, the LFOs and the opening chord start at
+		// once; the first felt-piano phrase is scheduled within seconds.
 		await expect
 			.poll(async () => (await audioState(page)).starts)
 			.toBeGreaterThanOrEqual(5)
+		const opening = (await audioState(page)).starts
 		await expect
 			.poll(async () => (await audioState(page)).starts, {
 				timeout: 15_000,
 			})
-			.toBeGreaterThanOrEqual(6)
+			.toBeGreaterThan(opening)
 		expect((await audioState(page)).states).toContain('running')
 
 		const toggle = page.getByRole('button', { name: 'Sound' })
@@ -103,8 +104,16 @@ test.describe('full mode', () => {
 test.describe('offline loudness', () => {
 	test.use({ viewport: DESKTOP })
 
-	for (const mood of [0, 1]) {
-		test(`the ambient at mood ${mood} renders between -34 and -26 dBFS RMS with peaks under -9 dBFS`, async ({
+	// Stereo, the page's seed, long enough to hold chord changes; the third
+	// case flips to dawn part-way, as a reader reaching the finale does.
+	const SECONDS = 40
+	const cases = [
+		{ name: 'at night', mood: 0 },
+		{ name: 'at dawn', mood: 1 },
+		{ name: 'from night to dawn at 15 s', mood: 0, flipAt: 15 },
+	]
+	for (const { name, mood, flipAt } of cases) {
+		test(`the ambient ${name} renders each channel between -34 and -26 dBFS RMS with peaks under -9 dBFS`, async ({
 			page,
 		}) => {
 			// Playwright runs from the repository root.
@@ -115,7 +124,7 @@ test.describe('offline loudness', () => {
 			const code = stripTypeScriptTypes(source)
 			await page.goto('about:blank')
 			const result = await page.evaluate(
-				async ({ code, mood }) => {
+				async ({ code, mood, flipAt, seconds }) => {
 					const url = URL.createObjectURL(
 						new Blob([code], { type: 'text/javascript' }),
 					)
@@ -133,34 +142,49 @@ test.describe('offline loudness', () => {
 							fadeTo(level: number, seconds: number): void
 						}
 					}
-					const seconds = 10
 					const rate = 44100
-					const ctx = new OfflineAudioContext(1, rate * seconds, rate)
-					const graph = mod.createAmbientGraph(
-						ctx,
-						ctx.destination,
-						3,
-					)
+					const ctx = new OfflineAudioContext(2, rate * seconds, rate)
+					const graph = mod.createAmbientGraph(ctx, ctx.destination)
 					graph.setMood(mood)
 					graph.fadeTo(mod.AMBIENT.master, 0.01)
-					graph.schedule(seconds)
-					const buffer = await ctx.startRendering()
-					const data = buffer.getChannelData(0)
-					let sum = 0
-					let peak = 0
-					for (let i = 0; i < data.length; i++) {
-						sum += data[i] * data[i]
-						peak = Math.max(peak, Math.abs(data[i]))
+					if (flipAt === undefined) {
+						graph.schedule(seconds)
+					} else {
+						// As the page does: scheduled up to the flip, then from it.
+						graph.schedule(flipAt)
+						void ctx.suspend(flipAt).then(() => {
+							graph.setMood(1)
+							graph.schedule(seconds)
+							return ctx.resume()
+						})
 					}
+					const buffer = await ctx.startRendering()
+					const channels = [0, 1].map((channel) => {
+						const data = buffer.getChannelData(channel)
+						let sum = 0
+						let peak = 0
+						for (let i = 0; i < data.length; i++) {
+							sum += data[i] * data[i]
+							peak = Math.max(peak, Math.abs(data[i]))
+						}
+						return {
+							rms: 20 * Math.log10(Math.sqrt(sum / data.length)),
+							peak: 20 * Math.log10(peak),
+						}
+					})
 					return {
-						rms: 20 * Math.log10(Math.sqrt(sum / data.length)),
-						peak: 20 * Math.log10(peak),
+						rms: channels.map((channel) => channel.rms),
+						peak: Math.max(
+							...channels.map((channel) => channel.peak),
+						),
 					}
 				},
-				{ code, mood },
+				{ code, mood, flipAt, seconds: SECONDS },
 			)
-			expect(result.rms).toBeGreaterThan(-34)
-			expect(result.rms).toBeLessThan(-26)
+			for (const rms of result.rms) {
+				expect(rms).toBeGreaterThan(-34)
+				expect(rms).toBeLessThan(-26)
+			}
 			expect(result.peak).toBeLessThanOrEqual(-9)
 		})
 	}

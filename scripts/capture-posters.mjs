@@ -5,9 +5,9 @@
  *   pnpm assets:posters [--url http://localhost:3100]
  *
  *   public/posters/room-night.jpg            1920×1200  hero framing, night
- *   public/posters/room-night-portrait.jpg   1080×1920  lite hero framing, night
+ *   public/posters/room-night-portrait.jpg   1080×2340  lite hero framing (a phone's aspect), night
  *   public/posters/room-dawn.jpg             1920×1200  finale camera at p = 1, dawn
- *   public/posters/room-dawn-portrait.jpg    1080×1920  the same, portrait
+ *   public/posters/room-dawn-portrait.jpg    1080×2340  the lite dawn camera, portrait
  *   app/apple-icon.png                       180×180    the sticker on ink
  *
  * Everything comes from the dev-only lab with the fake screen, through
@@ -25,14 +25,14 @@ const POSTERS = [
 		'public/posters/room-night-portrait.jpg',
 		'view=hero&lite=1&t=2.4',
 		1080,
-		1920,
+		2340,
 	],
 	['public/posters/room-dawn.jpg', 'view=finale&p=1&t=2.4', 1920, 1200],
 	[
 		'public/posters/room-dawn-portrait.jpg',
 		'view=finale&p=1&lite=1&t=2.4',
 		1080,
-		1920,
+		2340,
 	],
 ]
 const JPEG_QUALITY = 88

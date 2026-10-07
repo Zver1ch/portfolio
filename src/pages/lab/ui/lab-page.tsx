@@ -7,8 +7,8 @@ import { GAGS, OVERLAY } from '@/features/cat-room/config/tuning'
 import {
 	cameraAt,
 	dawnFactor,
+	liteDiveCamera,
 	liteFinaleCamera,
-	liteHeroCamera,
 } from '@/features/cat-room/lib/camera-path'
 import {
 	type OverlayPlacement,
@@ -81,15 +81,15 @@ function frameFor(
 			fish = { position: reach, held: false }
 		}
 	} else if (view === 'hero' || view === 'dive') {
+		const p = view === 'dive' ? params.p : 0
 		camera = params.lite
-			? liteHeroCamera(aspect)
-			: cameraAt('dive', params.p, aspect)
-		dive = view === 'dive' ? params.p : 0
+			? liteDiveCamera(p, aspect)
+			: cameraAt('dive', p, aspect)
+		dive = p
 	} else if (view === 'finale') {
-		camera =
-			params.lite && params.p >= 1
-				? liteFinaleCamera(aspect)
-				: cameraAt('finale', params.p, aspect)
+		camera = params.lite
+			? liteFinaleCamera(params.p, aspect)
+			: cameraAt('finale', params.p, aspect)
 		dawn = params.dawn ?? dawnFactor(params.p)
 	} else if (params.cam === 'hero') {
 		camera = cameraAt('dive', 0, aspect)

@@ -5,6 +5,8 @@ import { REDUCED_MOTION_QUERY } from '@/shared/config/motion'
 import { playTick } from '@/shared/lib/sound/sfx'
 import { cn } from '@/shared/lib/utils'
 import { useInView } from '../lib/use-in-view'
+import { useRoomMode } from '../model/room-mode'
+import { useRoomState } from '../model/room-store'
 
 const ERASE_MS = 55
 const TYPE_MS = 95
@@ -14,6 +16,10 @@ const TYPE_JITTER_MS = 70
  * The gibberish the cat types (plan §3.10). Server-rendered with the full
  * text, so it reads the same without JS; once on screen with motion
  * allowed it erases and types it again, like a paw walking over the keys.
+ * In lite mode "on screen" waits for the dive to have landed, and holds
+ * whenever the room is back over the line: under the opaque room it would
+ * type unseen, and the painted page on the monitor shows it whole, so the
+ * real line is whole too when they crossfade.
  * Decorative: `aria-hidden`. A `cat-typing` event on `window` replays it.
  */
 export function TypingLine({
@@ -25,12 +31,15 @@ export function TypingLine({
 }) {
 	const line = useRef<HTMLSpanElement>(null)
 	const { entered } = useInView(line, '0px')
+	const mode = useRoomMode()
+	const { phase, landed } = useRoomState()
+	const waiting = mode === 'lite' && (!landed || phase === 'room')
 	const [shown, setShown] = useState(text)
 	// The caret blinks while nothing happens and holds steady while the paw types.
 	const [busy, setBusy] = useState(false)
 
 	useEffect(() => {
-		if (!entered) return
+		if (!entered || waiting) return
 		if (window.matchMedia(REDUCED_MOTION_QUERY).matches) return
 		let timer = 0
 		const run = () => {
@@ -66,7 +75,7 @@ export function TypingLine({
 			setShown(text)
 			setBusy(false)
 		}
-	}, [entered, text])
+	}, [entered, waiting, text])
 
 	return (
 		<span
@@ -75,11 +84,16 @@ export function TypingLine({
 			data-busy={busy ? '' : undefined}
 			aria-hidden
 			className={cn(
-				'inline-block min-w-[10ch] text-right font-mono tracking-normal normal-case after:ml-px after:inline-block after:h-[1em] after:w-[0.5ch] after:translate-y-[0.15em] after:bg-rose/80 after:content-[""]',
+				'inline-block min-w-[10ch] text-right font-mono tracking-normal normal-case',
 				className,
 			)}
 		>
 			{shown}
+			{/* A real element, not a pseudo-element: the lite monitor paints it from the DOM. */}
+			<span
+				data-caret
+				className='ml-px inline-block h-[1em] w-[0.5ch] translate-y-[0.15em] bg-rose/80'
+			/>
 		</span>
 	)
 }

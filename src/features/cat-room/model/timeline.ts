@@ -4,10 +4,9 @@
  * it, nothing re-renders because of it.
  */
 export type Timeline = {
+	/** Scroll progress of the dive and the finale, 0..1 (lite mode too, over the stage's extra height). */
 	dive: number
 	finale: number
-	/** Lite mode fades the canvas in and out over the stages. */
-	layerOpacity: number
 	pointer: { x: number; y: number } | null
 	viewport: { width: number; height: number }
 	heroInView: boolean
@@ -18,7 +17,6 @@ export function createTimeline(): Timeline {
 	return {
 		dive: 0,
 		finale: 0,
-		layerOpacity: 1,
 		pointer: null,
 		viewport: { width: 1, height: 1 },
 		heroInView: true,

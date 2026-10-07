@@ -6,8 +6,9 @@ import {
 	cameraAt,
 	dawnFactor,
 	finaleUndock,
+	liteDiveCamera,
+	liteFade,
 	liteFinaleCamera,
-	liteHeroCamera,
 } from '../lib/camera-path'
 import type { DprGovernor } from '../lib/dpr-governor'
 import { createFish, type Fish, stepFish } from '../lib/fish'
@@ -34,7 +35,7 @@ import type { DirectorFrame, Phase } from './frame'
 import { type PhaseInput, resolvePhase } from './phase'
 import { getPortal } from './portals'
 import type { RoomMode } from './room-mode'
-import { setRoomPhase } from './room-store'
+import { landRoom, setRoomPhase } from './room-store'
 import type { Timeline } from './timeline'
 
 export type DirectorDeps = {
@@ -62,6 +63,8 @@ export type DirectorDeps = {
 export type Director = {
 	/** Resume ticking after something changed (scroll, resize, visibility). */
 	wake(): void
+	/** The layer changed size: the canvas follows in the next frame it draws (a resize clears it), at once while hidden. */
+	resize(): void
 	stop(): void
 	dispose(): void
 	readonly phase: Phase
@@ -111,6 +114,9 @@ function riseEnvelope(elapsed: number, duration: number, rise: number): number {
  * room on the pull-back with the page shrinking back into the monitor, the
  * cat sitting as before (the sleeping cat went at Gate 2, round 3);
  * `inside` draws nothing but the gags of plan §3.10, through the overlay.
+ * Lite mode runs the same two tracks on its own cameras with the page
+ * painted on the monitor, and crossfades the layer with the real page at
+ * the end of the dive and the start of the finale instead of warping it.
  */
 export function createDirector(deps: DirectorDeps): Director {
 	const { scene, timeline, mode, layer, proxy, gagProxy, governor } = deps
@@ -128,11 +134,23 @@ export function createDirector(deps: DirectorDeps): Director {
 	let firstFrame = true
 	let phase: Phase = 'off'
 	let disposed = false
+	let pendingResize = false
 
 	const showLayer = (visible: boolean) => {
 		if (shown === visible) return
 		shown = visible
 		layer.style.visibility = visible ? 'visible' : 'hidden'
+	}
+
+	/** A resize clears the canvas: only under no drawn frame, before a render or while the layer is hidden. */
+	const syncSize = () => {
+		if (!pendingResize) return
+		pendingResize = false
+		scene.resize(
+			timeline.viewport.width,
+			timeline.viewport.height,
+			governor.dpr,
+		)
 	}
 
 	const placeRect = (element: HTMLElement | null, rect: Rect | null) => {
@@ -157,12 +175,20 @@ export function createDirector(deps: DirectorDeps): Director {
 	const roomCamera = (aspect: number): CameraPose =>
 		mode === 'full'
 			? cameraAt('dive', timeline.dive, aspect)
-			: liteHeroCamera(aspect)
+			: liteDiveCamera(timeline.dive, aspect)
 
 	const finaleCamera = (aspect: number): CameraPose =>
 		mode === 'full'
 			? cameraAt('finale', timeline.finale, aspect)
-			: liteFinaleCamera(aspect)
+			: liteFinaleCamera(timeline.finale, aspect)
+
+	/** Lite mode crossfades the layer with the page over each stage (plan §3.4); full mode never fades. */
+	const layerOpacity = (finale: boolean): number =>
+		mode === 'full'
+			? 1
+			: finale
+				? liteFade('finale', timeline.finale)
+				: liteFade('dive', timeline.dive)
 
 	const phaseInput = (): PhaseInput => ({
 		mode,
@@ -188,6 +214,8 @@ export function createDirector(deps: DirectorDeps): Director {
 
 	const setPhase = (next: Phase) => {
 		if (phase === next) return
+		// Lite: the room leaves the first section only once the dive has landed.
+		if (mode === 'lite' && phase === 'room' && next === 'off') landRoom()
 		phase = next
 		html.dataset.roomPhase = next
 		setRoomPhase(next)
@@ -205,6 +233,7 @@ export function createDirector(deps: DirectorDeps): Director {
 		getPortal('finale')?.dock()
 		placeProxy()
 		placeRect(gagProxy, null)
+		syncSize()
 	}
 
 	const idle = () => {
@@ -334,6 +363,7 @@ export function createDirector(deps: DirectorDeps): Director {
 				{ position, held },
 			)
 		}
+		syncSize()
 		scene.render(frame, dt)
 		layer.style.opacity = '1'
 		showLayer(true)
@@ -353,11 +383,7 @@ export function createDirector(deps: DirectorDeps): Director {
 			phase,
 			camera,
 			time,
-			dawn: finale
-				? mode === 'full'
-					? dawnFactor(timeline.finale)
-					: 1
-				: 0,
+			dawn: finale ? dawnFactor(timeline.finale) : 0,
 			dive: finale ? 0 : timeline.dive,
 			viewport: timeline.viewport,
 			pointer: timeline.pointer,
@@ -378,6 +404,11 @@ export function createDirector(deps: DirectorDeps): Director {
 			fish: null,
 			stepped: false,
 		}
+		// A pixel-ratio change resizes, and so clears, the canvas: before the
+		// frame, never after it (lite's opaque layer would flash its ink).
+		syncSize()
+		const dpr = governor.sample(dt)
+		if (dpr !== null) scene.resize(width, height, dpr)
 		scene.render(frame, dt)
 		// The page on the monitor: the portal follows the projected screen,
 		// docking at the end of the dive and undocking at the start of the finale.
@@ -392,17 +423,21 @@ export function createDirector(deps: DirectorDeps): Director {
 				)
 			else getPortal('dive')?.apply(quad, timeline.dive, width, height)
 		}
-		layer.style.opacity = String(timeline.layerOpacity)
+		layer.style.opacity = String(layerOpacity(finale))
 		showLayer(true)
 		placeProxy()
 		placeRect(gagProxy, null)
-		const dpr = governor.sample(dt)
-		if (dpr !== null) scene.resize(width, height, dpr)
 	}
 
 	const teardown = () => {
 		disposed = true
 		stop()
+		// The layer outlives the director (a mode switch brings a new one that
+		// starts from "hidden"): leave it hidden and unfaded, or lite's opaque
+		// ink would stay over the page until a stage draws again.
+		layer.style.visibility = 'hidden'
+		layer.style.removeProperty('opacity')
+		shown = false
 		if (proxy) proxy.style.display = 'none'
 		if (gagProxy) gagProxy.style.display = 'none'
 		delete html.dataset.roomPhase
@@ -467,6 +502,11 @@ export function createDirector(deps: DirectorDeps): Director {
 			return phase
 		},
 		wake: start,
+		resize() {
+			pendingResize = true
+			if (shown) start()
+			else syncSize()
+		},
 		stop,
 		enterSection() {
 			// Resolve afresh: the stage observers may not have ticked yet.

@@ -8,10 +8,13 @@ import { HeroCopy } from './hero-copy'
 /**
  * The hero stage (plan §3.4): the poster slot and the portal holding the
  * first 2D section, stacked in the static layout and overlaid once the full
- * room runs. The hero copy is a sibling of the stage, never a child: a pinned
- * stage gets `position: fixed` and transforms that would trap it under the
- * canvas. The slot holds the loader veil (the face button until the first
- * frame) and the static face button; CSS decides which one shows.
+ * room runs. In lite mode the stack stays, the portal sticks to the top of
+ * the viewport and a spacer gives the stage the dive's scroll length: the
+ * canvas covers the stuck section while the camera flies in and crossfades
+ * to it at the end. The hero copy is a sibling of the stage, never a child:
+ * a pinned stage gets `position: fixed` and transforms that would trap it
+ * under the canvas. The slot holds the loader veil (the face button until
+ * the first frame) and the static face button; CSS decides which one shows.
  */
 /** Zero-size markers at the portal's corners: where the DOM warp lands (e2e, plan §8). */
 const CORNERS = ['tl', 'tr', 'br', 'bl'] as const
@@ -53,7 +56,7 @@ export function Hero({ children }: { children: ReactNode }) {
 				</div>
 				<div
 					data-portal
-					className='relative z-10 room-full:col-start-1 room-full:row-start-1 room-full:h-lvh'
+					className='relative z-10 room-full:col-start-1 room-full:row-start-1 room-full:h-lvh room-lite:sticky room-lite:top-0'
 				>
 					{children}
 					{CORNERS.map((corner) => (
@@ -65,6 +68,11 @@ export function Hero({ children }: { children: ReactNode }) {
 						/>
 					))}
 				</div>
+				<div
+					data-stage-spacer
+					aria-hidden
+					className='hidden room-lite:block room-lite:h-[120svh]'
+				/>
 			</PortalStage>
 			<HeroCopy />
 		</section>

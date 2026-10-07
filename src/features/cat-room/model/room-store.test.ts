@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import {
 	failRoom,
 	getRoomState,
+	landRoom,
 	resetRoomStore,
 	roomReady,
 	setRoomPhase,
@@ -56,5 +57,14 @@ describe('room store', () => {
 		expect(getRoomState().phase).toBe('finale')
 		resetRoomStore()
 		expect(getRoomState().phase).toBe('off')
+	})
+
+	it('notes the lite landing once, and forgets it with the rest', () => {
+		expect(getRoomState().landed).toBe(false)
+		landRoom()
+		landRoom()
+		expect(getRoomState().landed).toBe(true)
+		resetRoomStore()
+		expect(getRoomState().landed).toBe(false)
 	})
 })

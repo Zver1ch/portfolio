@@ -9,7 +9,9 @@ import type { CameraPose } from '@/shared/lib/math/projection'
 import {
 	add,
 	bezier2,
+	length,
 	lerp,
+	normalize,
 	scale,
 	sub,
 	type Vec3,
@@ -22,9 +24,10 @@ import {
 	FINALE,
 	FINALE_CONTROL,
 	HERO_CAMERA,
+	LITE_FRAMING,
 	LITE_PULLBACK,
 } from '../config/camera-tracks'
-import { SCREEN } from '../config/room-layout'
+import { DESK_TOP, SCREEN } from '../config/room-layout'
 
 export type Track = 'dive' | 'finale'
 
@@ -41,23 +44,111 @@ export function endCamera(overshoot = END_OVERSHOOT): CameraPose {
 	return { position: [x, y, z + distance], target: SCREEN.center, fov }
 }
 
-/** A camera pushed away from its target by `max(1, LITE_PULLBACK / aspect)`: narrow viewports see the whole room. */
-function pulledBack(camera: CameraPose, aspect: number): CameraPose {
+/**
+ * Lite mode (plan §3.4): a stage camera for a narrow viewport. Landscape
+ * viewports keep the stock pose. Portrait ones back the camera off along its
+ * own line of sight by `max(1, LITE_PULLBACK / aspect)`, so the desk fits the
+ * width, and aim it lower, so the desk top sits at `deskShare` of the frame
+ * and the bottom is free for the name or the credits; the aim blends back to
+ * the stock one towards a square window.
+ */
+function liteStageCamera(
+	stock: CameraPose,
+	aspect: number,
+	deskShare: number,
+): CameraPose {
 	const factor = Math.max(1, LITE_PULLBACK / aspect)
 	// Wide viewports keep the camera as is (no rounding through the maths).
-	if (factor === 1) return camera
-	const offset = sub(camera.position, camera.target)
-	return { ...camera, position: add(camera.target, scale(offset, factor)) }
+	if (factor === 1) return stock
+	const offset = sub(stock.position, stock.target)
+	const distance = length(offset) * factor
+	const fieldHeight = 2 * distance * Math.tan((stock.fov * Math.PI) / 360)
+	const portrait =
+		1 -
+		smoothstep(LITE_FRAMING.portraitTo, LITE_FRAMING.portraitFrom, aspect)
+	const target: Vec3 = [
+		stock.target[0],
+		mix(
+			stock.target[1],
+			DESK_TOP - (0.5 - deskShare) * fieldHeight,
+			portrait,
+		),
+		stock.target[2],
+	]
+	return {
+		...stock,
+		position: add(target, scale(normalize(offset), distance)),
+		target,
+	}
 }
 
-/** Lite mode: the hero camera on narrow viewports. */
+/** Lite mode: the hero camera, the start of the lite dive. */
 export function liteHeroCamera(aspect: number): CameraPose {
-	return pulledBack(HERO_CAMERA, aspect)
+	return liteStageCamera(HERO_CAMERA, aspect, LITE_FRAMING.deskShare.hero)
 }
 
-/** Lite mode and the portrait dawn poster: the dawn camera on narrow viewports. */
-export function liteFinaleCamera(aspect: number): CameraPose {
-	return pulledBack(DAWN_CAMERA, aspect)
+/** Lite mode and the portrait dawn poster: the dawn camera, the end of the lite pull-back. */
+export function liteDawnCamera(aspect: number): CameraPose {
+	return liteStageCamera(DAWN_CAMERA, aspect, LITE_FRAMING.deskShare.dawn)
+}
+
+/**
+ * Lite mode: the camera at the end of the dive, the exact fit with no
+ * overshoot. The screen's page column (`columnCorners`) lands on the
+ * viewport precisely, so the painted page can crossfade into the real one.
+ */
+export function liteEndCamera(): CameraPose {
+	return endCamera(1)
+}
+
+/** Lite mode: the dive from the lite hero camera to the exact fit, on the full dive's progress map. */
+export function liteDiveCamera(p: number, aspect: number): CameraPose {
+	const start = liteHeroCamera(aspect)
+	const end = liteEndCamera()
+	if (p <= DIVE.hold) return start
+	if (p >= DIVE.travelEnd) return end
+	const t = easeInOutCubic(unlerp(DIVE.hold, DIVE.travelEnd, p))
+	return {
+		position: bezier2(
+			start.position,
+			add(lerp(start.position, end.position, 0.5), LITE_FRAMING.diveBow),
+			end.position,
+			t,
+		),
+		target: lerp(start.target, end.target, clamp01(t / DIVE.targetLock)),
+		fov: start.fov,
+	}
+}
+
+/** Lite mode: the pull-back from the exact fit to the lite dawn camera, on the full finale's progress map. */
+export function liteFinaleCamera(p: number, aspect: number): CameraPose {
+	const start = liteEndCamera()
+	const end = liteDawnCamera(aspect)
+	if (p <= FINALE.undock) return start
+	if (p >= FINALE.pullBackEnd) return end
+	const t = easeInOutCubic(unlerp(FINALE.undock, FINALE.pullBackEnd, p))
+	return {
+		position: bezier2(
+			start.position,
+			lerp(start.position, end.position, 0.5),
+			end.position,
+			t,
+		),
+		target: lerp(start.target, end.target, t),
+		fov: mix(start.fov, end.fov, t),
+	}
+}
+
+/**
+ * Lite mode: the layer's opacity over a stage, the crossfade between the
+ * page painted on the monitor and the real page under the canvas. The dive
+ * fades the room out over its docking stretch, once the camera has arrived;
+ * the finale fades it in over the undock stretch, before the camera moves.
+ */
+export function liteFade(track: Track, p: number): number {
+	return track === 'dive'
+		? 1 - smoothstep(DIVE.dock, 1, p)
+		: smoothstep(0, FINALE.undock, p)
 }
 
 /** Camera pose for a scroll progress on a track. The aspect is kept for symmetry with the DOM warp. */

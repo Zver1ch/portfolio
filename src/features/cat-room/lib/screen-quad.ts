@@ -19,8 +19,29 @@ export function screenWidth(viewportAspect: number): number {
 export function screenCorners(
 	viewportAspect: number,
 ): readonly [Vec3, Vec3, Vec3, Vec3] {
+	return cornersOf(screenWidth(viewportAspect))
+}
+
+/**
+ * Lite mode (plan §3.4): the part of the screen that stands in for the page,
+ * a column of the screen's height in the viewport's own aspect, centred. On
+ * landscape viewports it is the whole screen; a phone sees a narrow page in
+ * the middle of the monitor, and the dive ends with that column on the
+ * viewport exactly.
+ */
+export function columnWidth(viewportAspect: number): number {
+	return Math.min(screenWidth(viewportAspect), SCREEN.height * viewportAspect)
+}
+
+export function columnCorners(
+	viewportAspect: number,
+): readonly [Vec3, Vec3, Vec3, Vec3] {
+	return cornersOf(columnWidth(viewportAspect))
+}
+
+function cornersOf(width: number): readonly [Vec3, Vec3, Vec3, Vec3] {
 	const [cx, cy, cz] = SCREEN.center
-	const hw = screenWidth(viewportAspect) / 2
+	const hw = width / 2
 	const hh = SCREEN.height / 2
 	return [
 		[cx - hw, cy + hh, cz],
@@ -30,13 +51,31 @@ export function screenCorners(
 	]
 }
 
+/** The page column as seen by `cam`, in CSS pixels (the lite dive's docking check). */
+export function projectColumn(
+	cam: CameraPose,
+	width: number,
+	height: number,
+): Quad | null {
+	return projectQuad(columnCorners(width / height), cam, width, height)
+}
+
 /** The screen as seen by `cam`, in CSS pixels, or null when a corner is behind the camera. */
 export function projectScreen(
 	cam: CameraPose,
 	width: number,
 	height: number,
 ): Quad | null {
-	const corners = screenCorners(width / height).map((corner) =>
+	return projectQuad(screenCorners(width / height), cam, width, height)
+}
+
+function projectQuad(
+	world: readonly [Vec3, Vec3, Vec3, Vec3],
+	cam: CameraPose,
+	width: number,
+	height: number,
+): Quad | null {
+	const corners = world.map((corner) =>
 		projectPoint(corner, cam, width, height),
 	)
 	if (corners.some((corner) => corner === null)) return null

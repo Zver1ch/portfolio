@@ -1,15 +1,23 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { playChomp, playPlop } from '@/shared/lib/sound/sfx'
 import { CAT_GLB } from '../config/cat-rig.gen'
 import { DPR_CAP, ROOM_LOAD } from '../config/tuning'
 import { createDprGovernor } from '../lib/dpr-governor'
 import { loadRoomScene } from '../lib/load-room-scene'
+import { paintPage } from '../lib/page-snapshot'
 import type { RoomScene } from '../lib/scene/create-room-scene'
+import { settleScrollPlace, trackScrollPlace } from '../lib/scroll-anchor'
+import {
+	installScrollRestore,
+	noteEarlyScroll,
+	restoreScrollOnce,
+} from '../lib/scroll-restore'
 import { isBoopClick } from '../lib/tap-gesture'
 import { createDirector, type Director } from '../model/director'
 import { onFeedRequest } from '../model/feed-bus'
+import { getPortal } from '../model/portals'
 import { useRoomMode } from '../model/room-mode'
 import {
 	failRoom,
@@ -48,8 +56,33 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 	const gagProxyRef = useRef<HTMLButtonElement>(null)
 	const sceneRef = useRef<RoomScene | null>(null)
 
-	useEffect(() => {
+	// A layout effect, and the layer sits before the stages in the tree: the
+	// mode's CSS (the lite spacers, the full-mode stage boxes) is in place
+	// before a stage measures itself for its ScrollTrigger.
+	useLayoutEffect(() => {
 		document.documentElement.dataset.roomMode = mode
+	}, [mode])
+
+	// At hydration, before the first mode's layout: a reader already scrolling
+	// keeps their place and gets no restore; the place is saved on the way
+	// out and the hash followed on history traversal from here on.
+	useEffect(() => {
+		const untrack = trackScrollPlace()
+		noteEarlyScroll()
+		const uninstall = installScrollRestore()
+		return () => {
+			uninstall()
+			untrack()
+		}
+	}, [])
+
+	// After the commit, with the stages' pins in place too: a place held
+	// across a mode switch is put back on the next frame, and once per page
+	// load the reader is put back where they were (a reload) or at the hash
+	// target, since the browser did that before the layout existed.
+	useEffect(() => {
+		settleScrollPlace()
+		if (mode !== 'static') restoreScrollOnce()
 	}, [mode])
 
 	useEffect(() => {
@@ -71,6 +104,35 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 		const governor = createDprGovernor(
 			Math.min(window.devicePixelRatio || 1, DPR_CAP[mode]),
 		)
+		// Lite mode paints the sections the tracks land on for the monitor
+		// (plan §3.4), at the layer's size, so they match the real page at the
+		// crossfade; the governor may lower the canvas, the pages stay crisp.
+		const pageDpr = governor.dpr
+		let repaint = 0
+		const paintPages = (scene: RoomScene) => {
+			if (mode !== 'lite') return
+			// A line still being typed would be painted half-way: once it is whole.
+			if (
+				document.querySelector(
+					'[data-stage] [data-portal] [data-typing-line][data-busy]',
+				)
+			) {
+				window.clearTimeout(repaint)
+				repaint = window.setTimeout(() => {
+					if (sceneRef.current) paintPages(sceneRef.current)
+				}, 500)
+				return
+			}
+			for (const track of ['dive', 'finale'] as const) {
+				const portal = getPortal(track)
+				scene.setScreenPage(
+					track,
+					portal
+						? paintPage(portal.element, timeline.viewport, pageDpr)
+						: null,
+				)
+			}
+		}
 
 		const fail = (reason: string) => {
 			if (!cancelled) failRoom(reason)
@@ -82,9 +144,13 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 		canvas.addEventListener('webglcontextlost', onContextLost)
 
 		// The stages on screen decide the phase; any change wakes the director.
+		// The finale counts by its footer: in lite the credits follow the stage
+		// in the flow and can outgrow a landscape phone's viewport, and the
+		// dawn room must stay under them to the end of the page.
+		const finaleStage = document.querySelector('[data-stage="finale"]')
 		const stages = [
 			['hero', document.querySelector('[data-stage="hero"]')],
-			['finale', document.querySelector('[data-stage="finale"]')],
+			['finale', finaleStage?.closest('footer') ?? finaleStage],
 		] as const
 		const inView = new IntersectionObserver((entries) => {
 			for (const entry of entries) {
@@ -156,11 +222,19 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 
 		const resize = new ResizeObserver(() => {
 			timeline.viewport = size()
-			sceneRef.current?.resize(
-				timeline.viewport.width,
-				timeline.viewport.height,
-				governor.dpr,
-			)
+			const scene = sceneRef.current
+			if (scene) {
+				// Resizing clears the canvas: the director does it in its next
+				// frame, under no drawn one; before it exists nothing is shown.
+				if (director) director.resize()
+				else
+					scene.resize(
+						timeline.viewport.width,
+						timeline.viewport.height,
+						governor.dpr,
+					)
+				paintPages(scene)
+			}
 			director?.wake()
 		})
 		resize.observe(layer)
@@ -204,6 +278,12 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 			}
 			sceneRef.current = scene
 			setRoomProgress(0.9)
+			// The painted pages need the web fonts, which have long arrived by now.
+			if (mode === 'lite' && document.fonts) {
+				await document.fonts.ready
+				if (cancelled) return
+			}
+			paintPages(scene)
 			director = createDirector({
 				scene,
 				timeline,
@@ -268,6 +348,7 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 			cancelled = true
 			cancelSchedule()
 			window.clearTimeout(timeout)
+			window.clearTimeout(repaint)
 			canvas.removeEventListener('webglcontextlost', onContextLost)
 			inView.disconnect()
 			untouch()
@@ -285,6 +366,9 @@ export function RoomLayer({ onPet }: { onPet: (origin: PetOrigin) => void }) {
 			sceneRef.current?.dispose()
 			sceneRef.current = null
 			canvas.remove()
+			// Whatever the director left: the next mode starts from a hidden layer.
+			layer.style.visibility = 'hidden'
+			layer.style.removeProperty('opacity')
 			delete html.dataset.sceneReady
 		}
 	}, [mode])

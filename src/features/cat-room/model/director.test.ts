@@ -1,7 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { gsap } from '@/shared/lib/gsap/register'
 import { GAGS } from '../config/tuning'
-import { dawnFactor, liteFinaleCamera } from '../lib/camera-path'
+import {
+	dawnFactor,
+	liteDiveCamera,
+	liteEndCamera,
+	liteFade,
+	liteFinaleCamera,
+} from '../lib/camera-path'
 import { createDprGovernor } from '../lib/dpr-governor'
 import { createPortal } from '../lib/portal'
 import type { Rect } from '../lib/scene/cat/cat'
@@ -177,19 +183,59 @@ describe('createDirector', () => {
 		expect(proxy.style.display).toBe('block')
 	})
 
-	it('lite mode shows the full dawn from the pulled-back camera and never warps', () => {
+	it('lite mode flies the lite dive and crossfades the layer out at its end, never warping', () => {
+		const { frames, calls } = start('lite')
+		const aspect = VIEWPORT.width / VIEWPORT.height
+		gsap.ticker.tick()
+		expect(director?.phase).toBe('room')
+		expect(layer.style.opacity).toBe('1')
+		expect(divePortal.style.transform).toBe('')
+		timeline.dive = 0.5
+		gsap.ticker.tick()
+		let frame = frames.at(-1) as DirectorFrame
+		expect(frame.camera).toEqual(liteDiveCamera(0.5, aspect))
+		expect(frame.dive).toBe(0.5)
+		expect(layer.style.opacity).toBe('1')
+		timeline.dive = 0.95
+		gsap.ticker.tick()
+		frame = frames.at(-1) as DirectorFrame
+		expect(frame.camera).toEqual(liteEndCamera())
+		expect(Number(layer.style.opacity)).toBeCloseTo(liteFade('dive', 0.95))
+		expect(divePortal.style.transform).toBe('')
+		// The crossfade is over: the page is the page, nothing is drawn.
+		timeline.dive = 1
+		gsap.ticker.tick()
+		expect(director?.phase).toBe('off')
+		expect(layer.style.visibility).toBe('hidden')
+		expect(calls.renderer.clear).toHaveBeenCalledTimes(1)
+	})
+
+	it('lite mode fades the dawn room in at the start of the finale and pulls back to the lite dawn camera', () => {
 		const { frames } = start('lite')
+		const aspect = VIEWPORT.width / VIEWPORT.height
 		timeline.heroInView = false
 		timeline.finaleInView = true
 		gsap.ticker.tick()
+		expect(director?.phase).toBe('off')
+		timeline.finale = 0.05
+		director?.wake()
+		gsap.ticker.tick()
 		expect(director?.phase).toBe('finale')
-		const frame = frames.at(-1) as DirectorFrame
+		let frame = frames.at(-1) as DirectorFrame
+		expect(frame.camera).toEqual(liteEndCamera())
+		expect(frame.dawn).toBeCloseTo(dawnFactor(0.05))
+		expect(Number(layer.style.opacity)).toBeCloseTo(
+			liteFade('finale', 0.05),
+		)
+		timeline.finale = 1
+		gsap.ticker.tick()
+		frame = frames.at(-1) as DirectorFrame
 		expect(frame.dawn).toBe(1)
 		expect(frame.pose).toBe('sit')
-		expect(frame.camera).toEqual(
-			liteFinaleCamera(VIEWPORT.width / VIEWPORT.height),
-		)
+		expect(frame.camera).toEqual(liteFinaleCamera(1, aspect))
+		expect(layer.style.opacity).toBe('1')
 		expect(finalePortal.style.transform).toBe('')
+		expect(proxy.style.display).toBe('block')
 	})
 
 	const goInside = () => {
@@ -328,6 +374,37 @@ describe('createDirector', () => {
 		expect(fake.calls.render.mock.calls.length).toBe(rendered)
 	})
 
+	it('a resize from the layer waits for the next drawn frame, and happens at once while hidden', () => {
+		const { calls } = start('lite')
+		gsap.ticker.tick()
+		expect(layer.style.visibility).toBe('visible')
+		calls.resize.mockClear()
+		director?.resize()
+		expect(calls.resize).not.toHaveBeenCalled()
+		gsap.ticker.tick()
+		expect(calls.resize).toHaveBeenCalledTimes(1)
+		expect(calls.resize.mock.invocationCallOrder[0]).toBeLessThan(
+			calls.render.mock.invocationCallOrder.at(-1) as number,
+		)
+		// Hidden: nothing is drawn, so the canvas is resized right away.
+		timeline.dive = 1
+		gsap.ticker.tick()
+		expect(layer.style.visibility).toBe('hidden')
+		calls.resize.mockClear()
+		director?.resize()
+		expect(calls.resize).toHaveBeenCalledTimes(1)
+	})
+
+	it('lite mode notes the landing once the room leaves the first section', () => {
+		start('lite')
+		gsap.ticker.tick()
+		expect(getRoomState().landed).toBe(false)
+		timeline.dive = 1
+		gsap.ticker.tick()
+		expect(director?.phase).toBe('off')
+		expect(getRoomState().landed).toBe(true)
+	})
+
 	it('dispose hides the proxy and clears the phase', () => {
 		start('full')
 		gsap.ticker.tick()
@@ -336,5 +413,23 @@ describe('createDirector', () => {
 		expect(document.documentElement.dataset.roomPhase).toBeUndefined()
 		expect(getRoomState().phase).toBe('off')
 		expect(proxy.style.display).toBe('none')
+	})
+
+	it('dispose leaves the layer hidden and unfaded for the director of the next mode', () => {
+		start('lite')
+		timeline.dive = 0.95
+		gsap.ticker.tick()
+		expect(layer.style.visibility).toBe('visible')
+		expect(Number(layer.style.opacity)).toBeLessThan(1)
+		director?.dispose()
+		expect(layer.style.visibility).toBe('hidden')
+		expect(layer.style.opacity).toBe('')
+		// The next director finds a hidden layer and shows it only when it draws.
+		start('full')
+		timeline.dive = 1
+		timeline.heroInView = false
+		gsap.ticker.tick()
+		expect(director?.phase).toBe('inside')
+		expect(layer.style.visibility).toBe('hidden')
 	})
 })

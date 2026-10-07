@@ -69,7 +69,14 @@ test.describe('full mode', () => {
 			width: number
 			height: number
 		}
-		await page.mouse.click(x + width / 2, y + height * 0.3)
+		// The proxy appears as soon as the head's top crosses the bottom edge,
+		// with most of its box still below the viewport: on a quick machine
+		// the point a third of the way down may not be on screen yet, so the
+		// click stays inside the viewport, on the part of the head that shows.
+		await page.mouse.click(
+			x + width / 2,
+			Math.min(y + height * 0.3, DESKTOP.height - 2),
+		)
 		await expect(page.getByTestId('boop-count')).toHaveText('1')
 		expect(layerVisible).toBe(true)
 		expect(ariaHidden).toBe('true')
@@ -94,9 +101,11 @@ test.describe('full mode', () => {
 		await page.keyboard.press('Escape')
 		await expect(html(page)).not.toHaveAttribute('data-room-gag', /./)
 
+		// An empty spot at the section's right edge, below the "Enable sound"
+		// chip that hangs under the header.
 		const spot = await page.locator('#stack').evaluate((node) => {
 			const rect = node.getBoundingClientRect()
-			return { x: rect.right - 40, y: Math.max(rect.top + 40, 120) }
+			return { x: rect.right - 40, y: Math.max(rect.top + 40, 200) }
 		})
 		await page.mouse.click(spot.x, spot.y)
 		await expect(html(page)).toHaveAttribute('data-room-gag', 'fish')

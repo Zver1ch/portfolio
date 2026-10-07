@@ -20,6 +20,7 @@ const scene = vi.hoisted(() => ({
 	measure: vi.fn(() => ({ cat: null, head: null })),
 	dispose: vi.fn(),
 	renderer: { clear: vi.fn() },
+	setScreenPage: vi.fn(),
 }))
 const createRoomScene = vi.hoisted(() =>
 	vi.fn(async (options: { onProgress?: (f: number) => void }) => {
@@ -37,6 +38,7 @@ const loader = vi.hoisted(() => ({
 const director = vi.hoisted(() => ({
 	dispose: vi.fn(),
 	wake: vi.fn(),
+	resize: vi.fn(),
 	stop: vi.fn(),
 	enterSection: vi.fn(),
 	feed: vi.fn(() => true),
@@ -49,10 +51,36 @@ vi.mock('../model/director', () => ({
 	}),
 }))
 
+/** The scroll keeping, spied: the store's `failRoom` holds through the same module. */
+const scroll = vi.hoisted(() => ({
+	restore: vi.fn(),
+	hold: vi.fn(),
+	settle: vi.fn(),
+	early: vi.fn(),
+	uninstall: vi.fn(),
+}))
+vi.mock('../lib/scroll-restore', () => ({
+	restoreScrollOnce: scroll.restore,
+	noteEarlyScroll: scroll.early,
+	installScrollRestore: () => scroll.uninstall,
+}))
+vi.mock('../lib/scroll-anchor', () => ({
+	holdScrollPlace: scroll.hold,
+	settleScrollPlace: scroll.settle,
+	trackScrollPlace: () => () => {},
+}))
+
 import { ROOM_LOAD } from '../config/tuning'
+import { createPortal } from '../lib/portal'
 import { createDirector, type Director } from '../model/director'
 import { requestFeed } from '../model/feed-bus'
-import { getRoomState, resetRoomStore, setRoomPhase } from '../model/room-store'
+import { registerPortal } from '../model/portals'
+import {
+	failRoom,
+	getRoomState,
+	resetRoomStore,
+	setRoomPhase,
+} from '../model/room-store'
 import { resetTimeline, touchTimeline } from '../model/timeline'
 import { RoomLayer } from './room-layer'
 
@@ -97,6 +125,41 @@ describe('RoomLayer', () => {
 		vi.unstubAllGlobals()
 		delete document.documentElement.dataset.roomMode
 		delete document.documentElement.dataset.sceneReady
+	})
+
+	it('asks for the scroll restore on every non-static layout and settles a held place after each commit', async () => {
+		const { rerender, unmount } = render(<RoomLayer onPet={() => {}} />)
+		await flush()
+		expect(document.documentElement.dataset.roomMode).toBe('full')
+		// Before any restore: was the reader already scrolling?
+		expect(scroll.early).toHaveBeenCalledTimes(1)
+		expect(scroll.early.mock.invocationCallOrder[0]).toBeLessThan(
+			scroll.restore.mock.invocationCallOrder[0] as number,
+		)
+		expect(scroll.restore).toHaveBeenCalledTimes(1)
+		expect(scroll.settle).toHaveBeenCalled()
+
+		// The full query flipped (the mode module held the place): the new layout settles it.
+		hooks.fullViewport = false
+		scroll.settle.mockClear()
+		rerender(<RoomLayer onPet={() => {}} />)
+		await flush()
+		expect(document.documentElement.dataset.roomMode).toBe('lite')
+		expect(scroll.settle).toHaveBeenCalled()
+		// Asked again for the new layout; the restore itself runs once per load.
+		expect(scroll.restore).toHaveBeenCalledTimes(2)
+
+		// A failure holds the place through the store, then static settles it
+		// and asks for no restore: its layout is the server's.
+		scroll.settle.mockClear()
+		act(() => failRoom('context lost'))
+		await flush()
+		expect(scroll.hold).toHaveBeenCalledTimes(1)
+		expect(document.documentElement.dataset.roomMode).toBe('static')
+		expect(scroll.settle).toHaveBeenCalled()
+		expect(scroll.restore).toHaveBeenCalledTimes(2)
+		unmount()
+		expect(scroll.uninstall).toHaveBeenCalledTimes(1)
 	})
 
 	it('stays static under reduced motion and never loads the scene', async () => {
@@ -225,11 +288,29 @@ describe('RoomLayer', () => {
 		expect(gagProxy).toHaveAttribute('tabindex', '-1')
 	})
 
-	it('uses the painted screen in lite mode', async () => {
+	it('uses the painted screen in lite mode and paints the portal pages for it', async () => {
 		hooks.fullViewport = false
-		render(<RoomLayer onPet={() => {}} />)
-		await flush()
-		expect(document.documentElement.dataset.roomMode).toBe('lite')
+		const portal = document.createElement('div')
+		portal.textContent = 'I build layouts.'
+		document.body.append(portal)
+		const unregister = registerPortal('dive', createPortal(portal))
+		try {
+			render(<RoomLayer onPet={() => {}} />)
+			await flush()
+			expect(document.documentElement.dataset.roomMode).toBe('lite')
+			expect(createRoomScene).toHaveBeenCalledWith(
+				expect.objectContaining({ fakeScreen: true }),
+			)
+			// Both tracks get their page (jsdom has no 2D context, so the
+			// registered portal's picture is null here too, like the missing one's).
+			const tracks = vi
+				.mocked(scene.setScreenPage)
+				.mock.calls.map(([track]) => track)
+			expect(tracks).toEqual(['dive', 'finale'])
+		} finally {
+			unregister()
+			portal.remove()
+		}
 	})
 
 	it('falls back to static when the scene chunk is rejected', async () => {

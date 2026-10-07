@@ -15,17 +15,33 @@ import { timeline, touchTimeline } from '../model/timeline'
 const PIN_HEIGHTS: Record<Track, number> = { dive: 2.2, finale: 1.8 }
 /** The hero copy fades over the first part of the dive. */
 const HERO_COPY_FADE = 0.45
-/** Lite mode pushes the camera a third of the way in while the hero scrolls out. */
-const LITE_DIVE = 0.35
 
-let scrollRestorationSet = false
+/** The hero copy fades out over the first stretch of the dive, in both modes. */
+function fadeHeroCopy(section: HTMLElement): gsap.core.Tween | null {
+	const copy = section.querySelector('[data-hero-copy]')
+	if (!copy) return null
+	return gsap.to(copy, {
+		autoAlpha: 0,
+		ease: 'none',
+		scrollTrigger: {
+			trigger: section,
+			start: 'top top',
+			end: () => `+=${Math.round(window.innerHeight * HERO_COPY_FADE)}`,
+			scrub: true,
+		},
+	})
+}
 
 /**
  * A stage: the box the room's camera is tied to (plan §3.4). In full mode
  * it pins for the length of its track and writes the scroll progress to the
- * timeline; in lite mode nothing pins and the layer fades instead. The
- * portal inside it is registered for the director; the hero's own scroll
- * handler also warps it, so the dive works before the scene has arrived.
+ * timeline. In lite mode nothing pins: the stage is taller than its portal
+ * by a spacer, the portal sticks to the top of the viewport (CSS) under the
+ * opaque canvas for that extra height, and the scroll through it is the
+ * track's progress, so the mobile URL bar and touch momentum have nothing
+ * to jump. The portal is registered for the director; in full mode the
+ * hero's own scroll handler also warps it, so the dive works before the
+ * scene has arrived.
  */
 export function PortalStage({
 	track,
@@ -55,28 +71,7 @@ export function PortalStage({
 			const triggers: ScrollTrigger[] = []
 			const tweens: gsap.core.Tween[] = []
 
-			let restoreScroll = () => {}
 			if (mode === 'full') {
-				if (!scrollRestorationSet) {
-					scrollRestorationSet = true
-					history.scrollRestoration = 'manual'
-					const onRefresh = () => {
-						ScrollTrigger.removeEventListener('refresh', onRefresh)
-						const hash = window.location.hash
-						if (!hash) return
-						try {
-							document.querySelector(hash)?.scrollIntoView()
-						} catch {
-							// Not a selector; nothing to scroll to.
-						}
-					}
-					ScrollTrigger.addEventListener('refresh', onRefresh)
-					restoreScroll = () => {
-						ScrollTrigger.removeEventListener('refresh', onRefresh)
-						history.scrollRestoration = 'auto'
-						scrollRestorationSet = false
-					}
-				}
 				const write = (self: ScrollTrigger) => {
 					timeline[track] = self.progress
 					touchTimeline()
@@ -114,60 +109,32 @@ export function PortalStage({
 						onRefresh: write,
 					}),
 				)
-				if (track === 'dive') {
-					const copy = section.querySelector('[data-hero-copy]')
-					if (copy)
-						tweens.push(
-							gsap.to(copy, {
-								autoAlpha: 0,
-								ease: 'none',
-								scrollTrigger: {
-									trigger: section,
-									start: 'top top',
-									end: () =>
-										`+=${Math.round(window.innerHeight * HERO_COPY_FADE)}`,
-									scrub: true,
-								},
-							}),
-						)
-				}
-			} else if (track === 'dive') {
-				// The poster box is the hero here; the canvas is gone by the time
-				// it has scrolled out and the first section is uncovered.
-				const slot = element.querySelector<HTMLElement>('[data-slot]')
-				const write = (self: ScrollTrigger) => {
-					timeline.dive = LITE_DIVE * self.progress
-					timeline.layerOpacity =
-						1 - smoothstep(0.15, 0.75, self.progress)
-					touchTimeline()
-				}
-				triggers.push(
-					ScrollTrigger.create({
-						trigger: slot ?? section,
-						start: 'top top',
-						end: 'bottom top',
-						onUpdate: write,
-						onRefresh: write,
-					}),
-				)
 			} else {
+				// The track runs from the stage's top reaching the viewport's top
+				// to the moment the stuck portal is released: the stage's height
+				// beyond the portal's own.
 				const write = (self: ScrollTrigger) => {
-					timeline.layerOpacity = smoothstep(
-						0.25,
-						0.85,
-						self.progress,
-					)
+					timeline[track] = self.progress
 					touchTimeline()
 				}
 				triggers.push(
 					ScrollTrigger.create({
-						trigger: section,
-						start: 'top bottom',
-						end: 'bottom bottom',
+						trigger: element,
+						start: 'top top',
+						end: () =>
+							`+=${Math.max(
+								1,
+								element.offsetHeight -
+									(portalElement?.offsetHeight ?? 0),
+							)}`,
 						onUpdate: write,
 						onRefresh: write,
 					}),
 				)
+			}
+			if (track === 'dive') {
+				const fade = fadeHeroCopy(section)
+				if (fade) tweens.push(fade)
 			}
 
 			return () => {
@@ -176,12 +143,10 @@ export function PortalStage({
 					tween.kill()
 				}
 				for (const trigger of triggers) trigger.kill(true)
-				restoreScroll()
 				unregister()
 				portal?.dock()
 				if (veil) veil.style.removeProperty('opacity')
 				timeline[track] = 0
-				timeline.layerOpacity = 1
 			}
 		},
 		// Revert on every mode change: a pin from the full mode must not survive

@@ -135,23 +135,84 @@ test('mid-dive the warped page and the hole in the monitor coincide within 2 px'
 test.describe('lite mode', () => {
 	test.use({ viewport: { width: 390, height: 844 } })
 
-	test('nothing pins and the canvas fades out as the hero scrolls away', async ({
+	/** The lite dive's scroll length: the hero stage beyond its stuck portal. */
+	const liteDiveTo = async (page: Page, p: number) => {
+		await page.evaluate((progress) => {
+			const stage = document.querySelector<HTMLElement>(
+				'[data-stage="hero"]',
+			)
+			const portal = stage?.querySelector<HTMLElement>('[data-portal]')
+			if (!stage || !portal) throw new Error('no hero stage')
+			window.scrollTo(
+				0,
+				Math.round(
+					progress * (stage.offsetHeight - portal.offsetHeight),
+				),
+			)
+		}, p)
+		await page.waitForTimeout(600)
+	}
+	const layerOpacity = (page: Page) =>
+		page
+			.locator('[data-room-layer]')
+			.evaluate((node) => Number((node as HTMLElement).style.opacity))
+
+	test('nothing pins: the first section sticks under the opaque room while the camera flies in, then the room crossfades to it', async ({
 		page,
 	}) => {
+		const problems = collectProblems(page)
 		await gotoHydrated(page)
 		await expect(html(page)).toHaveAttribute('data-room-mode', 'lite')
 		await expect(html(page)).toHaveAttribute('data-scene-ready', 'true', {
 			timeout: READY_TIMEOUT,
 		})
 		await expect(page.locator('.pin-spacer')).toHaveCount(0)
-		await expect(
-			page.locator('[data-stage="hero"] [data-portal]'),
-		).toHaveCSS('transform', 'none')
-		await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.9))
-		await page.waitForTimeout(600)
-		const opacity = await page
-			.locator('[data-room-layer]')
-			.evaluate((node) => Number((node as HTMLElement).style.opacity))
-		expect(opacity).toBeLessThan(0.1)
+		const portal = page.locator('[data-stage="hero"] [data-portal]')
+		await expect(portal).toHaveCSS('transform', 'none')
+		await expect(portal).toHaveCSS('position', 'sticky')
+		// The room is on from the first frame, over the whole viewport.
+		await expect(html(page)).toHaveAttribute('data-room-phase', 'room')
+		await expect(page.locator('[data-room-layer]')).toBeVisible()
+		expect(await layerOpacity(page)).toBe(1)
+		await expect(page.locator('[data-room-layer]')).toHaveCSS(
+			'background-color',
+			'rgb(18, 13, 22)',
+		)
+
+		// Mid-dive: the section is stuck at the top under the room, the name has faded.
+		await liteDiveTo(page, 0.6)
+		await expect(html(page)).toHaveAttribute('data-room-phase', 'room')
+		expect(await layerOpacity(page)).toBe(1)
+		expect(
+			await portal.evaluate((node) => node.getBoundingClientRect().top),
+		).toBe(0)
+		await expect(portal).toHaveCSS('transform', 'none')
+		await expect(page.locator('[data-hero-copy]')).toBeHidden()
+
+		// The crossfade: the painted page gives way to the real one.
+		await liteDiveTo(page, 0.95)
+		const mid = await layerOpacity(page)
+		expect(mid).toBeGreaterThan(0.05)
+		expect(mid).toBeLessThan(0.95)
+
+		// Landed: nothing is drawn, the statement is the page, still at the top
+		// (the release point, give or take the sub-pixel of the svh heights).
+		await liteDiveTo(page, 1)
+		await expect(html(page)).toHaveAttribute('data-room-phase', 'off')
+		await expect(page.locator('[data-room-layer]')).toBeHidden()
+		await expect(page.getByText(profile.statement)).toBeInViewport()
+		expect(
+			Math.abs(
+				await portal.evaluate(
+					(node) => node.getBoundingClientRect().top,
+				),
+			),
+		).toBeLessThan(1)
+
+		// Back up: the room returns the same way.
+		await liteDiveTo(page, 0.5)
+		await expect(html(page)).toHaveAttribute('data-room-phase', 'room')
+		await expect(page.locator('[data-room-layer]')).toBeVisible()
+		expect(problems).toEqual([])
 	})
 })

@@ -28,8 +28,23 @@ export const DAWN_CAMERA: CameraPose = {
 /** Control point of the pull-back from the screen to the dawn camera. */
 export const FINALE_CONTROL: Vec3 = [0, 1.3, 0.1]
 
-/** Lite mode pushes the hero camera away on narrow viewports: `max(1, LITE_PULLBACK / aspect)`. */
+/** Lite mode pushes a stage camera away on narrow viewports: `max(1, LITE_PULLBACK / aspect)`. */
 export const LITE_PULLBACK = 1.0
+
+/**
+ * Lite mode on portrait viewports (plan §3.4): the pulled-back camera aims
+ * lower than the stock one, so the desk top sits at this share of the frame's
+ * height from the top. The hero leaves the bottom to the name, the dawn
+ * leaves it to the credits. Blended in between `portraitFrom` and
+ * `portraitTo` (viewport aspects) so a square window gets the stock aim.
+ */
+export const LITE_FRAMING = {
+	deskShare: { hero: 0.42, dawn: 0.36 },
+	portraitFrom: 1.0,
+	portraitTo: 0.8,
+	/** The lite dive's Bézier control point, relative to the midpoint of the path. */
+	diveBow: [-0.2, 0, -0.15] as Vec3,
+} as const
 
 /** Dive progress map (0..1 of the pinned scroll). */
 export const DIVE = {
