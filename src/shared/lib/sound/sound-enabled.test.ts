@@ -43,30 +43,10 @@ describe('sound-enabled store', () => {
 		expect(getSoundEnabled()).toBe(false)
 	})
 
-	it('tells an explicit opt-in from the default, and whether any choice was stored', async () => {
-		const {
-			getSoundEnabled,
-			getSoundOptIn,
-			hasSoundChoice,
-			setSoundEnabled,
-		} = await load()
-		expect(getSoundEnabled()).toBe(true)
-		expect(getSoundOptIn()).toBe(false)
-		expect(hasSoundChoice()).toBe(false)
-		setSoundEnabled(true)
-		expect(getSoundOptIn()).toBe(true)
-		expect(hasSoundChoice()).toBe(true)
-		setSoundEnabled(false)
-		expect(getSoundOptIn()).toBe(false)
-		expect(hasSoundChoice()).toBe(true)
-		expect(getSoundEnabled()).toBe(false)
-	})
-
 	it('ignores a stored value that is neither true nor false', async () => {
 		window.localStorage.setItem('sound-enabled', 'maybe')
-		const { getSoundEnabled, hasSoundChoice } = await load()
+		const { getSoundEnabled } = await load()
 		expect(getSoundEnabled()).toBe(true)
-		expect(hasSoundChoice()).toBe(false)
 	})
 
 	it('notifies useSoundEnabled subscribers', async () => {

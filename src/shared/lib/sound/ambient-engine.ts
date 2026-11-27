@@ -4,7 +4,7 @@ import { getAudioContext, resumeAudio } from './audio-context'
 /**
  * The page's ambient engine (plan §3.12): one graph on the shared context,
  * faded in and out, with the chords, phrases and birds scheduled a little
- * ahead. `startAmbient` must follow an explicit opt-in and a user gesture; a
+ * ahead. `startAmbient` needs sound on and a user gesture; a
  * suspended context stays silent until `resumeAudio` succeeds. A stop fades
  * the master out and then releases the graph, so a muted page costs no
  * audio processing; the context itself is never closed or suspended, the

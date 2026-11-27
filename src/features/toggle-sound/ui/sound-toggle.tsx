@@ -3,14 +3,12 @@
 import { Volume2, VolumeX } from 'lucide-react'
 import {
 	setSoundEnabled,
-	useSoundOptIn,
+	useSoundEnabled,
 } from '@/shared/lib/sound/sound-enabled'
 import { Button } from '@/shared/ui/button'
 
 export function SoundToggle({ className }: { className?: string }) {
-	// Opt-in, not the on-by-default flag: the ambient only plays after an
-	// explicit choice, so an unchosen state must not read as sound on.
-	const enabled = useSoundOptIn()
+	const enabled = useSoundEnabled()
 
 	return (
 		<Button

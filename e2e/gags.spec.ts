@@ -127,8 +127,7 @@ test.describe('full mode', () => {
 		await page.keyboard.press('Escape')
 		await expect(html(page)).not.toHaveAttribute('data-room-gag', /./)
 
-		// An empty spot at the section's right edge, below the "Enable sound"
-		// chip that hangs under the header.
+		// An empty spot at the section's right edge, clear of the header.
 		const spot = await page.locator('#stack').evaluate((node) => {
 			const rect = node.getBoundingClientRect()
 			return { x: rect.right - 40, y: Math.max(rect.top + 40, 200) }

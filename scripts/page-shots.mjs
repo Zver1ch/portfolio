@@ -84,7 +84,7 @@ try {
 		await shot(page, '05-about-peek')
 		await page.keyboard.press('Escape')
 		await scrollIntoView(page, '#stack', 500)
-		// Below the "Enable sound" chip under the header.
+		// Clear of the header.
 		const spot = await page.locator('#stack').evaluate((node) => {
 			const rect = node.getBoundingClientRect()
 			return { x: rect.right - 60, y: Math.max(rect.top + 60, 200) }

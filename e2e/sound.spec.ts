@@ -52,7 +52,7 @@ const audioState = (page: Page) =>
 test.describe('full mode', () => {
 	test.use({ viewport: DESKTOP })
 
-	test('the prompt shows until a choice; enabling starts the ambient on a running context; muting silences it and persists', async ({
+	test('sound is on by default; the first gesture starts the ambient; the toggle mutes and unmutes it; a stored mute survives a reload', async ({
 		page,
 	}) => {
 		await spyOnAudio(page)
@@ -60,13 +60,14 @@ test.describe('full mode', () => {
 		await expect(html(page)).toHaveAttribute('data-scene-ready', 'true', {
 			timeout: READY_TIMEOUT,
 		})
-		const prompt = page.getByRole('button', { name: 'Enable sound' })
-		await expect(prompt).toBeVisible()
-		// Nothing plays before the opt-in.
-		expect((await audioState(page)).starts).toBe(0)
-
-		await prompt.click()
-		await expect(prompt).toHaveCount(0)
+		await expect(
+			page.getByRole('button', { name: 'Enable sound' }),
+		).toHaveCount(0)
+		const toggle = page.getByRole('button', { name: 'Sound' })
+		await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+		// Headless Chromium does not enforce the autoplay policy, so the
+		// gesture only has to be harmless here.
+		await page.keyboard.press('Shift')
 		// The room tone, the LFOs and the opening chord start at
 		// once; the first felt-piano phrase is scheduled within seconds.
 		await expect
@@ -80,8 +81,6 @@ test.describe('full mode', () => {
 			.toBeGreaterThan(opening)
 		expect((await audioState(page)).states).toContain('running')
 
-		const toggle = page.getByRole('button', { name: 'Sound' })
-		await expect(toggle).toHaveAttribute('aria-pressed', 'true')
 		await toggle.click()
 		await expect(toggle).toHaveAttribute('aria-pressed', 'false')
 		await page.waitForTimeout(500)
@@ -89,13 +88,23 @@ test.describe('full mode', () => {
 		await page.waitForTimeout(3500)
 		expect((await audioState(page)).starts).toBe(muted)
 
+		await toggle.click()
+		await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+		await expect
+			.poll(async () => (await audioState(page)).starts, {
+				timeout: 15_000,
+			})
+			.toBeGreaterThan(muted)
+
+		await toggle.click()
+		await expect(toggle).toHaveAttribute('aria-pressed', 'false')
 		await page.reload()
 		await gotoHydrated(page)
 		await expect(toggle).toHaveAttribute('aria-pressed', 'false')
 		await expect(html(page)).toHaveAttribute('data-scene-ready', 'true', {
 			timeout: READY_TIMEOUT,
 		})
-		await expect(prompt).toHaveCount(0)
+		await page.keyboard.press('Shift')
 		await page.waitForTimeout(800)
 		expect((await audioState(page)).starts).toBe(0)
 	})

@@ -135,6 +135,8 @@ To add a shadcn component: `pnpx shadcn@latest add <component>`
 
 ## Content
 
+Open Graph URLs come from `profile.site` (a hard-coded canonical origin, needed because the page is static), not from the runtime `SITE_URL` that robots/sitemap use.
+
 The site is English only and has no backend. All copy lives in the typed
 `profile` object in `src/shared/config/profile.ts`; pages read it directly.
 The copy follows the owner's resume: role, `experience` and `skills` say the
@@ -334,15 +336,13 @@ otherwise the value is captured during prerendering.
   buffers, about 1.8 MB at 48 kHz, stay cached per context for a quick
   return), so a muted page costs no audio processing; it never closes or
   suspends the context the meow and the effects share. `features/cat-room/ui/ambient-sound.tsx`
-  starts it only after the explicit opt-in (`getSoundOptIn()`, the stored
-  value exactly `'true'`), while the room is ready and the tab visible, dawn
-  mood in the finale. `features/toggle-sound/ui/sound-prompt.tsx` is the
-  "Enable sound" chip, mounted by `widgets/cat-stage` once the room runs,
-  fixed under the header (`top: 7.5rem`, below the first section's corner
-  captions and clear of the bottom band, where the gags play and the credits
-  end): at the right under the toggle from `sm` up, at the left on phones,
-  where the lite dawn framing puts the cat's head under the header on the
-  right; gone once any choice is stored; the toggle mutes everything.
+  starts it while sound is on (`getSoundEnabled()`, on by default, one flag
+  with the meow and the effects; owner decision of 2026-11-27, no prompt),
+  the room is ready and the tab visible, dawn mood in the finale. Gesture
+  listeners (pointerdown, pointerup, keydown) are armed before the first
+  attempt and removed once it succeeds, so the first click, tap or key press
+  starts it under the autoplay policy; the header toggle mutes everything
+  and the choice is stored.
 - Smooth scrolling (`src/shared/lib/gsap/smooth-scroll.tsx`): Lenis runs on
   fine pointers only and is ticked from the GSAP ticker ahead of
   ScrollTrigger. In-page links are scrolled by Lenis alone: the component
@@ -375,7 +375,8 @@ otherwise the value is captured during prerendering.
 
 - Validated via t3-env in `src/shared/config/env.ts`.
 - `SITE_URL` (optional, server-only, defaults to `http://localhost:3000`) —
-  public origin for robots.txt/sitemap.xml. Those routes call `connection()`,
+  public origin for robots.txt/sitemap.xml (the Open Graph URLs do not use it:
+  they come from the hard-coded `profile.site`, as the page is static). Those routes call `connection()`,
   so it is read at runtime (swappable per container). The Zod default applies
   at runtime, where validation runs — do not turn these routes static: at
   build time `SKIP_ENV_VALIDATION=1` (Docker) makes t3-env return raw

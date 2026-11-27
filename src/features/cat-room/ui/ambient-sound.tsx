@@ -6,19 +6,19 @@ import {
 	startAmbient,
 	stopAmbient,
 } from '@/shared/lib/sound/ambient-engine'
-import { useSoundOptIn } from '@/shared/lib/sound/sound-enabled'
+import { useSoundEnabled } from '@/shared/lib/sound/sound-enabled'
 import { useRoomState } from '../model/room-store'
 
 /**
- * Renders nothing (plan §3.12): runs the ambient after an explicit opt-in,
- * while the room is ready and the tab is visible, with the dawn mood in the
- * finale. An opt-in stored on an earlier visit comes without a gesture, so
- * a context the browser keeps suspended waits for the next pointer or key.
+ * Renders nothing (plan §3.12): runs the ambient while sound is on (the
+ * default), the room is ready and the tab is visible, with the dawn mood in
+ * the finale. Nothing here follows a gesture, so a context the browser keeps
+ * suspended waits for the first pointer or key.
  */
 export function AmbientSound() {
-	const optIn = useSoundOptIn()
+	const enabled = useSoundEnabled()
 	const { status, phase } = useRoomState()
-	const wanted = optIn && status === 'ready'
+	const wanted = enabled && status === 'ready'
 
 	useEffect(() => {
 		if (!wanted) {

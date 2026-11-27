@@ -23,12 +23,11 @@ describe('AmbientSound', () => {
 	beforeEach(() => {
 		resetRoomStore()
 		window.localStorage.clear()
-		setSoundEnabled(false)
-		window.localStorage.clear()
+		setSoundEnabled(true)
 	})
 	afterEach(cleanup)
 
-	it('starts only after the opt-in with the room ready, follows the phase, and stops on mute', async () => {
+	it('starts with sound on and the room ready, follows the phase, stops on mute and restarts on unmute', async () => {
 		render(<AmbientSound />)
 		await flush()
 		expect(engine.startAmbient).not.toHaveBeenCalled()
@@ -37,10 +36,6 @@ describe('AmbientSound', () => {
 			startRoom()
 			roomReady()
 		})
-		await flush()
-		expect(engine.startAmbient).not.toHaveBeenCalled()
-
-		act(() => setSoundEnabled(true))
 		await flush()
 		expect(engine.startAmbient).toHaveBeenCalledTimes(1)
 
@@ -52,6 +47,21 @@ describe('AmbientSound', () => {
 		act(() => setSoundEnabled(false))
 		await flush()
 		expect(engine.stopAmbient).toHaveBeenCalled()
+
+		act(() => setSoundEnabled(true))
+		await flush()
+		expect(engine.startAmbient).toHaveBeenCalledTimes(2)
+	})
+
+	it('stays off when the stored choice is muted', async () => {
+		act(() => {
+			startRoom()
+			roomReady()
+			setSoundEnabled(false)
+		})
+		render(<AmbientSound />)
+		await flush()
+		expect(engine.startAmbient).not.toHaveBeenCalled()
 	})
 
 	it('waits for a gesture when the browser keeps the context suspended', async () => {
@@ -59,7 +69,6 @@ describe('AmbientSound', () => {
 		act(() => {
 			startRoom()
 			roomReady()
-			setSoundEnabled(true)
 		})
 		render(<AmbientSound />)
 		await flush()
@@ -76,7 +85,6 @@ describe('AmbientSound', () => {
 		act(() => {
 			startRoom()
 			roomReady()
-			setSoundEnabled(true)
 		})
 		render(<AmbientSound />)
 		await flush()
@@ -86,5 +94,24 @@ describe('AmbientSound', () => {
 		})
 		await flush()
 		expect(engine.startAmbient).toHaveBeenCalledTimes(2)
+	})
+
+	it('removes the gesture listeners once the start succeeds', async () => {
+		const add = vi.spyOn(window, 'addEventListener')
+		const remove = vi.spyOn(window, 'removeEventListener')
+		act(() => {
+			startRoom()
+			roomReady()
+		})
+		render(<AmbientSound />)
+		await flush()
+
+		for (const type of ['pointerdown', 'pointerup', 'keydown']) {
+			const armed = add.mock.calls.find(([name]) => name === type)
+			expect(armed).toBeDefined()
+			expect(remove).toHaveBeenCalledWith(type, armed?.[1])
+		}
+		add.mockRestore()
+		remove.mockRestore()
 	})
 })
