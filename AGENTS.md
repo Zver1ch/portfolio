@@ -149,7 +149,7 @@ with the owner. Third-party credits are typed in
 The 2D face everywhere is `public/stickers/cat-sticker.png`
 (`CatFaceButton`); no SVG cat exists any more.
 
-The cat click sound is `public/sounds/cat-click.mp3` (supplied by the owner).
+The cat click sound is `public/sounds/cat-click.mp3` (supplied by the owner, trimmed to a single 0.54 s meow).
 
 Cache Components is enabled, so everything is dynamic by default and
 `export const revalidate` / `dynamic` / `fetchCache` are build errors; opt in

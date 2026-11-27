@@ -26,22 +26,25 @@ export function AmbientSound() {
 			return
 		}
 		let cancelled = false
-		const onGesture = () => {
-			disarm()
-			void tryStart()
-		}
+		const onGesture = () => void tryStart()
+		// Touch activates on pointerup, not pointerdown.
 		const arm = () => {
 			window.addEventListener('pointerdown', onGesture)
+			window.addEventListener('pointerup', onGesture)
 			window.addEventListener('keydown', onGesture)
 		}
 		const disarm = () => {
 			window.removeEventListener('pointerdown', onGesture)
+			window.removeEventListener('pointerup', onGesture)
 			window.removeEventListener('keydown', onGesture)
 		}
 		const tryStart = async () => {
 			if (document.hidden) return
+			// Armed before the await: a browser that keeps `resume()` pending
+			// until a gesture never settles it, so the result cannot arm.
+			arm()
 			const started = await startAmbient()
-			if (!started && !cancelled) arm()
+			if (started && !cancelled) disarm()
 		}
 		const onVisibility = () => {
 			if (document.hidden) stopAmbient()

@@ -70,4 +70,21 @@ describe('AmbientSound', () => {
 		await flush()
 		expect(engine.startAmbient).toHaveBeenCalledTimes(2)
 	})
+
+	it('arms the gesture listeners while a resume stays pending', async () => {
+		engine.startAmbient.mockReturnValueOnce(new Promise(() => {}))
+		act(() => {
+			startRoom()
+			roomReady()
+			setSoundEnabled(true)
+		})
+		render(<AmbientSound />)
+		await flush()
+		expect(engine.startAmbient).toHaveBeenCalledTimes(1)
+		act(() => {
+			window.dispatchEvent(new Event('pointerup'))
+		})
+		await flush()
+		expect(engine.startAmbient).toHaveBeenCalledTimes(2)
+	})
 })
