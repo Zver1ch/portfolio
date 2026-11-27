@@ -10,10 +10,10 @@ export function Contact() {
 			className='scroll-mt-16 border-t border-border px-4 py-24 sm:px-6 sm:py-32'
 		>
 			<div className='mx-auto grid max-w-7xl gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-16'>
-				<MetaCaption index='04'>Contact</MetaCaption>
+				<MetaCaption index='05'>Contact</MetaCaption>
 				<div>
 					<p className='max-w-2xl font-display text-[clamp(1.5rem,3.2vw,3rem)] leading-tight font-medium text-balance'>
-						Write to me, tell me about the task, or just pet the
+						Write to me, tell me about the role, or just pet the
 						cat.
 					</p>
 					<dl className='mt-12 grid gap-x-10 gap-y-6 sm:grid-cols-[auto_1fr] sm:items-baseline'>

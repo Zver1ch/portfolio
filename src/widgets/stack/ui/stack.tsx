@@ -16,7 +16,7 @@ export function Stack() {
 			className='scroll-mt-16 border-t border-border px-4 py-24 sm:px-6 sm:py-32'
 		>
 			<div className='mx-auto grid max-w-7xl gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-16'>
-				<MetaCaption index='03'>Stack</MetaCaption>
+				<MetaCaption index='04'>Stack</MetaCaption>
 				<div>
 					<table className='w-full border-collapse text-left'>
 						<caption className='sr-only'>
@@ -61,9 +61,11 @@ export function Stack() {
 							))}
 						</tbody>
 					</table>
-					<p className='mt-6 text-sm text-muted-foreground'>
-						Learning rows move up with the first live demo.
-					</p>
+					{profile.learning.length > 0 && (
+						<p className='mt-6 text-sm text-muted-foreground'>
+							Learning rows move up with the first live demo.
+						</p>
+					)}
 				</div>
 			</div>
 		</section>

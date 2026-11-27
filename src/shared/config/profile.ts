@@ -5,6 +5,12 @@ export type ProfileProject = {
 	tags: string[]
 }
 
+export type ProfileJob = {
+	place: string
+	period: string
+	summary: string
+}
+
 export type ProfileLink = {
 	label: string
 	href: string
@@ -23,9 +29,11 @@ export type Profile = {
 	about: string
 	location: string
 	languages: string[]
+	/** Newest first; the same entries as the owner's resume. */
+	experience: ProfileJob[]
 	/** Used in real work today. */
 	skills: string[]
-	/** In progress: moves to `skills` once there is a live demo. */
+	/** In progress; leave empty when nothing is. */
 	learning: string[]
 	lookingFor: string[]
 	now: string
@@ -37,17 +45,44 @@ export type Profile = {
 export const profile: Profile = {
 	name: 'Dmitriy Gorbunov',
 	handle: 'Zver1ch',
-	role: 'Frontend developer · in progress',
-	tagline: 'Building layouts. Learning the rest. Supervised by a cat.',
+	role: 'Frontend developer',
+	tagline: 'Building interfaces with React and Next.js. Supervised by a cat.',
 	statement: 'I build layouts. The cat sits on them.',
 	footerStatement: "Let's build something. The cat approves.",
-	about: "I build layouts with HTML and CSS and I'm leveling up in JavaScript, React, Next.js and TypeScript.",
+	about: 'I build web interfaces with React, Next.js and TypeScript. Started with HTML and CSS layouts for freelance clients, then joined a product team.',
 	location: 'Remote',
 	languages: ['RU', 'EN'],
-	skills: ['HTML', 'CSS', 'SCSS', 'CSS Modules'],
-	learning: ['JavaScript', 'React', 'Next.js', 'TypeScript'],
-	lookingFor: ['Internships', 'Junior roles', 'HTML/CSS layout gigs'],
-	now: 'Personal site: in progress',
+	experience: [
+		{
+			place: 'Commercial project under NDA',
+			period: 'Sep – Nov 2026',
+			summary:
+				"A photo and video generation service built by a team of ten. Moved my share of the pages from jQuery to Next.js, following the tech lead's architecture, and helped package the service in Docker. The Lighthouse performance score went to 90+ after the move.",
+		},
+		{
+			place: 'Freelance',
+			period: '2025 – 2026',
+			summary:
+				'About a year of direct work with clients: landing pages built from Figma mockups, new features for existing sites in plain HTML and CSS, React and Next.js, and fixes in legacy code.',
+		},
+	],
+	skills: [
+		'HTML',
+		'CSS',
+		'SCSS',
+		'CSS Modules',
+		'JavaScript',
+		'TypeScript',
+		'React',
+		'Next.js',
+		'Git',
+		'Docker',
+		'Figma',
+		'Claude Code',
+	],
+	learning: [],
+	lookingFor: ['Junior frontend roles', 'Internships'],
+	now: 'Open to full-time remote work',
 	projects: [],
 	links: [
 		{ label: 'GitHub', href: 'https://github.com/Zver1ch' },

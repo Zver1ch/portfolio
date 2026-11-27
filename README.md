@@ -29,8 +29,8 @@ pnpm install
 pnpm dev
 ```
 
-Edit `src/shared/config/profile.ts`; the site publishes only what the owner can
-confirm (no years, employers or e-mail).
+Edit `src/shared/config/profile.ts`; the site says what the owner's resume says
+and nothing beyond it (no NDA employer name, no e-mail).
 
 ## Scripts
 
@@ -83,7 +83,7 @@ app/                  — Next.js App Router routes (thin, import from src/pages
 pages/                — required stub, see pages/README.md
 src/
   pages/     — page compositions (home)
-  widgets/   — site-header, hero, manifesto, about, stack, contact, finale
+  widgets/   — site-header, hero, manifesto, about, experience, stack, contact, finale
   features/  — boop-cat, toggle-sound, cat-room (the 3D scene)
   entities/  — business entities (add when needed)
   shared/    — config (profile, env, routes), lib, ui

@@ -14,6 +14,7 @@ import { profile } from '@/shared/config/profile'
 const NAV = [
 	{ href: '#top', label: 'Top' },
 	{ href: '#about', label: 'About' },
+	{ href: '#work', label: 'Work' },
 	{ href: '#stack', label: 'Stack' },
 	{ href: '#contact', label: 'Contact' },
 ] as const
