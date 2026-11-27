@@ -152,12 +152,7 @@ test.describe('lite mode', () => {
 		}, p)
 		await page.waitForTimeout(600)
 	}
-	const layerOpacity = (page: Page) =>
-		page
-			.locator('[data-room-layer]')
-			.evaluate((node) => Number((node as HTMLElement).style.opacity))
-
-	test('nothing pins: the first section sticks under the opaque room while the camera flies in, then the room crossfades to it', async ({
+	test('nothing pins: the stuck first section sits on the monitor while the camera flies in, then lands as the page', async ({
 		page,
 	}) => {
 		const problems = collectProblems(page)
@@ -168,32 +163,17 @@ test.describe('lite mode', () => {
 		})
 		await expect(page.locator('.pin-spacer')).toHaveCount(0)
 		const portal = page.locator('[data-stage="hero"] [data-portal]')
-		await expect(portal).toHaveCSS('transform', 'none')
+		await expect(portal).toHaveCSS('transform', /^matrix3d/)
 		await expect(portal).toHaveCSS('position', 'sticky')
 		// The room is on from the first frame, over the whole viewport.
 		await expect(html(page)).toHaveAttribute('data-room-phase', 'room')
 		await expect(page.locator('[data-room-layer]')).toBeVisible()
-		expect(await layerOpacity(page)).toBe(1)
-		await expect(page.locator('[data-room-layer]')).toHaveCSS(
-			'background-color',
-			'rgb(18, 13, 22)',
-		)
 
-		// Mid-dive: the section is stuck at the top under the room, the name has faded.
+		// Mid-dive: the section is stuck and still warped, the name has faded.
 		await liteDiveTo(page, 0.6)
 		await expect(html(page)).toHaveAttribute('data-room-phase', 'room')
-		expect(await layerOpacity(page)).toBe(1)
-		expect(
-			await portal.evaluate((node) => node.getBoundingClientRect().top),
-		).toBe(0)
-		await expect(portal).toHaveCSS('transform', 'none')
+		await expect(portal).toHaveCSS('transform', /^matrix3d/)
 		await expect(page.locator('[data-hero-copy]')).toBeHidden()
-
-		// The crossfade: the painted page gives way to the real one.
-		await liteDiveTo(page, 0.95)
-		const mid = await layerOpacity(page)
-		expect(mid).toBeGreaterThan(0.05)
-		expect(mid).toBeLessThan(0.95)
 
 		// Landed: nothing is drawn, the statement is the page, still at the top
 		// (the release point, give or take the sub-pixel of the svh heights).
@@ -201,6 +181,7 @@ test.describe('lite mode', () => {
 		await expect(html(page)).toHaveAttribute('data-room-phase', 'off')
 		await expect(page.locator('[data-room-layer]')).toBeHidden()
 		await expect(page.getByText(profile.statement)).toBeInViewport()
+		await expect(portal).toHaveCSS('transform', 'none')
 		expect(
 			Math.abs(
 				await portal.evaluate(

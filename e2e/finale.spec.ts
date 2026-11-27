@@ -103,12 +103,8 @@ test.describe('lite mode', () => {
 		}, p)
 		await page.waitForTimeout(600)
 	}
-	const layerOpacity = (page: Page) =>
-		page
-			.locator('[data-room-layer]')
-			.evaluate((node) => Number((node as HTMLElement).style.opacity))
 
-	test('the statement sticks, the dawn room fades in over it and pulls back; the credits roll in under the cat', async ({
+	test('the statement sticks, shrinks into the monitor as the camera pulls back; the credits roll in under the cat', async ({
 		page,
 	}) => {
 		const problems = collectProblems(page)
@@ -122,24 +118,16 @@ test.describe('lite mode', () => {
 		await expect(page.getByText(profile.footerStatement)).toBeInViewport()
 		await expect(finalePortal(page)).toHaveCSS('position', 'sticky')
 
-		// A little further: the room fades in over the stuck statement.
+		// A little further: the room is drawn around the stuck statement,
+		// which shrinks into the monitor.
 		await liteFinaleTo(page, 0.05)
 		await expect(html(page)).toHaveAttribute('data-room-phase', 'finale')
 		await expect(page.locator('[data-room-layer]')).toBeVisible()
-		const fading = await layerOpacity(page)
-		expect(fading).toBeGreaterThan(0.05)
-		expect(fading).toBeLessThan(0.95)
-		expect(
-			await finalePortal(page).evaluate(
-				(node) => node.getBoundingClientRect().top,
-			),
-		).toBe(0)
-		await expect(finalePortal(page)).toHaveCSS('transform', 'none')
+		await expect(finalePortal(page)).toHaveCSS('transform', /^matrix3d/)
 
 		// The end of the page: the dawn room with the cat above the credits.
 		await scrollToEnd(page)
 		await expect(html(page)).toHaveAttribute('data-room-phase', 'finale')
-		expect(await layerOpacity(page)).toBe(1)
 		const ccBy = page.getByRole('link', { name: 'CC BY 4.0' })
 		await expect(ccBy).toBeInViewport()
 		await expect(ccBy).toHaveAttribute(
