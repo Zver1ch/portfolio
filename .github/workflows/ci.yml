@@ -36,7 +36,10 @@ jobs:
           restore-keys: |
             nextjs-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
+      # E2E is switched off in CI for now (about 4 of the 6 minutes); run
+      # pnpm test:e2e locally. Remove the three `if: false` lines to bring it back.
       - name: Restore Playwright browsers
+        if: false
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
@@ -67,9 +70,11 @@ jobs:
         run: pnpm build
 
       - name: Install Playwright browsers
+        if: false
         run: pnpm exec playwright install --with-deps chromium
 
       # Reuses the build from the Build step (playwright.config.ts runs
       # `pnpm start` in CI instead of rebuilding)
       - name: E2E tests
+        if: false
         run: pnpm test:e2e

@@ -84,7 +84,7 @@ win; do not "fix" the code toward the canonical guidance.
 
 - **pre-commit**: Biome check + auto-fix on staged files
 - **pre-push**: type-check (`pnpm tsc`) + FSD validation (`pnpm run fsd`)
-- **CI** (`.github/workflows/ci.yml`): lint → tsc → fsd → tests → build → e2e on push/PR
+- **CI** (`.github/workflows/ci.yml`): lint → tsc → fsd → tests → build on push/PR; the e2e steps are switched off for now (`if: false`), run `pnpm test:e2e` locally
 
 ## Testing
 
