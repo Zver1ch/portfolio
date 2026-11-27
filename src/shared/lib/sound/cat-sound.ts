@@ -23,7 +23,7 @@ let loading: Promise<Meow | null> | undefined
 let meow: Meow | null | undefined
 let voices = 0
 
-/** Seconds of near silence before the meow: the file opens with about 0.7 s of it. */
+/** Seconds of near silence before the meow: the file opens with a few tens of ms of it. */
 function onsetOf(buffer: AudioBuffer): number {
 	const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) =>
 		buffer.getChannelData(i),

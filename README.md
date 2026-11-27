@@ -70,9 +70,10 @@ decided on the client (the server always renders the static page):
 - **static** (reduced motion, no WebGL, Save-Data, or any failure while
   loading): posters and a 2D face button; nothing moves.
 
-Sound is opt-in: the "Enable sound" chip starts a generated ambient (room
-tone, the PC's hum, sparse plucks, chirps at dawn); the meow and the small
-effects play unless muted. Details, budgets and the test matrix are in
+Sound is on by default: a generated ambient (room tone, the PC's hum,
+sparse plucks, chirps at dawn) starts on the first click, tap or key press,
+since browsers block audio before a gesture; the header toggle mutes it, the
+meow and the small effects, and remembers the choice. Details, budgets and the test matrix are in
 `AGENTS.md` and `docs/cat-room-plan.md`; the owner's review packages are in
 `docs/lookdev/`.
 
@@ -105,7 +106,7 @@ pipeline.
   every fallback to static.
 - `dive.spec.ts`, `finale.spec.ts`, `gags.spec.ts`, `sound.spec.ts` — the
   pinned dive and its pixel alignment, the finale, the edge intrusions, the
-  sound opt-in and the offline loudness of the ambient.
+  sound toggle and the offline loudness of the ambient.
 
 The 3D specs run serially under software WebGL (SwiftShader) with long
 timeouts. Where Playwright cannot download Chromium, point `CHROME_PATH` at a
@@ -118,6 +119,8 @@ hermetic.
 docker build -t portfolio .
 docker run -p 3000:3000 -e SITE_URL=https://example.com portfolio
 ```
+
+`SITE_URL` only feeds robots.txt and sitemap.xml; the Open Graph URLs come from the hard-coded `profile.site`.
 
 Or with Compose (reads env from `.env.local` if present):
 

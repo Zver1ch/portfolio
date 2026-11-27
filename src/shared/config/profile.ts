@@ -18,6 +18,8 @@ export type ProfileLink = {
 
 export type Profile = {
 	name: string
+	/** Canonical origin: the base for Open Graph URLs, baked in at build time. */
+	site: string
 	handle: string
 	role: string
 	/** One line under the name in the hero. */
@@ -44,6 +46,7 @@ export type Profile = {
 
 export const profile: Profile = {
 	name: 'Dmitriy Gorbunov',
+	site: 'https://zver1ch.dev',
 	handle: 'Zver1ch',
 	role: 'Frontend developer',
 	tagline: 'Building interfaces with React and Next.js. Supervised by a cat.',
