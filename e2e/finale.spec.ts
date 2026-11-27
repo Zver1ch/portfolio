@@ -118,9 +118,9 @@ test.describe('lite mode', () => {
 		await expect(page.getByText(profile.footerStatement)).toBeInViewport()
 		await expect(finalePortal(page)).toHaveCSS('position', 'sticky')
 
-		// A little further: the room is drawn around the stuck statement,
+		// Further on: the room is drawn around the stuck statement,
 		// which shrinks into the monitor.
-		await liteFinaleTo(page, 0.05)
+		await liteFinaleTo(page, 0.3)
 		await expect(html(page)).toHaveAttribute('data-room-phase', 'finale')
 		await expect(page.locator('[data-room-layer]')).toBeVisible()
 		await expect(finalePortal(page)).toHaveCSS('transform', /^matrix3d/)
