@@ -11,7 +11,6 @@ import type { CameraPose } from '@/shared/lib/math/projection'
 import { CAMERA_FAR, CAMERA_NEAR } from '../../config/camera-tracks'
 import { roomColliders } from '../../config/colliders'
 import type { DirectorFrame } from '../../model/frame'
-import type { Track } from '../camera-path'
 import {
 	type OverlayPlacement,
 	overlayCameraPosition,
@@ -30,7 +29,6 @@ import {
 	createRoomMaterial,
 	createSceneUniforms,
 } from './materials'
-import { createCardHole } from './overlay/card-hole'
 import { createFishMesh } from './overlay/fish'
 import { createRenderer, resizeRenderer } from './renderer'
 import { buildRoom } from './room/build-room'
@@ -42,10 +40,8 @@ export type RoomSceneOptions = {
 	width: number
 	height: number
 	dpr: number
-	/** Painted screen instead of the DOM hole (lite mode, posters, lab). */
+	/** Painted screen instead of the DOM hole (posters, lab). */
 	fakeScreen: boolean
-	/** Phone variant `c`: the screen may be as narrow as the viewport (a portrait panel). */
-	screenAspectFloor?: number
 	/** Where the cat's GLB comes from; the lab swaps in the source model. */
 	modelUrl: string
 	/** Omit the cat (room look-dev). */
@@ -67,11 +63,6 @@ export type RoomScene = {
 	update(frame: DirectorFrame, dt: number): void
 	/** Draws the last updated state. */
 	draw(): void
-	/**
-	 * Lite mode (plan §3.4): the page section a track lands on, painted for
-	 * the monitor's page column; null shows the bars again.
-	 */
-	setScreenPage(track: Track, image: HTMLCanvasElement | null): void
 	/** Draws several frames side by side in one canvas (probe sheets). */
 	renderPanes(
 		panes: { frame: DirectorFrame; rect: PaneRect }[],
@@ -108,16 +99,8 @@ export async function createRoomScene(
 	glowMesh.renderOrder = 10
 	scene.add(roomMesh, glowMesh)
 
-	const monitor = createMonitor(
-		roomMaterial,
-		width / height,
-		fakeScreen,
-		options.screenAspectFloor,
-	)
+	const monitor = createMonitor(roomMaterial, width / height, fakeScreen)
 	scene.add(monitor.group)
-	// Phone variant `c`: the hole that follows the page card over the room.
-	const cardHole = createCardHole()
-	scene.add(cardHole.mesh)
 
 	const sticker = await createSticker()
 	scene.add(sticker.mesh)
@@ -195,13 +178,6 @@ export async function createRoomScene(
 			activeCamera = camera
 		}
 		uniforms.uDawn.value = frame.dawn
-		monitor.showPage(frame.phase === 'finale' ? 'finale' : 'dive')
-		cardHole.set(
-			overlay ? null : (frame.hole ?? null),
-			frame.camera,
-			width,
-			height,
-		)
 		cat?.update(frame, dt, activeCamera)
 		placeFish(frame)
 	}
@@ -224,9 +200,6 @@ export async function createRoomScene(
 		},
 		update,
 		draw,
-		setScreenPage(track, image) {
-			monitor.setPage(track, image)
-		},
 		renderPanes(panes, dt, clear = true) {
 			renderer.setScissorTest(false)
 			if (clear) renderer.clear()
@@ -270,7 +243,6 @@ export async function createRoomScene(
 		dispose() {
 			cat?.dispose()
 			fish.dispose()
-			cardHole.dispose()
 			sticker.dispose()
 			monitor.dispose()
 			room.opaque.dispose()

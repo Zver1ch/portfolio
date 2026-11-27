@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { PHONE_CARD } from '@/features/cat-room/config/camera-tracks'
-import { PHONE_TRAITS } from '@/features/cat-room/config/phone-variant'
 import type { PoseName } from '@/features/cat-room/config/poses'
 import { CAT_SPOT } from '@/features/cat-room/config/room-layout'
 import { GAGS, OVERLAY } from '@/features/cat-room/config/tuning'
@@ -11,8 +9,6 @@ import {
 	dawnFactor,
 	liteDiveCamera,
 	liteFinaleCamera,
-	phoneDiveCamera,
-	phoneFinaleCamera,
 } from '@/features/cat-room/lib/camera-path'
 import {
 	type OverlayPlacement,
@@ -86,18 +82,14 @@ function frameFor(
 		}
 	} else if (view === 'hero' || view === 'dive') {
 		const p = view === 'dive' ? params.p : 0
-		camera = params.phone
-			? phoneDiveCamera(params.phone, p, aspect)
-			: params.lite
-				? liteDiveCamera(p, aspect)
-				: cameraAt('dive', p, aspect)
+		camera = params.lite
+			? liteDiveCamera(p, aspect)
+			: cameraAt('dive', p, aspect)
 		dive = p
 	} else if (view === 'finale') {
-		camera = params.phone
-			? phoneFinaleCamera(params.phone, params.p, aspect)
-			: params.lite
-				? liteFinaleCamera(params.p, aspect)
-				: cameraAt('finale', params.p, aspect)
+		camera = params.lite
+			? liteFinaleCamera(params.p, aspect)
+			: cameraAt('finale', params.p, aspect)
 		dawn = params.dawn ?? dawnFactor(params.p)
 	} else if (params.cam === 'hero') {
 		camera = cameraAt('dive', 0, aspect)
@@ -177,10 +169,6 @@ export function LabPage() {
 				height,
 				dpr,
 				fakeScreen: true,
-				screenAspectFloor:
-					params.phone && PHONE_TRAITS[params.phone].portraitMonitor
-						? PHONE_CARD.screenAspectFloor
-						: undefined,
 				modelUrl: modelUrl(params.model),
 				cat: !params.nocat,
 				hairSprings: params.hair,

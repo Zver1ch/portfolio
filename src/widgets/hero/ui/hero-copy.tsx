@@ -13,7 +13,7 @@ export function HeroCopy() {
 			data-hero-copy
 			className='pointer-events-none absolute inset-x-0 top-0 z-[45] h-svh'
 		>
-			<div className='mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pt-20 pb-16 sm:px-6 sm:pb-24 short:pb-6 phone-c:justify-start phone-c:pt-24'>
+			<div className='mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pt-20 pb-16 sm:px-6 sm:pb-24 short:pb-6'>
 				<MetaCaption index='01' as='p'>
 					Role
 				</MetaCaption>
@@ -26,7 +26,7 @@ export function HeroCopy() {
 				<p className='mt-2 max-w-xl text-base text-blush/90 sm:text-lg short:mt-1 short:text-sm'>
 					{profile.tagline}
 				</p>
-				<p className='mt-8 flex items-center gap-2 font-mono text-xs tracking-[0.3em] text-muted-foreground uppercase short:mt-3 phone-c:mt-auto'>
+				<p className='mt-8 flex items-center gap-2 font-mono text-xs tracking-[0.3em] text-muted-foreground uppercase short:mt-3'>
 					Scroll to dive in
 					<ArrowDown aria-hidden className='size-4 text-rose' />
 				</p>

@@ -1,4 +1,3 @@
-import type { Quad } from '@/shared/lib/math/homography'
 import type { CameraPose } from '@/shared/lib/math/projection'
 import type { Vec3 } from '@/shared/lib/math/vec3'
 import type { PoseName } from '../config/poses'
@@ -36,10 +35,4 @@ export type DirectorFrame = {
 	fish: { position: Vec3; held: boolean } | null
 	/** Quantise the animation clock to 12 steps a second (lab toggle). */
 	stepped: boolean
-	/**
-	 * Phone variant `c`: a screen-space hole in CSS px (TL TR BR BL) that
-	 * follows the page card, so the real page shows through wherever the card
-	 * is while the camera holds; absent otherwise.
-	 */
-	hole?: Quad | null
 }

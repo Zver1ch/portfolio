@@ -14,8 +14,6 @@ export type RoomState = {
 	reason: string | null
 	/** What the director is showing, for the parts of the page that depend on it (the proxy's label). */
 	phase: Phase
-	/** Lite mode: the dive has landed on the first section at least once (the typing line waits for it). */
-	landed: boolean
 }
 
 const INITIAL: RoomState = {
@@ -24,7 +22,6 @@ const INITIAL: RoomState = {
 	failed: false,
 	reason: null,
 	phase: 'off',
-	landed: false,
 }
 
 let state: RoomState = INITIAL
@@ -72,12 +69,6 @@ export function failRoom(reason: string) {
 export function setRoomPhase(phase: Phase) {
 	if (state.phase === phase) return
 	emit({ phase })
-}
-
-/** The lite dive has landed: the page is the page from here on, until the room comes back over it. */
-export function landRoom() {
-	if (state.landed) return
-	emit({ landed: true })
 }
 
 /** Test hook. */

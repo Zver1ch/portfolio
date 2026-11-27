@@ -122,23 +122,7 @@
 @custom-variant room-lite (&:where([data-room-mode="lite"] *));
 /* A phone on its side: the hero copy has to fit under the header. */
 @custom-variant short (@media (max-height: 30rem));
-/*
- * Gate 2 round 6: the three phone variants behind `?phone=a|b|c`, pending the
- * owner's choice (`features/cat-room/config/phone-variant.ts`). The layer sets
- * `data-phone-variant` in lite mode only, so these imply `room-lite:`.
- */
-@custom-variant phone-a (&:where([data-phone-variant="a"] *));
-@custom-variant phone-b (&:where([data-phone-variant="b"] *));
-@custom-variant phone-c (&:where([data-phone-variant="c"] *));
 
-/*
- * Lite mode: the room is opaque over the page and the director crossfades the
- * layer with the page at the end of the dive and the start of the finale, so
- * the layer carries the page's own ink wherever the room draws nothing.
- */
-html[data-room-mode="lite"] [data-room-layer] {
-	background: var(--ink);
-}
 /* The name over the lite room: a scrim of its own, the canvas sits above the slot's. */
 html[data-room-mode="lite"] [data-hero-copy] {
 	background: linear-gradient(
@@ -146,36 +130,6 @@ html[data-room-mode="lite"] [data-hero-copy] {
 		var(--ink) 0%,
 		color-mix(in oklch, var(--ink) 78%, transparent) 34%,
 		transparent 64%
-	);
-}
-/*
- * The phone variants never cover the page with ink: `a` keeps the room as a
- * backdrop under the page (the layer below `main` and the footer, which the
- * page's sections cover with their own ink), `b` and `c` show the real page
- * through the monitor's hole.
- */
-html[data-phone-variant] [data-room-layer] {
-	background: transparent;
-}
-html[data-phone-variant="a"] [data-room-layer] {
-	z-index: 0;
-}
-html[data-phone-variant="a"] main,
-html[data-phone-variant="a"] footer {
-	position: relative;
-	z-index: 10;
-}
-/* The still's name sits on the slot's own scrim, under the page like the room. */
-html[data-phone-variant="a"] [data-hero-copy] {
-	background: none;
-}
-/* The card's name sits at the top of the shot: the scrim comes down from the header. */
-html[data-phone-variant="c"] [data-hero-copy] {
-	background: linear-gradient(
-		to bottom,
-		var(--ink) 0%,
-		color-mix(in oklch, var(--ink) 72%, transparent) 36%,
-		transparent 62%
 	);
 }
 

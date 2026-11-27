@@ -6,16 +6,7 @@ import {
 	unlerp,
 } from '@/shared/lib/math/ease'
 import type { CameraPose } from '@/shared/lib/math/projection'
-import {
-	add,
-	bezier2,
-	length,
-	lerp,
-	normalize,
-	scale,
-	sub,
-	type Vec3,
-} from '@/shared/lib/math/vec3'
+import { add, bezier2, lerp, type Vec3 } from '@/shared/lib/math/vec3'
 import {
 	DAWN_CAMERA,
 	DIVE,
@@ -24,19 +15,13 @@ import {
 	FINALE,
 	FINALE_CONTROL,
 	HERO_CAMERA,
+	LITE_CAMERAS,
+	LITE_FINALE_BOW,
 	LITE_FRAMING,
-	LITE_PULLBACK,
-	PHONE_BOW,
-	PHONE_CAMERAS,
-	PHONE_CARD,
 } from '../config/camera-tracks'
-import type { PhoneVariant } from '../config/phone-variant'
-import { DESK_TOP, SCREEN } from '../config/room-layout'
+import { SCREEN } from '../config/room-layout'
 
 export type Track = 'dive' | 'finale'
-
-/** The phone variants with cameras of their own (Gate 2 round 6). */
-export type PhoneCameraVariant = Exclude<PhoneVariant, 'default'>
 
 /**
  * The camera at the end of the dive: on the screen normal, at the distance
@@ -52,118 +37,11 @@ export function endCamera(overshoot = END_OVERSHOOT): CameraPose {
 }
 
 /**
- * Lite mode (plan §3.4): a stage camera for a narrow viewport. Landscape
- * viewports keep the stock pose. Portrait ones back the camera off along its
- * own line of sight by `max(1, LITE_PULLBACK / aspect)`, so the desk fits the
- * width, and aim it lower, so the desk top sits at `deskShare` of the frame
- * and the bottom is free for the name or the credits; the aim blends back to
- * the stock one towards a square window.
+ * Lite mode (plan §3.4): a stage camera for a viewport. Portrait viewports
+ * get the lite pose, landscape ones the stock pose, blended between
+ * `LITE_FRAMING.portraitTo` and `portraitFrom`.
  */
 function liteStageCamera(
-	stock: CameraPose,
-	aspect: number,
-	deskShare: number,
-): CameraPose {
-	const factor = Math.max(1, LITE_PULLBACK / aspect)
-	// Wide viewports keep the camera as is (no rounding through the maths).
-	if (factor === 1) return stock
-	const offset = sub(stock.position, stock.target)
-	const distance = length(offset) * factor
-	const fieldHeight = 2 * distance * Math.tan((stock.fov * Math.PI) / 360)
-	const portrait =
-		1 -
-		smoothstep(LITE_FRAMING.portraitTo, LITE_FRAMING.portraitFrom, aspect)
-	const target: Vec3 = [
-		stock.target[0],
-		mix(
-			stock.target[1],
-			DESK_TOP - (0.5 - deskShare) * fieldHeight,
-			portrait,
-		),
-		stock.target[2],
-	]
-	return {
-		...stock,
-		position: add(target, scale(normalize(offset), distance)),
-		target,
-	}
-}
-
-/** Lite mode: the hero camera, the start of the lite dive. */
-export function liteHeroCamera(aspect: number): CameraPose {
-	return liteStageCamera(HERO_CAMERA, aspect, LITE_FRAMING.deskShare.hero)
-}
-
-/** Lite mode and the portrait dawn poster: the dawn camera, the end of the lite pull-back. */
-export function liteDawnCamera(aspect: number): CameraPose {
-	return liteStageCamera(DAWN_CAMERA, aspect, LITE_FRAMING.deskShare.dawn)
-}
-
-/**
- * Lite mode: the camera at the end of the dive, the exact fit with no
- * overshoot. The screen's page column (`columnCorners`) lands on the
- * viewport precisely, so the painted page can crossfade into the real one.
- */
-export function liteEndCamera(): CameraPose {
-	return endCamera(1)
-}
-
-/** Lite mode: the dive from the lite hero camera to the exact fit, on the full dive's progress map. */
-export function liteDiveCamera(p: number, aspect: number): CameraPose {
-	const start = liteHeroCamera(aspect)
-	const end = liteEndCamera()
-	if (p <= DIVE.hold) return start
-	if (p >= DIVE.travelEnd) return end
-	const t = easeInOutCubic(unlerp(DIVE.hold, DIVE.travelEnd, p))
-	return {
-		position: bezier2(
-			start.position,
-			add(lerp(start.position, end.position, 0.5), LITE_FRAMING.diveBow),
-			end.position,
-			t,
-		),
-		target: lerp(start.target, end.target, clamp01(t / DIVE.targetLock)),
-		fov: start.fov,
-	}
-}
-
-/** Lite mode: the pull-back from the exact fit to the lite dawn camera, on the full finale's progress map. */
-export function liteFinaleCamera(p: number, aspect: number): CameraPose {
-	const start = liteEndCamera()
-	const end = liteDawnCamera(aspect)
-	if (p <= FINALE.undock) return start
-	if (p >= FINALE.pullBackEnd) return end
-	const t = easeInOutCubic(unlerp(FINALE.undock, FINALE.pullBackEnd, p))
-	return {
-		position: bezier2(
-			start.position,
-			lerp(start.position, end.position, 0.5),
-			end.position,
-			t,
-		),
-		target: lerp(start.target, end.target, t),
-		fov: mix(start.fov, end.fov, t),
-	}
-}
-
-/**
- * Lite mode: the layer's opacity over a stage, the crossfade between the
- * page painted on the monitor and the real page under the canvas. The dive
- * fades the room out over its docking stretch, once the camera has arrived;
- * the finale fades it in over the undock stretch, before the camera moves.
- */
-export function liteFade(track: Track, p: number): number {
-	return track === 'dive'
-		? 1 - smoothstep(DIVE.dock, 1, p)
-		: smoothstep(0, FINALE.undock, p)
-}
-
-/**
- * Phone variants (Gate 2 round 6, `config/phone-variant.ts`): a variant's
- * own stage pose on portrait viewports, the stock pose on landscape ones,
- * blended between `LITE_FRAMING.portraitTo` and `portraitFrom`.
- */
-function phoneStageCamera(
 	pose: CameraPose,
 	stock: CameraPose,
 	aspect: number,
@@ -180,90 +58,60 @@ function phoneStageCamera(
 	}
 }
 
-export function phoneHeroCamera(
-	variant: PhoneCameraVariant,
-	aspect: number,
-): CameraPose {
-	return phoneStageCamera(PHONE_CAMERAS[variant].hero, HERO_CAMERA, aspect)
+/** Lite mode: the hero camera, the start of the lite dive. */
+export function liteHeroCamera(aspect: number): CameraPose {
+	return liteStageCamera(LITE_CAMERAS.hero, HERO_CAMERA, aspect)
 }
 
-export function phoneDawnCamera(
-	variant: PhoneCameraVariant,
-	aspect: number,
-): CameraPose {
-	return phoneStageCamera(PHONE_CAMERAS[variant].dawn, DAWN_CAMERA, aspect)
+/** Lite mode and the portrait dawn poster: the dawn camera, the end of the lite pull-back. */
+export function liteDawnCamera(aspect: number): CameraPose {
+	return liteStageCamera(LITE_CAMERAS.dawn, DAWN_CAMERA, aspect)
 }
 
 /**
- * The hero stage of a phone variant: `a` and `c` hold their hero camera; `b`
- * flies straight from it to the exact fit on the dive's map, the path bowed
- * away from the cat, the field of view narrowing to the fit's.
+ * Lite mode: the camera at the end of the dive, the exact fit with no
+ * overshoot. The screen's page column (`columnCorners`) lands on the
+ * viewport precisely, so the warped section docks onto the real one.
  */
-export function phoneDiveCamera(
-	variant: PhoneCameraVariant,
-	p: number,
-	aspect: number,
-): CameraPose {
-	const start = phoneHeroCamera(variant, aspect)
-	if (variant !== 'b') return start
-	const end = liteEndCamera()
+export function liteEndCamera(): CameraPose {
+	return endCamera(1)
+}
+
+/**
+ * Lite mode: the dive, a straight push from the lite hero camera to the
+ * exact fit on the full dive's progress map, the field of view narrowing to
+ * the fit's.
+ */
+export function liteDiveCamera(p: number, aspect: number): CameraPose {
+	const start = liteHeroCamera(aspect)
 	if (p <= DIVE.hold) return start
+	const end = liteEndCamera()
 	if (p >= DIVE.travelEnd) return end
 	const t = easeInOutCubic(unlerp(DIVE.hold, DIVE.travelEnd, p))
 	return {
-		position: bezier2(
-			start.position,
-			add(lerp(start.position, end.position, 0.5), PHONE_BOW.dive),
-			end.position,
-			t,
-		),
+		position: lerp(start.position, end.position, t),
 		target: lerp(start.target, end.target, clamp01(t / DIVE.targetLock)),
 		fov: mix(start.fov, end.fov, t),
 	}
 }
 
-/** The finale stage of a phone variant: `a` and `c` hold their dawn camera; `b` pulls back from the exact fit to it. */
-export function phoneFinaleCamera(
-	variant: PhoneCameraVariant,
-	p: number,
-	aspect: number,
-): CameraPose {
-	const end = phoneDawnCamera(variant, aspect)
-	if (variant !== 'b') return end
+/** Lite mode: the pull-back from the exact fit to the lite dawn camera, bowed around the desk, on the full finale's progress map. */
+export function liteFinaleCamera(p: number, aspect: number): CameraPose {
 	const start = liteEndCamera()
 	if (p <= FINALE.undock) return start
+	const end = liteDawnCamera(aspect)
 	if (p >= FINALE.pullBackEnd) return end
 	const t = easeInOutCubic(unlerp(FINALE.undock, FINALE.pullBackEnd, p))
 	return {
 		position: bezier2(
 			start.position,
-			add(lerp(start.position, end.position, 0.5), PHONE_BOW.finale),
+			add(lerp(start.position, end.position, 0.5), LITE_FINALE_BOW),
 			end.position,
 			t,
 		),
 		target: lerp(start.target, end.target, t),
 		fov: mix(start.fov, end.fov, t),
 	}
-}
-
-/**
- * Variant `c`: the page card's progress in the portal's docking terms
- * (`DIVE.dock` is the bare screen quad, 1 the viewport). On the dive it
- * grows out of the screen after the hold and fills the viewport at the end
- * of the track; on the finale it is the viewport at the start and is back in
- * the screen by `PHONE_CARD.finaleEnd`.
- */
-export function phoneCardProgress(track: Track, p: number): number {
-	if (track === 'dive') {
-		if (p >= 1) return 1
-		return mix(
-			DIVE.dock,
-			1,
-			easeInOutCubic(clamp01(unlerp(DIVE.hold, 1, p))),
-		)
-	}
-	if (p <= 0) return 1
-	return mix(1, DIVE.dock, easeInOutCubic(clamp01(p / PHONE_CARD.finaleEnd)))
 }
 
 /** Camera pose for a scroll progress on a track. The aspect is kept for symmetry with the DOM warp. */

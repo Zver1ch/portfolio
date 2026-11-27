@@ -20,7 +20,6 @@ const scene = vi.hoisted(() => ({
 	measure: vi.fn(() => ({ cat: null, head: null })),
 	dispose: vi.fn(),
 	renderer: { clear: vi.fn() },
-	setScreenPage: vi.fn(),
 }))
 const createRoomScene = vi.hoisted(() =>
 	vi.fn(async (options: { onProgress?: (f: number) => void }) => {
@@ -71,10 +70,8 @@ vi.mock('../lib/scroll-anchor', () => ({
 }))
 
 import { ROOM_LOAD } from '../config/tuning'
-import { createPortal } from '../lib/portal'
 import { createDirector, type Director } from '../model/director'
 import { requestFeed } from '../model/feed-bus'
-import { registerPortal } from '../model/portals'
 import {
 	failRoom,
 	getRoomState,
@@ -288,29 +285,17 @@ describe('RoomLayer', () => {
 		expect(gagProxy).toHaveAttribute('tabindex', '-1')
 	})
 
-	it('uses the painted screen in lite mode and paints the portal pages for it', async () => {
+	it('shows the real page through the monitor in lite mode too, and caps its pixel ratio lower', async () => {
 		hooks.fullViewport = false
-		const portal = document.createElement('div')
-		portal.textContent = 'I build layouts.'
-		document.body.append(portal)
-		const unregister = registerPortal('dive', createPortal(portal))
-		try {
-			render(<RoomLayer onPet={() => {}} />)
-			await flush()
-			expect(document.documentElement.dataset.roomMode).toBe('lite')
-			expect(createRoomScene).toHaveBeenCalledWith(
-				expect.objectContaining({ fakeScreen: true }),
-			)
-			// Both tracks get their page (jsdom has no 2D context, so the
-			// registered portal's picture is null here too, like the missing one's).
-			const tracks = vi
-				.mocked(scene.setScreenPage)
-				.mock.calls.map(([track]) => track)
-			expect(tracks).toEqual(['dive', 'finale'])
-		} finally {
-			unregister()
-			portal.remove()
-		}
+		render(<RoomLayer onPet={() => {}} />)
+		await flush()
+		expect(document.documentElement.dataset.roomMode).toBe('lite')
+		expect(createRoomScene).toHaveBeenCalledWith(
+			expect.objectContaining({ fakeScreen: false }),
+		)
+		expect(createDirector).toHaveBeenCalledWith(
+			expect.objectContaining({ mode: 'lite' }),
+		)
 	})
 
 	it('falls back to static when the scene chunk is rejected', async () => {

@@ -6,27 +6,13 @@ import { SCREEN } from '../config/room-layout'
 /** Corner order everywhere: top-left, top-right, bottom-right, bottom-left. */
 export type Quad = readonly [Vec2, Vec2, Vec2, Vec2]
 
-/**
- * The monitor takes the viewport's aspect, so the dive ends exactly at
- * identity. `floor` lowers the range's narrow end: phone variant `c` turns
- * the monitor into a portrait panel in the viewport's own aspect.
- */
-export function screenAspect(
-	viewportAspect: number,
-	floor: number = SCREEN.aspectRange[0],
-): number {
-	return clamp(
-		viewportAspect,
-		Math.min(floor, SCREEN.aspectRange[0]),
-		SCREEN.aspectRange[1],
-	)
+/** The monitor takes the viewport's aspect, so the dive ends exactly at identity. */
+export function screenAspect(viewportAspect: number): number {
+	return clamp(viewportAspect, SCREEN.aspectRange[0], SCREEN.aspectRange[1])
 }
 
-export function screenWidth(
-	viewportAspect: number,
-	floor: number = SCREEN.aspectRange[0],
-): number {
-	return SCREEN.height * screenAspect(viewportAspect, floor)
+export function screenWidth(viewportAspect: number): number {
+	return SCREEN.height * screenAspect(viewportAspect)
 }
 
 /** World corners of the screen quad (facing +Z) for a viewport aspect. */
@@ -37,8 +23,8 @@ export function screenCorners(
 }
 
 /**
- * Lite mode (plan §3.4): the part of the screen that stands in for the page,
- * a column of the screen's height in the viewport's own aspect, centred. On
+ * Lite mode (plan §3.4): the part of the screen that shows the page, a
+ * column of the screen's height in the viewport's own aspect, centred. On
  * landscape viewports it is the whole screen; a phone sees a narrow page in
  * the middle of the monitor, and the dive ends with that column on the
  * viewport exactly.

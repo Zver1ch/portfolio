@@ -2,18 +2,13 @@ import { gsap } from '@/shared/lib/gsap/register'
 import { smoothstep } from '@/shared/lib/math/ease'
 import type { Quad } from '@/shared/lib/math/homography'
 import { type CameraPose, unprojectPoint } from '@/shared/lib/math/projection'
-import { PHONE_TRAITS, type PhoneVariant } from '../config/phone-variant'
 import { GAGS, OVERLAY, POINTER_LOOK_DEPTH } from '../config/tuning'
 import {
 	cameraAt,
 	dawnFactor,
 	finaleUndock,
 	liteDiveCamera,
-	liteFade,
 	liteFinaleCamera,
-	phoneCardProgress,
-	phoneDiveCamera,
-	phoneFinaleCamera,
 } from '../lib/camera-path'
 import type { DprGovernor } from '../lib/dpr-governor'
 import { createFish, type Fish, stepFish } from '../lib/fish'
@@ -32,7 +27,6 @@ import {
 	overlayToWorld,
 	risingPlacement,
 } from '../lib/overlay'
-import { dockedQuad } from '../lib/portal'
 import type { Rect } from '../lib/scene/cat/cat'
 import type { RoomScene } from '../lib/scene/create-room-scene'
 import { advance } from '../lib/scene-time'
@@ -41,15 +35,13 @@ import type { DirectorFrame, Phase } from './frame'
 import { type PhaseInput, resolvePhase } from './phase'
 import { getPortal } from './portals'
 import type { RoomMode } from './room-mode'
-import { landRoom, setRoomPhase } from './room-store'
+import { setRoomPhase } from './room-store'
 import type { Timeline } from './timeline'
 
 export type DirectorDeps = {
 	scene: RoomScene
 	timeline: Timeline
 	mode: Exclude<RoomMode, 'static'>
-	/** Lite mode's phone variant (Gate 2 round 6); the round-5 lite when absent. */
-	variant?: PhoneVariant
 	/** The fixed layer: hidden whenever no frame is needed. */
 	layer: HTMLElement
 	/** The pet proxy button to keep over the cat, when there is one. */
@@ -133,16 +125,12 @@ function riseEnvelope(elapsed: number, duration: number, rise: number): number {
  * room on the pull-back with the page shrinking back into the monitor, the
  * cat sitting as before (the sleeping cat went at Gate 2, round 3);
  * `inside` draws nothing but the gags of plan §3.10, through the overlay.
- * Lite mode runs the same two tracks on its own cameras with the page
- * painted on the monitor, and crossfades the layer with the real page at
- * the end of the dive and the start of the finale instead of warping it.
+ * Lite mode runs the same two tracks on its own cameras, the page warped
+ * onto the monitor's page column instead of the whole screen, and goes
+ * `off` between the stages.
  */
 export function createDirector(deps: DirectorDeps): Director {
 	const { scene, timeline, mode, layer, proxy, gagProxy, governor } = deps
-	// The phone variants are lite's alone; full mode never branches on them.
-	const variant: PhoneVariant =
-		mode === 'lite' ? (deps.variant ?? 'default') : 'default'
-	const traits = PHONE_TRAITS[variant]
 	const html = document.documentElement
 	const clock = { current: 0 }
 	const wall = deps.now ?? (() => performance.now() / 1000)
@@ -188,104 +176,40 @@ export function createDirector(deps: DirectorDeps): Director {
 		element.style.height = `${rect.height.toFixed(1)}px`
 	}
 
-	/** Variant `c`: the page card of the last frame, in CSS px. */
-	let card: Quad | null = null
-
-	/** The card lies over most of the cat: no pet target through it. */
-	const underCard = (rect: Rect): boolean => {
-		if (!card) return false
-		const xs = card.map((corner) => corner[0])
-		const ys = card.map((corner) => corner[1])
-		const width =
-			Math.min(rect.x + rect.width, Math.max(...xs)) -
-			Math.max(rect.x, Math.min(...xs))
-		const height =
-			Math.min(rect.y + rect.height, Math.max(...ys)) -
-			Math.max(rect.y, Math.min(...ys))
-		return (
-			Math.max(0, width) * Math.max(0, height) >
-			0.5 * rect.width * rect.height
-		)
-	}
-
-	/**
-	 * Variant `a`: the room lies under the page and the first section slides
-	 * over it, so the proxy stops where that section begins; the credits are
-	 * a sibling of the finale's stage and cover the cat the same way. Variant
-	 * `c` hides the proxy while the card covers the cat.
-	 */
-	const uncovered = (rect: Rect | null): Rect | null => {
-		if (!rect) return rect
-		if (traits.card) return underCard(rect) ? null : rect
-		if (!traits.backdrop) return rect
-		const cover =
-			phase === 'finale'
-				? document.querySelector('[data-credits-roll]')
-				: getPortal('dive')?.element
-		if (!cover) return rect
-		const bottom = Math.min(
-			rect.y + rect.height,
-			cover.getBoundingClientRect().top,
-		)
-		const height = bottom - rect.y
-		return height < rect.height * 0.3 ? null : { ...rect, height }
-	}
-
 	const placeProxy = () => {
 		placeRect(
 			proxy,
-			phase === 'room' || phase === 'finale'
-				? uncovered(scene.measure().cat)
-				: null,
+			phase === 'room' || phase === 'finale' ? scene.measure().cat : null,
 		)
 	}
 
 	const roomCamera = (aspect: number): CameraPose =>
 		mode === 'full'
 			? cameraAt('dive', timeline.dive, aspect)
-			: variant === 'default'
-				? liteDiveCamera(timeline.dive, aspect)
-				: phoneDiveCamera(variant, timeline.dive, aspect)
+			: liteDiveCamera(timeline.dive, aspect)
 
 	const finaleCamera = (aspect: number): CameraPose =>
 		mode === 'full'
 			? cameraAt('finale', timeline.finale, aspect)
-			: variant === 'default'
-				? liteFinaleCamera(timeline.finale, aspect)
-				: phoneFinaleCamera(variant, timeline.finale, aspect)
-
-	/** Lite mode crossfades the layer with the page over each stage (plan §3.4); full mode and the phone variants never fade. */
-	const layerOpacity = (finale: boolean): number =>
-		mode === 'full' || variant !== 'default'
-			? 1
-			: finale
-				? liteFade('finale', timeline.finale)
-				: liteFade('dive', timeline.dive)
+			: liteFinaleCamera(timeline.finale, aspect)
 
 	/**
-	 * The page on the monitor: in full mode the portal follows the projected
-	 * screen, docking at the end of the dive and undocking at the start of
-	 * the finale. Variants `b` and `c` do the same with the page column of
-	 * the stuck section; `c` keeps the camera still and moves the card
-	 * instead, with a hole in the canvas following it.
+	 * The page on the monitor: the portal follows the projected screen (the
+	 * page column of the stuck section in lite), docking at the end of the
+	 * dive and undocking at the start of the finale.
 	 */
 	const warpPage = (
 		finale: boolean,
 		camera: CameraPose,
 		width: number,
 		height: number,
-	): DirectorFrame['hole'] => {
-		if (mode !== 'full' && !traits.domPage) return undefined
+	) => {
 		const quad =
 			mode === 'full'
 				? projectScreen(camera, width, height)
 				: projectColumn(camera, width, height)
 		const track = finale ? 'finale' : 'dive'
-		const progress = traits.card
-			? phoneCardProgress(track, timeline[track])
-			: finale
-				? finaleUndock(timeline.finale)
-				: timeline.dive
+		const progress = finale ? finaleUndock(timeline.finale) : timeline.dive
 		const portal = getPortal(track)
 		// Lite's portal sticks instead of pinning: once its stage has scrolled
 		// on (the credits pushing the finale up), its box is above the
@@ -300,15 +224,6 @@ export function createDirector(deps: DirectorDeps): Director {
 			width,
 			height,
 		)
-		if (!traits.card || !quad) return undefined
-		return progress >= 1
-			? [
-					[0, 0],
-					[width, 0],
-					[width, height],
-					[0, height],
-				]
-			: dockedQuad(quad, progress, width, height)
 	}
 
 	const phaseInput = (): PhaseInput => ({
@@ -335,8 +250,6 @@ export function createDirector(deps: DirectorDeps): Director {
 
 	const setPhase = (next: Phase) => {
 		if (phase === next) return
-		// Lite: the room leaves the first section only once the dive has landed.
-		if (mode === 'lite' && phase === 'room' && next === 'off') landRoom()
 		phase = next
 		html.dataset.roomPhase = next
 		setRoomPhase(next)
@@ -350,9 +263,8 @@ export function createDirector(deps: DirectorDeps): Director {
 			scene.renderer.clear()
 			showLayer(false)
 		}
-		if (phase === 'inside' || traits.domPage) getPortal('dive')?.dock()
+		getPortal('dive')?.dock()
 		getPortal('finale')?.dock()
-		card = null
 		placeProxy()
 		placeRect(gagProxy, null)
 		syncSize()
@@ -487,7 +399,6 @@ export function createDirector(deps: DirectorDeps): Director {
 		}
 		syncSize()
 		scene.render(frame, dt)
-		layer.style.opacity = '1'
 		showLayer(true)
 		placeRect(gagProxy, gag.kind === 'peek' ? scene.measure().head : null)
 		return 'drawn'
@@ -501,9 +412,7 @@ export function createDirector(deps: DirectorDeps): Director {
 		const camera = finale
 			? finaleCamera(width / height)
 			: roomCamera(width / height)
-		// Before the frame: the hole must match the card drawn in it.
-		const hole = warpPage(finale, camera, width, height)
-		card = hole ?? null
+		warpPage(finale, camera, width, height)
 		const frame: DirectorFrame = {
 			phase,
 			camera,
@@ -528,15 +437,13 @@ export function createDirector(deps: DirectorDeps): Director {
 			reach: null,
 			fish: null,
 			stepped: false,
-			hole,
 		}
 		// A pixel-ratio change resizes, and so clears, the canvas: before the
-		// frame, never after it (lite's opaque layer would flash its ink).
+		// frame, never after it.
 		syncSize()
 		const dpr = governor.sample(dt)
 		if (dpr !== null) scene.resize(width, height, dpr)
 		scene.render(frame, dt)
-		layer.style.opacity = String(layerOpacity(finale))
 		showLayer(true)
 		placeProxy()
 		placeRect(gagProxy, null)
@@ -546,10 +453,8 @@ export function createDirector(deps: DirectorDeps): Director {
 		disposed = true
 		stop()
 		// The layer outlives the director (a mode switch brings a new one that
-		// starts from "hidden"): leave it hidden and unfaded, or lite's opaque
-		// ink would stay over the page until a stage draws again.
+		// starts from "hidden"): leave it hidden.
 		layer.style.visibility = 'hidden'
-		layer.style.removeProperty('opacity')
 		shown = false
 		if (proxy) proxy.style.display = 'none'
 		if (gagProxy) gagProxy.style.display = 'none'

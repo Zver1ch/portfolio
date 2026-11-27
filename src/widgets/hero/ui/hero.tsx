@@ -7,14 +7,16 @@ import { HeroCopy } from './hero-copy'
 
 /**
  * The hero stage (plan §3.4): the poster slot and the portal holding the
- * first 2D section, stacked in the static layout and overlaid once the full
- * room runs. In lite mode the stack stays, the portal sticks to the top of
- * the viewport and a spacer gives the stage the dive's scroll length: the
- * canvas covers the stuck section while the camera flies in and crossfades
- * to it at the end. The hero copy is a sibling of the stage, never a child:
- * a pinned stage gets `position: fixed` and transforms that would trap it
- * under the canvas. The slot holds the loader veil (the face button until
- * the first frame) and the static face button; CSS decides which one shows.
+ * first 2D section, stacked in the static layout and overlaid once a room
+ * runs. In lite mode the portal sticks to the top of the viewport over the
+ * slot and a spacer gives the stage the dive's scroll length (one viewport
+ * height): the canvas covers the stuck section, which shows through the
+ * monitor's hole, warped onto its page column, while the camera pushes in,
+ * and is the page again at the end. The hero copy is a sibling of the
+ * stage, never a child: a pinned stage gets `position: fixed` and
+ * transforms that would trap it under the canvas. The slot holds the loader
+ * veil (the face button until the first frame) and the static face button;
+ * CSS decides which one shows.
  */
 /** Zero-size markers at the portal's corners: where the DOM warp lands (e2e, plan §8). */
 const CORNERS = ['tl', 'tr', 'br', 'bl'] as const
@@ -37,7 +39,7 @@ export function Hero({ children }: { children: ReactNode }) {
 			>
 				<div
 					data-slot
-					className='relative h-svh room-full:col-start-1 room-full:row-start-1 room-full:h-lvh phone-b:col-start-1 phone-b:row-start-1 phone-c:col-start-1 phone-c:row-start-1'
+					className='relative h-svh room-full:col-start-1 room-full:row-start-1 room-full:h-lvh room-lite:col-start-1 room-lite:row-start-1'
 				>
 					<RoomPoster variant='night' priority />
 					<div
@@ -56,7 +58,7 @@ export function Hero({ children }: { children: ReactNode }) {
 				</div>
 				<div
 					data-portal
-					className='relative z-10 room-full:col-start-1 room-full:row-start-1 room-full:h-lvh room-lite:sticky room-lite:top-0 phone-a:static phone-b:col-start-1 phone-b:row-start-1 phone-c:col-start-1 phone-c:row-start-1'
+					className='relative z-10 room-full:col-start-1 room-full:row-start-1 room-full:h-lvh room-lite:sticky room-lite:top-0 room-lite:col-start-1 room-lite:row-start-1'
 				>
 					{children}
 					{CORNERS.map((corner) => (
@@ -71,7 +73,7 @@ export function Hero({ children }: { children: ReactNode }) {
 				<div
 					data-stage-spacer
 					aria-hidden
-					className='hidden room-lite:block room-lite:h-[120svh] phone-a:hidden phone-b:h-[100svh] phone-c:h-[60svh]'
+					className='hidden room-lite:block room-lite:h-[100svh]'
 				/>
 			</PortalStage>
 			<HeroCopy />

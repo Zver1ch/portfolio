@@ -9,14 +9,15 @@ import { Credits } from './credits'
 /**
  * The finale stage (plan §2, §3.4): the footer statement is the page the
  * camera pulls back from, so it is the portal; the dawn room is the slot.
- * Stacked in the static layout, overlaid once the full room runs, where the
+ * Stacked in the static layout, overlaid once a room runs. In full mode the
  * stage pins and the credits are a sibling of it, never a child: pinned at
  * the footer's bottom edge they roll in over the last stretch of the
  * pull-back, as a column on the left so the cat stays in reach. In lite mode
- * the statement sticks to the top of the viewport under the canvas while
- * the slot and a spacer scroll by (the pull-back's length), and the credits
- * follow in the flow, rolling in over the dawn room, which the lite camera
- * frames with the cat above them.
+ * the statement sticks to the top of the viewport over the slot, shrinking
+ * into the monitor under the canvas while a spacer scrolls by (the
+ * pull-back's length, 0.8 viewport heights), and the credits follow in the
+ * flow, rolling in over the dawn room, which the lite camera frames with
+ * the cat above them.
  */
 export function Finale({ children }: { children: ReactNode }) {
 	return (
@@ -27,13 +28,13 @@ export function Finale({ children }: { children: ReactNode }) {
 			>
 				<div
 					data-portal
-					className='relative z-10 flex min-h-svh items-center bg-ink px-4 py-24 sm:px-6 room-full:col-start-1 room-full:row-start-1 room-full:h-lvh room-lite:sticky room-lite:top-0 phone-a:static phone-b:col-start-1 phone-b:row-start-1 phone-c:col-start-1 phone-c:row-start-1'
+					className='relative z-10 flex min-h-svh items-center bg-ink px-4 py-24 sm:px-6 room-full:col-start-1 room-full:row-start-1 room-full:h-lvh room-lite:sticky room-lite:top-0 room-lite:col-start-1 room-lite:row-start-1'
 				>
 					<div className='mx-auto w-full max-w-7xl'>{children}</div>
 				</div>
 				<div
 					data-slot
-					className='relative h-svh room-full:col-start-1 room-full:row-start-1 room-full:h-lvh phone-b:col-start-1 phone-b:row-start-1 phone-c:col-start-1 phone-c:row-start-1'
+					className='relative h-svh room-full:col-start-1 room-full:row-start-1 room-full:h-lvh room-lite:col-start-1 room-lite:row-start-1'
 				>
 					<RoomPoster variant='dawn' />
 					<div
@@ -50,7 +51,7 @@ export function Finale({ children }: { children: ReactNode }) {
 				<div
 					data-stage-spacer
 					aria-hidden
-					className='hidden room-lite:block room-lite:h-[80svh] phone-a:hidden phone-b:h-[80svh] phone-c:h-[50svh]'
+					className='hidden room-lite:block room-lite:h-[80svh]'
 				/>
 			</PortalStage>
 			<div

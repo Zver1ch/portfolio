@@ -28,87 +28,40 @@ export const DAWN_CAMERA: CameraPose = {
 /** Control point of the pull-back from the screen to the dawn camera. */
 export const FINALE_CONTROL: Vec3 = [0, 1.3, 0.1]
 
-/** Lite mode pushes a stage camera away on narrow viewports: `max(1, LITE_PULLBACK / aspect)`. */
-export const LITE_PULLBACK = 1.0
-
 /**
- * Lite mode on portrait viewports (plan §3.4): the pulled-back camera aims
- * lower than the stock one, so the desk top sits at this share of the frame's
- * height from the top. The hero leaves the bottom to the name, the dawn
- * leaves it to the credits. Blended in between `portraitFrom` and
- * `portraitTo` (viewport aspects) so a square window gets the stock aim.
+ * Lite mode (plan §3.4, the owner's choice at Gate 2 round 6): the stage
+ * cameras of a portrait viewport, the stock framings with a phone's field of
+ * view, composed from close by so the whole desk and a big cat fill the
+ * frame and the monitor is in the shot to fly into. The hero camera leaves
+ * the bottom to the name; the dawn one, from the left, keeps the cat on the
+ * right above the credits. Each is blended to the stock pose on landscape
+ * viewports over `LITE_FRAMING.portraitTo..portraitFrom` (viewport aspects),
+ * so a square window gets the stock framing.
  */
+export const LITE_CAMERAS = {
+	hero: {
+		position: [1.15, 1.35, 0.8],
+		target: [0.52, 0.9, -1.1],
+		fov: 52,
+	},
+	dawn: {
+		position: [0.0, 1.4, 0.9],
+		target: [0.5, 0.72, -1.0],
+		fov: 50,
+	},
+} as const satisfies Record<string, CameraPose>
+
 export const LITE_FRAMING = {
-	deskShare: { hero: 0.42, dawn: 0.36 },
 	portraitFrom: 1.0,
 	portraitTo: 0.8,
-	/** The lite dive's Bézier control point, relative to the midpoint of the path. */
-	diveBow: [-0.2, 0, -0.15] as Vec3,
 } as const
 
 /**
- * Gate 2 round 6 (`config/phone-variant.ts`): the stage cameras of the three
- * phone variants, composed for a portrait frame from close by instead of
- * backing the stock cameras off. Each is blended to the stock pose on
- * landscape viewports over `LITE_FRAMING.portraitTo..portraitFrom`.
+ * Lite mode: the dive is a straight push into the monitor; the pull-back
+ * bows forward, around the desk, to the dawn camera (an offset from the
+ * midpoint of the path).
  */
-export const PHONE_CAMERAS = {
-	/** The still: the cat from its right, the monitor over its shoulder; the dawn one leaves the bottom half to the credits. */
-	a: {
-		hero: {
-			position: [1.5, 1.05, 0.54],
-			target: [0.7, 0.8, -0.84],
-			fov: 55,
-		},
-		dawn: {
-			position: [1.45, 1.0, 0.55],
-			target: [0.65, 0.88, -0.85],
-			fov: 48,
-		},
-	},
-	/** The short dive: the stock hero framing with a phone's field of view, so the monitor is in the shot to fly into. */
-	b: {
-		hero: {
-			position: [1.15, 1.35, 0.8],
-			target: [0.52, 0.9, -1.1],
-			fov: 52,
-		},
-		dawn: {
-			position: [0.0, 1.4, 0.9],
-			target: [0.5, 0.72, -1.0],
-			fov: 50,
-		},
-	},
-	/** The card: frontal and level, the cat in the lower half under the name, the portrait monitor beside it. */
-	c: {
-		hero: {
-			position: [0.95, 1.18, 0.75],
-			target: [0.55, 1.18, -0.9],
-			fov: 55,
-		},
-		dawn: {
-			position: [1.0, 1.0, 0.8],
-			target: [0.55, 0.85, -0.9],
-			fov: 50,
-		},
-	},
-} as const satisfies Record<string, { hero: CameraPose; dawn: CameraPose }>
-
-/** Variant b: the dive is a straight push-in; the pull-back bows forward, around the desk, to the dawn camera. Offsets from the midpoint. */
-export const PHONE_BOW = {
-	dive: [0, 0, 0] as Vec3,
-	finale: [0.1, 0.1, 0.35] as Vec3,
-} as const
-
-/**
- * Variant c: the monitor is a vertical panel, 9:16 at the narrowest (a coder's
- * second screen turned portrait); the page card grows out of it over the
- * whole dive track and is back in it by `finaleEnd` of the finale's.
- */
-export const PHONE_CARD = {
-	screenAspectFloor: 0.5625,
-	finaleEnd: 0.45,
-} as const
+export const LITE_FINALE_BOW: Vec3 = [0.1, 0.1, 0.35]
 
 /** Dive progress map (0..1 of the pinned scroll). */
 export const DIVE = {
