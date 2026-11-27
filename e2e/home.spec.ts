@@ -1,108 +1,42 @@
-import { expect, type Page, test } from '@playwright/test'
+import { expect, test } from '@playwright/test'
+import { credits } from '../src/shared/config/credits'
 import { profile } from '../src/shared/config/profile'
+import {
+	collectProblems,
+	DESKTOP,
+	gotoHydrated,
+	HEADER_HEIGHT,
+	heroCat,
+	horizontalOverflow,
+	invisibleText,
+	scrollThrough,
+	waitForScrollToSettle,
+	wordsBrokenAcrossLines,
+} from './helpers'
 
-const DESKTOP = { width: 1440, height: 900 }
-const CHAPTERS = [
-	{ link: 'Обо мне', heading: /Кот идёт/ },
-	{ link: 'Стек', heading: /Чем я/ },
-	{ link: 'Проекты', heading: /Проекты появятся/ },
-	{ link: 'Связаться', heading: /Помахать/ },
+const SECTIONS = [
+	{ link: 'About', heading: 'About' },
+	{ link: 'Stack', heading: 'Stack' },
+	{ link: 'Contact', heading: 'Contact' },
 ]
-const HEADER_HEIGHT = 64
-
-function collectProblems(page: Page) {
-	const problems: string[] = []
-	page.on('console', (message) => {
-		if (message.type() === 'error') problems.push(message.text())
-	})
-	page.on('pageerror', (error) => problems.push(error.message))
-	page.on('response', (response) => {
-		if (response.status() >= 400)
-			problems.push(`${response.status()} ${response.url()}`)
-	})
-	return problems
-}
-
-/** React has hydrated the page, so GSAP scenes and Lenis are set up. */
-async function gotoHydrated(page: Page) {
-	await page.goto('/')
-	await page.waitForFunction(() => {
-		const h1 = document.querySelector('h1')
-		return (
-			h1 !== null &&
-			Object.keys(h1).some((key) => key.startsWith('__react'))
-		)
-	})
-	await page.evaluate(
-		() =>
-			new Promise((resolve) =>
-				requestAnimationFrame(() => requestAnimationFrame(resolve)),
-			),
-	)
-}
-
-function prologueCat(page: Page) {
-	return page.getByRole('button', { name: 'Погладить кота', exact: true })
-}
-
-async function waitForScrollToSettle(page: Page) {
-	await expect
-		.poll(
-			async () => {
-				const before = await page.evaluate(() => window.scrollY)
-				await page.waitForTimeout(150)
-				return (await page.evaluate(() => window.scrollY)) === before
-			},
-			{ timeout: 10_000 },
-		)
-		.toBe(true)
-}
-
-async function horizontalOverflow(page: Page) {
-	return page.evaluate(
-		() =>
-			Math.max(
-				document.documentElement.scrollWidth,
-				document.body.scrollWidth,
-			) - window.innerWidth,
-	)
-}
-
-/** Wheel through the whole page like a reader, calling `check` at every step. */
-async function scrollThrough(page: Page, check?: () => Promise<void>) {
-	await page.mouse.move(10, 300)
-	for (let step = 0; step < 80; step++) {
-		await page.mouse.wheel(0, 500)
-		await page.waitForTimeout(60)
-		await check?.()
-		const atBottom = await page.evaluate(
-			() =>
-				window.scrollY + window.innerHeight >=
-				document.documentElement.scrollHeight - 2,
-		)
-		if (atBottom) break
-	}
-	await waitForScrollToSettle(page)
-}
 
 test.describe('without JavaScript', () => {
 	test.use({ javaScriptEnabled: false })
 
-	test('the server HTML tells the whole story', async ({ page }) => {
+	test('the server HTML carries the whole page', async ({ page }) => {
 		await page.goto('/')
 
+		await expect(page.locator('html')).toHaveAttribute('lang', 'en')
 		await expect(
 			page.getByRole('heading', { level: 1, name: profile.name }),
 		).toBeVisible()
 		await expect(page.getByText(profile.role)).toBeVisible()
+		await expect(page.getByText(profile.tagline)).toBeVisible()
+		await expect(page.getByText(profile.statement)).toBeVisible()
 		await expect(page.getByText(profile.about)).toBeVisible()
-		for (const shelf of ['Использую', 'В процессе'])
-			await expect(
-				page.getByRole('heading', { level: 3, name: shelf }),
-			).toBeVisible()
 		for (const skill of [...profile.skills, ...profile.learning])
 			await expect(
-				page.getByText(skill, { exact: true }).first(),
+				page.getByRole('rowheader', { name: skill, exact: true }),
 			).toBeVisible()
 		for (const item of profile.lookingFor)
 			await expect(
@@ -112,6 +46,15 @@ test.describe('without JavaScript', () => {
 			await expect(
 				page.getByRole('link', { name: link.label }),
 			).toHaveAttribute('href', link.href)
+		await expect(page.getByText(profile.footerStatement)).toBeVisible()
+		for (const credit of credits)
+			await expect(
+				page.getByRole('link', { name: `“${credit.title.label}”` }),
+			).toHaveAttribute('href', credit.title.href)
+
+		await expect(page.locator('[data-poster="night"] img')).toBeVisible()
+		await expect(page.locator('canvas')).toHaveCount(0)
+		await expect(heroCat(page)).toBeVisible()
 	})
 
 	test('the name keeps both words whole at 360px', async ({ page }) => {
@@ -120,36 +63,6 @@ test.describe('without JavaScript', () => {
 		expect(await wordsBrokenAcrossLines(page)).toEqual([])
 	})
 })
-
-/** Words of the h1 whose characters do not all sit on one line. */
-function wordsBrokenAcrossLines(page: Page) {
-	return page.locator('h1').evaluate((h1) => {
-		const tops: { char: string; top: number }[] = []
-		const walker = document.createTreeWalker(h1, NodeFilter.SHOW_TEXT)
-		while (walker.nextNode()) {
-			const node = walker.currentNode as Text
-			for (let i = 0; i < node.length; i++) {
-				const range = document.createRange()
-				range.setStart(node, i)
-				range.setEnd(node, i + 1)
-				tops.push({
-					char: node.data[i],
-					top: Math.round(range.getBoundingClientRect().top),
-				})
-			}
-		}
-		const words: { char: string; top: number }[][] = [[]]
-		for (const entry of tops) {
-			if (/\s/.test(entry.char)) words.push([])
-			else words[words.length - 1].push(entry)
-		}
-		return words
-			.filter((word) =>
-				word.some((c) => Math.abs(c.top - word[0].top) > 4),
-			)
-			.map((word) => word.map((c) => c.char).join(''))
-	})
-}
 
 test.describe('hero', () => {
 	test.beforeEach(async ({ page }) => {
@@ -184,19 +97,32 @@ test.describe('hero', () => {
 		expect(new Set(states)).toEqual(new Set(['visible|1']))
 	})
 
-	test('the animated name keeps both words whole at 360px', async ({
-		page,
-	}) => {
-		await page.setViewportSize({ width: 360, height: 740 })
+	test('nothing covers the name', async ({ page }) => {
 		await gotoHydrated(page)
-		await page.waitForTimeout(2600)
-		expect(await wordsBrokenAcrossLines(page)).toEqual([])
-		expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0)
+		// The copy lets pointer events through to the room on purpose, so give
+		// it pointer events back for the hit test: what matters is that no
+		// stage, canvas or poster is stacked above it (plan §3.2).
+		const onTop = await page.locator('h1').evaluate((h1) => {
+			const copy = h1.closest<HTMLElement>('[data-hero-copy]')
+			if (copy) copy.style.pointerEvents = 'auto'
+			const rect = h1.getBoundingClientRect()
+			const hit = document.elementFromPoint(
+				rect.left + 10,
+				rect.top + rect.height / 2,
+			)
+			if (copy) copy.style.pointerEvents = ''
+			return hit !== null && h1.contains(hit)
+		})
+		expect(onTop).toBe(true)
 	})
 })
 
 test.describe('cat', () => {
-	test('keyboard reaches the prologue cat and boops with Enter and Space', async ({
+	// The face buttons are the static page's pet target; the live room's proxy
+	// has its own tests in room.spec.ts.
+	test.use({ reducedMotion: 'reduce' })
+
+	test('keyboard reaches every face button, each boops with Enter and Space', async ({
 		page,
 	}) => {
 		await gotoHydrated(page)
@@ -204,7 +130,7 @@ test.describe('cat', () => {
 		await expect(counter).toHaveText('0')
 
 		const visited: string[] = []
-		for (let i = 0; i < 40; i++) {
+		for (let i = 0; i < 60; i++) {
 			await page.keyboard.press('Tab')
 			const focused = await page.evaluate(() => {
 				const el = document.activeElement
@@ -219,19 +145,18 @@ test.describe('cat', () => {
 			})
 			if (!focused) break
 			expect(focused.hidden, focused.label).toBe(false)
-			if (visited.includes(focused.label) && visited.length > 2) break
+			if (visited.includes(focused.label) && focused.label === 'Zver1ch')
+				break
 			visited.push(focused.label)
 		}
-		expect(visited).toContain('Погладить кота')
-		expect(visited).toContain('Погладить кота на прощание')
-		expect(
-			visited.filter((label) => label.startsWith('Погладить')),
-		).toHaveLength(2)
+		expect(visited[0]).toBe('Skip to content')
+		// The hero, the contact section and the finale each have a face button.
+		expect(visited.filter((label) => label === 'Pet the cat')).toHaveLength(
+			3,
+		)
 
-		const cat = prologueCat(page)
+		const cat = heroCat(page)
 		await cat.focus()
-		await page.keyboard.press('Shift+Tab')
-		await page.keyboard.press('Tab')
 		await expect(cat).toBeFocused()
 		await expect(cat).toHaveCSS(
 			'box-shadow',
@@ -244,15 +169,7 @@ test.describe('cat', () => {
 		await expect(counter).toHaveText('2')
 	})
 
-	test('decorative cats stay out of the tab order', async ({ page }) => {
-		await gotoHydrated(page)
-		const decorative = page.locator('button[aria-hidden="true"]')
-		expect(await decorative.count()).toBeGreaterThan(0)
-		for (const cat of await decorative.all())
-			await expect(cat).toHaveAttribute('tabindex', '-1')
-	})
-
-	test('the first boop fetches the meow and plays it; muted boops stay silent', async ({
+	test('the meow is fetched before the first boop, which plays it; muted boops stay silent', async ({
 		page,
 	}) => {
 		await page.addInitScript(() => {
@@ -270,22 +187,29 @@ test.describe('cat', () => {
 					(window as unknown as { __audio: { starts: number } })
 						.__audio.starts,
 			)
-		await gotoHydrated(page)
-
+		let requests = 0
+		page.on('request', (request) => {
+			if (request.url().endsWith('/sounds/cat-click.mp3')) requests += 1
+		})
 		const sound = page.waitForResponse((response) =>
 			response.url().endsWith('/sounds/cat-click.mp3'),
 		)
-		await prologueCat(page).click()
-		expect((await sound).status()).toBe(200)
-		await expect.poll(starts).toBe(1)
+		await gotoHydrated(page)
 
-		const soundToggle = page.getByRole('button', { name: 'Звук' })
+		// Prefetched on idle after hydration, with no click and no context yet.
+		expect((await sound).status()).toBe(200)
+		expect(await starts()).toBe(0)
+		await heroCat(page).click()
+		await expect.poll(starts).toBe(1)
+		expect(requests).toBe(1)
+
+		const soundToggle = page.getByRole('button', { name: 'Sound' })
 		await expect(soundToggle).toHaveAttribute('aria-pressed', 'true')
 		await soundToggle.click()
 		await expect(soundToggle).toHaveAttribute('aria-pressed', 'false')
 
-		await prologueCat(page).click()
-		await prologueCat(page).click()
+		await heroCat(page).click()
+		await heroCat(page).click()
 		await expect(page.getByTestId('boop-count')).toHaveText('3')
 		await page.waitForTimeout(500)
 		expect(await starts()).toBe(1)
@@ -296,115 +220,149 @@ test.describe('cat', () => {
 
 	test('the boop counter survives a reload', async ({ page }) => {
 		await gotoHydrated(page)
-		await prologueCat(page).click()
-		await prologueCat(page).click()
+		await heroCat(page).click()
+		await heroCat(page).click()
 		await expect(page.getByTestId('boop-count')).toHaveText('2')
-		await expect(page.locator('header')).toContainText('чмоков: 2')
+		await expect(page.locator('header')).toContainText('boops: 2')
 
 		await page.reload()
 		await expect(page.getByTestId('boop-count')).toHaveText('2')
 	})
 })
 
-test.describe('scroll story (full mode)', () => {
+test.describe('sections', () => {
 	test.use({ viewport: DESKTOP })
 
-	test('chapter links land on each heading and nothing stays pinned', async ({
+	test('nav links land on each heading below the header', async ({
 		page,
 	}) => {
 		const problems = collectProblems(page)
 		await gotoHydrated(page)
-		const nav = page.getByRole('navigation', { name: 'Главы' })
+		const nav = page.getByRole('navigation', { name: 'Sections' })
+		// Every scroll position on the way down, to prove the page never turns
+		// back: the browser's own fragment jump racing the smooth scroll did.
+		await page.evaluate(() => {
+			const log: number[] = []
+			Object.assign(window, { __scrollLog: log })
+			window.addEventListener('scroll', () => log.push(window.scrollY), {
+				passive: true,
+			})
+		})
 
-		for (const chapter of CHAPTERS) {
-			await nav.getByRole('link', { name: chapter.link }).click()
+		for (const section of SECTIONS) {
+			await page.evaluate(() => {
+				;(
+					window as unknown as { __scrollLog: number[] }
+				).__scrollLog.length = 0
+			})
+			await nav.getByRole('link', { name: section.link }).click()
 			await waitForScrollToSettle(page)
 			const heading = page.getByRole('heading', {
 				level: 2,
-				name: chapter.heading,
+				name: section.heading,
+				exact: true,
 			})
 			await expect(heading).toBeInViewport()
 			const box = await heading.boundingBox()
 			expect(box?.y).toBeGreaterThanOrEqual(HEADER_HEIGHT)
+			const log = await page.evaluate(
+				() =>
+					(window as unknown as { __scrollLog: number[] })
+						.__scrollLog,
+			)
+			const turnedBack = log.some(
+				(y, i) => i > 0 && y < (log[i - 1] as number) - 1,
+			)
+			expect(turnedBack, `${section.link}: ${log.join(' ')}`).toBe(false)
+			// The hash lands when the smooth scroll completes, a few sub-pixel
+			// frames after the position looks settled.
+			await expect
+				.poll(() => new URL(page.url()).hash, { timeout: 5000 })
+				.toBe(
+					(await nav
+						.getByRole('link', { name: section.link })
+						.getAttribute('href')) as string,
+				)
 		}
 
-		await nav.getByRole('link', { name: 'Пролог' }).click()
+		await nav.getByRole('link', { name: 'Top' }).click()
 		await waitForScrollToSettle(page)
 		await expect(page.getByRole('heading', { level: 1 })).toBeInViewport()
-		await expect(
-			page.getByRole('heading', { level: 2, name: /Кот идёт/ }),
-		).not.toBeInViewport()
 		expect(problems).toEqual([])
 	})
 
-	test('a reader can scroll to the footer without errors', async ({
+	test('a reader can scroll to the credits and back to the top without errors', async ({
 		page,
 	}) => {
 		const problems = collectProblems(page)
 		await gotoHydrated(page)
-		await expect(page.locator('.pin-spacer')).not.toHaveCount(0)
 
 		await scrollThrough(page)
-		await expect(
-			page.getByRole('heading', { level: 2, name: /Помахать/ }),
-		).toBeInViewport()
-		await expect(page.getByText('Конец истории')).toBeInViewport()
+		// The dawn poster is lazy: scrolled into view, it must have loaded.
+		const dawn = page.locator('[data-poster="dawn"] img')
+		await expect(dawn).toHaveCount(1)
+		await expect
+			.poll(() =>
+				dawn.evaluate((img: HTMLImageElement) => img.naturalWidth),
+			)
+			.toBeGreaterThan(0)
+		const ccBy = page.getByRole('link', { name: 'CC BY 4.0' })
+		await expect(ccBy).toBeInViewport()
+		await expect(ccBy).toHaveAttribute(
+			'href',
+			'https://creativecommons.org/licenses/by/4.0/',
+		)
+		await expect(page.locator('[data-credits]')).toContainText(
+			'licensed under CC BY 4.0',
+		)
 
-		await page.mouse.wheel(0, -100_000)
+		await page.getByRole('link', { name: 'Back to top' }).click()
 		await waitForScrollToSettle(page)
 		await expect(page.getByRole('heading', { level: 1 })).toBeInViewport()
 		expect(problems).toEqual([])
+	})
+
+	test('only the shipped cat model may ever be requested', async ({
+		page,
+	}) => {
+		const models: string[] = []
+		page.on('response', (response) => {
+			const url = new URL(response.url())
+			if (/\.(glb|gltf|bin)$/.test(url.pathname))
+				models.push(url.pathname)
+		})
+		await gotoHydrated(page)
+		await scrollThrough(page)
+		expect(models.filter((path) => path !== '/models/cat.glb')).toEqual([])
 	})
 })
 
 test.describe('reduced motion', () => {
 	test.use({ viewport: DESKTOP, reducedMotion: 'reduce' })
 
-	test('no pins and every chapter is readable without scrolling effects', async ({
-		page,
-	}) => {
+	test('no pins and every section is readable', async ({ page }) => {
 		const problems = collectProblems(page)
 		await gotoHydrated(page)
 		await page.waitForTimeout(500)
 		await expect(page.locator('.pin-spacer')).toHaveCount(0)
-
-		const invisible = await page.locator('main').evaluate((main) => {
-			const hidden: string[] = []
-			const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT)
-			while (walker.nextNode()) {
-				const node = walker.currentNode
-				const text = node.textContent?.trim()
-				const parent = node.parentElement
-				if (!text || !parent || parent.closest('[aria-hidden="true"]'))
-					continue
-				let el: Element | null = parent
-				while (el) {
-					const style = getComputedStyle(el)
-					if (
-						style.visibility === 'hidden' ||
-						Number(style.opacity) < 0.5
-					) {
-						hidden.push(text)
-						break
-					}
-					el = el.parentElement
-				}
-			}
-			return hidden
-		})
-		expect(invisible).toEqual([])
-		for (const chapter of CHAPTERS)
+		expect(await invisibleText(page, 'main')).toEqual([])
+		for (const section of SECTIONS)
 			await expect(
-				page.getByRole('heading', { level: 2, name: chapter.heading }),
+				page.getByRole('heading', {
+					level: 2,
+					name: section.heading,
+					exact: true,
+				}),
 			).toBeVisible()
 		expect(problems).toEqual([])
 	})
 })
 
-test.describe('lite mode', () => {
+test.describe('narrow viewports', () => {
 	for (const viewport of [
-		{ width: 1366, height: 657 },
 		{ width: 390, height: 844 },
+		{ width: 360, height: 740 },
+		{ width: 320, height: 640 },
 	]) {
 		test(`${viewport.width}x${viewport.height}: no pins and no sideways scroll`, async ({
 			page,
@@ -413,21 +371,39 @@ test.describe('lite mode', () => {
 			await page.setViewportSize(viewport)
 			await gotoHydrated(page)
 			await expect(page.locator('.pin-spacer')).toHaveCount(0)
-
-			await prologueCat(page).click()
 			expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0)
 
 			await scrollThrough(page, async () => {
 				expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0)
 			})
-			await expect(page.getByText('Конец истории')).toBeInViewport()
+			await expect(
+				page.getByRole('link', { name: 'Back to top' }),
+			).toBeInViewport()
 
+			// The finale's cat is petted with the dawn room held on screen, at
+			// the end of the pull-back (the lite room's proxy, or the static
+			// face button in the slot when no room came).
+			await page.evaluate(() => {
+				const stage = document.querySelector<HTMLElement>(
+					'[data-stage="finale"]',
+				)
+				const portal =
+					stage?.querySelector<HTMLElement>('[data-portal]')
+				if (!stage || !portal) return
+				const top = stage.getBoundingClientRect().top + window.scrollY
+				window.scrollTo(
+					0,
+					top + stage.offsetHeight - portal.offsetHeight,
+				)
+			})
+			await waitForScrollToSettle(page)
+			await page.waitForTimeout(600)
 			await page
-				.getByRole('button', { name: 'Погладить кота на прощание' })
+				.getByRole('button', { name: 'Pet the cat', exact: true })
+				.last()
 				.click()
 			await page.waitForTimeout(300)
 			expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0)
-			await expect(page.locator('.pin-spacer')).toHaveCount(0)
 			expect(problems).toEqual([])
 		})
 	}
@@ -459,11 +435,15 @@ test.describe('lite mode', () => {
 	})
 })
 
-test('unknown route renders the 404 page', async ({ page }) => {
-	await page.goto('/definitely-not-a-page')
-
-	await expect(
-		page.getByRole('heading', { name: 'Page not found' }),
-	).toBeVisible()
-	await expect(page.getByRole('link', { name: 'Go home' })).toBeVisible()
+test('unknown routes and the dev-only lab render the 404 page', async ({
+	page,
+}) => {
+	for (const path of ['/definitely-not-a-page', '/lab']) {
+		const response = await page.goto(path)
+		expect(response?.status(), path).toBe(404)
+		await expect(
+			page.getByRole('heading', { name: 'Page not found' }),
+		).toBeVisible()
+		await expect(page.getByRole('link', { name: 'Go home' })).toBeVisible()
+	}
 })

@@ -1,15 +1,20 @@
 # Portfolio
 
-Backend-less, dark-only personal portfolio ("сайт-визитка", in Russian) built
-on Next.js 16 (App Router) with Feature-Sliced Design and strict tooling. All
-content comes from a typed config in `src/shared/config/profile.ts`.
+Backend-less, dark-only, English personal portfolio built on Next.js 16 (App
+Router) with Feature-Sliced Design and strict tooling: a 3D developer room with
+a cat on the desk, a scroll dive into the monitor, flat 2D sections with huge
+type. All copy comes from a typed config in `src/shared/config/profile.ts`;
+third-party credits are in `CREDITS.md`.
 
 ## Stack
 
 - **Next.js 16** — App Router, React 19, Cache Components and React Compiler enabled
 - **Feature-Sliced Design** — validated with [steiger](https://github.com/feature-sliced/steiger)
 - **Tailwind CSS v4** + **shadcn** (base-nova, Base UI primitives), dark theme only, plum + pink palette tokens in `app/globals.css`
-- **next/font** — Unbounded (display), Onest (body), JetBrains Mono (mono)
+- **next/font** — Unbounded (display), Onest (body), JetBrains Mono (mono), latin subsets
+- **three.js** — the cat room (`src/features/cat-room`), loaded lazily, never in the initial chunks
+- **GSAP** (ScrollTrigger) + **Lenis** — the pinned dive and finale, smooth scrolling
+- **Web Audio** — code-generated ambient and effects, no audio files besides the meow
 - **Biome** — lint + format (tabs, single quotes, no semicolons)
 - **Lefthook** — pre-commit lint, pre-push type-check + FSD validation
 - **Vitest** + **Testing Library** — colocated component tests
@@ -24,7 +29,8 @@ pnpm install
 pnpm dev
 ```
 
-Edit `src/shared/config/profile.ts` — placeholders start with `TODO:`.
+Edit `src/shared/config/profile.ts`; the site publishes only what the owner can
+confirm (no years, employers or e-mail).
 
 ## Scripts
 
@@ -40,6 +46,35 @@ Edit `src/shared/config/profile.ts` — placeholders start with `TODO:`.
 | `pnpm test:coverage` | Run Vitest tests with coverage report |
 | `pnpm test:e2e` | Run Playwright e2e tests |
 | `pnpm run fsd` | Validate FSD layer boundaries |
+| `pnpm assets:model` | Rebuild `public/models/cat.glb` from the source avatar |
+| `pnpm assets:inspect` | Print the model facts; `--write-rig` regenerates `cat-rig.gen.ts` |
+| `pnpm assets:check` | Asset guard: no source models or stray model files under `public/`, rig in sync |
+| `pnpm assets:shots` | Lab screenshots through headless Chromium: `--view`, `--pose`, `--probe`, `--sequence dive\|finale`, `--clip` (cat versus furniture), `--gate` (the Gate 1 package) |
+| `pnpm assets:posters` | Renders the hero and finale posters and the touch icon from the lab |
+| `pnpm assets:page-shots` | Stills of the production page at the moments the owner reviews (the Gate 2 package in `docs/lookdev/gate-2/`); needs a running `pnpm start` |
+
+## The cat room
+
+The home page is a 3D developer room with a cat on the desk, drawn on one
+fixed transparent canvas above the page. It runs in one of three modes,
+decided on the client (the server always renders the static page):
+
+- **full** (wide landscape viewports with motion allowed and real WebGL): the
+  hero pins and the camera dives into the monitor, where the page itself shows
+  through a hole in the canvas; between the stages the cat peeks from the
+  bottom edge, a tap on an empty spot (or "Feed the cat" in the header) drops
+  a fish, Escape stops the gags; the finale pulls back out of the monitor into
+  the dawn room, the cat still sitting on the desk, and the credits rolling in.
+- **lite** (phones, narrow viewports): the same room with a painted screen,
+  no pins, no gags; the canvas fades over the hero and the finale.
+- **static** (reduced motion, no WebGL, Save-Data, or any failure while
+  loading): posters and a 2D face button; nothing moves.
+
+Sound is opt-in: the "Enable sound" chip starts a generated ambient (room
+tone, the PC's hum, sparse plucks, chirps at dawn); the meow and the small
+effects play unless muted. Details, budgets and the test matrix are in
+`AGENTS.md` and `docs/cat-room-plan.md`; the owner's review packages are in
+`docs/lookdev/`.
 
 ## Project structure
 
@@ -48,12 +83,13 @@ app/                  — Next.js App Router routes (thin, import from src/pages
 pages/                — required stub, see pages/README.md
 src/
   pages/     — page compositions (home)
-  widgets/   — composite UI blocks (add when needed)
-  features/  — user interactions (add when needed)
+  widgets/   — site-header, hero, manifesto, about, stack, contact, finale
+  features/  — boop-cat, toggle-sound, cat-room (the 3D scene)
   entities/  — business entities (add when needed)
   shared/    — config (profile, env, routes), lib, ui
 assets/               — source 3D models and their licences (never served, see assets/models/README.md)
-docs/                 — implementation plans (docs/cat-room-plan.md)
+docs/                 — implementation plans (docs/cat-room-plan.md) and look-dev packages (docs/lookdev/)
+scripts/              — asset pipeline: model build, inspect, guard, lab screenshots
 ```
 
 ## E2E tests
@@ -63,7 +99,18 @@ app itself (`pnpm build-start`); locally it reuses a server already running on
 :3000, and in CI it runs `pnpm start` against the build produced earlier in the
 pipeline.
 
-The site has no network dependencies, so the specs are hermetic.
+- `home.spec.ts` — the page without JavaScript, the hero, the face buttons,
+  the sections, reduced motion, narrow viewports, the 404 page.
+- `room.spec.ts` — the live room in full and lite mode, the lazy scene chunk,
+  every fallback to static.
+- `dive.spec.ts`, `finale.spec.ts`, `gags.spec.ts`, `sound.spec.ts` — the
+  pinned dive and its pixel alignment, the finale, the edge intrusions, the
+  sound opt-in and the offline loudness of the ambient.
+
+The 3D specs run serially under software WebGL (SwiftShader) with long
+timeouts. Where Playwright cannot download Chromium, point `CHROME_PATH` at a
+Chromium binary. The site has no network dependencies, so the specs are
+hermetic.
 
 ## Docker
 

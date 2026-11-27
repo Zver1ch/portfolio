@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
 	return {
 		name: profile.name,
 		short_name: profile.handle,
-		description: profile.about,
+		description: profile.tagline,
 		start_url: '/',
 		display: 'standalone',
 		background_color: '#120d16',
