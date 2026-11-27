@@ -36,9 +36,20 @@ describe('HomePage', () => {
 		expect(screen.getAllByText('In use')).toHaveLength(
 			profile.skills.length,
 		)
-		expect(screen.getAllByText('Learning')).toHaveLength(
+		expect(screen.queryAllByText('Learning')).toHaveLength(
 			profile.learning.length,
 		)
+	})
+
+	it('lists the experience from the profile', () => {
+		render(<HomePage />)
+
+		for (const job of profile.experience) {
+			expect(
+				screen.getByRole('heading', { level: 3, name: job.place }),
+			).toBeInTheDocument()
+			expect(screen.getByText(job.summary)).toBeInTheDocument()
+		}
 	})
 
 	it('credits the models with links and has no Projects section', () => {

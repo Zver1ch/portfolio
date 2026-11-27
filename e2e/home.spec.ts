@@ -16,6 +16,7 @@ import {
 
 const SECTIONS = [
 	{ link: 'About', heading: 'About' },
+	{ link: 'Work', heading: 'Work' },
 	{ link: 'Stack', heading: 'Stack' },
 	{ link: 'Contact', heading: 'Contact' },
 ]
@@ -34,6 +35,8 @@ test.describe('without JavaScript', () => {
 		await expect(page.getByText(profile.tagline)).toBeVisible()
 		await expect(page.getByText(profile.statement)).toBeVisible()
 		await expect(page.getByText(profile.about)).toBeVisible()
+		for (const job of profile.experience)
+			await expect(page.getByText(job.summary)).toBeVisible()
 		for (const skill of [...profile.skills, ...profile.learning])
 			await expect(
 				page.getByRole('rowheader', { name: skill, exact: true }),

@@ -84,7 +84,7 @@ win; do not "fix" the code toward the canonical guidance.
 
 - **pre-commit**: Biome check + auto-fix on staged files
 - **pre-push**: type-check (`pnpm tsc`) + FSD validation (`pnpm run fsd`)
-- **CI** (`.github/workflows/ci.yml`): lint → tsc → fsd → tests → build → e2e on push/PR
+- **CI** (`.github/workflows/ci.yml`): lint → tsc → fsd → tests → build on push/PR; the e2e steps are switched off for now (`if: false`), run `pnpm test:e2e` locally
 
 ## Testing
 
@@ -137,10 +137,12 @@ To add a shadcn component: `pnpx shadcn@latest add <component>`
 
 The site is English only and has no backend. All copy lives in the typed
 `profile` object in `src/shared/config/profile.ts`; pages read it directly.
-Publish only facts the owner can confirm: no years of experience or
-employers, never "junior" as a self-title, a skill moves from `learning` to
-`skills` once it has a live demo, projects appear only with a live demo, no
-e-mail (the domain has no MX). The three statements (hero tagline, dive
+The copy follows the owner's resume: role, `experience` and `skills` say the
+same as the resume and nothing beyond it. The NDA employer is never named,
+"junior" is never a self-title (it may appear in `lookingFor`), `learning`
+holds only what is in progress and may be empty (a skill moves from it to
+`skills` once it has a live demo), projects appear only with a
+live demo, no e-mail (the domain has no MX). The three statements (hero tagline, dive
 statement, footer statement) are owner-approved texts: change them only
 with the owner. Third-party credits are typed in
 `src/shared/config/credits.ts` and repeated word for word in `CREDITS.md`.

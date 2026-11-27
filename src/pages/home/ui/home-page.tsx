@@ -4,6 +4,7 @@ import { Statement } from '@/shared/ui/statement'
 import { About } from '@/widgets/about/ui/about'
 import { CatStage } from '@/widgets/cat-stage/ui/cat-stage'
 import { Contact } from '@/widgets/contact/ui/contact'
+import { Experience } from '@/widgets/experience/ui/experience'
 import { Finale } from '@/widgets/finale/ui/finale'
 import { Hero } from '@/widgets/hero/ui/hero'
 import { Manifesto } from '@/widgets/manifesto/ui/manifesto'
@@ -27,6 +28,7 @@ export function HomePage() {
 					<Manifesto />
 				</Hero>
 				<About />
+				<Experience />
 				<Stack />
 				<Contact />
 			</main>
