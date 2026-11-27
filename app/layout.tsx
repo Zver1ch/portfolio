@@ -24,11 +24,14 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
+	metadataBase: new URL(profile.site),
 	title: {
 		default: `${profile.name} — ${profile.role}`,
 		template: `%s | ${profile.name}`,
 	},
 	description: profile.tagline,
+	openGraph: { type: 'website', url: '/', siteName: profile.name },
+	twitter: { card: 'summary_large_image' },
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
