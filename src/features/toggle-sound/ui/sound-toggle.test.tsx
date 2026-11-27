@@ -11,7 +11,7 @@ describe('SoundToggle', () => {
 	it('keeps a stable label and flips aria-pressed', () => {
 		render(<SoundToggle />)
 
-		const button = screen.getByRole('button', { name: 'Звук' })
+		const button = screen.getByRole('button', { name: 'Sound' })
 		expect(button).toHaveAttribute('aria-pressed', 'true')
 
 		fireEvent.click(button)

@@ -1,6 +1,6 @@
 # Cat Room: implementation plan
 
-Status: approved by the owner on 2026-10-04. Start with M0 and M1, then stop at Gate 1.
+Status: approved by the owner on 2026-10-04. Gate 1 passed the same day after seven feedback rounds (see `docs/lookdev/gate-1/README.md`). M2–M8 are built; the Gate 2 package is in `docs/lookdev/gate-2/README.md` and waits for the owner's review on real GPUs, a phone and with sound.
 
 Audience: the implementer, working only from this repository. All paths are repo-relative. Follow `AGENTS.md`: pnpm only, Biome style, FSD without barrels, React Compiler on (no hand-written `useMemo`/`useCallback`/`memo`), dark theme only.
 
@@ -17,7 +17,7 @@ Working agreement:
 1. A 3D hero: a developer's room at night, the cat lounging on the desk in front of the monitor.
 2. The camera dives into the monitor and the screen becomes the page.
 3. Clean 2D sections with huge typography, with the cat intruding from the viewport edges.
-4. The camera pulls back out of the monitor into the room at dawn, the cat asleep, then credits.
+4. The camera pulls back out of the monitor into the room at dawn, the cat still sitting there, then credits. (Gate 2, round 3: the sleeping cat was dropped after two rounds of pose work; the cat sits as in the hero.)
 
 **Non-goals.** Projects section, Russian locale, light theme, custom cursor, PS1 pixelation or vertex jitter, runtime lights, shadows, post-processing, physics engines, external animation files, WebGPU, Open Graph image.
 
@@ -27,11 +27,11 @@ Working agreement:
 
 | # | Decision |
 |---|---|
-| 1 | World: cozy developer room at night. Base set only: desk, modern flat monitor (no CRT or retro devices), PC tower, keyboard, mouse, window with the moon, lamp, plus one pair of socks with a paw print (an object in the room). Anything else needs owner approval at Gate 1. |
+| 1 | World: cozy developer room at night. Base set only: desk, modern flat monitor (no CRT or retro devices), PC tower, keyboard, mouse, window with the moon, lamp, plus the cat's spare pair of stockings dropped on the floor (black, white double stripe, like the pair on its legs; Gate 1 round 6 replaced the paw-print socks). Anything else needs owner approval at Gate 1. |
 | 2 | Structure: 3D hero with a scroll-driven camera, 2D sections with huge type, a second 3D moment at the end, credits. |
 | 3 | Dark only, existing palette tokens, no `dark:` variants. |
-| 4 | The cat gets in the way of work: lying on his side on the desk in front of the monitor, head propped on a paw, tail over the screen; gibberish (`asdfghjkl`) gets typed; on click he stretches and meows. Wholesome, lazy, cat-like, no pin-up staging. The pose render is approved by the owner before anything is built on it. |
-| 5 | Dive into the monitor until the screen fills the viewport and is the page. Finale: pull back out of the monitor; dawn; cat asleep. |
+| 4 | The cat gets in the way of work: sitting on the front edge of the desk next to the mouse, legs dangling over the edge, one paw on the mouse, facing the visitor (Gate 1 decision: the side-lying pose of the first drafts was rejected); gibberish (`asdfghjkl`) gets typed; on click he stretches and meows. Wholesome, lazy, cat-like, no pin-up staging. The pose render is approved by the owner before anything is built on it. |
+| 5 | Dive into the monitor until the screen fills the viewport and is the page. Finale: pull back out of the monitor; dawn; the cat sits as before (no sleeping cat since Gate 2, round 3). |
 | 6 | In 2D sections the cat stays outside the screen and intrudes from the edges (ears, paw swatting the cursor, tail sweep, face against the glass, `asdfgh` typed). A click drops a fish and a paw snatches it. Clicking the cat meows. No walking mini-cat. |
 | 7 | Style: clean flat low-poly, flat palette colours, light painted with colour, full resolution. |
 | 8 | The character GLB is used as authored: bow tie and stockings stay, proportions untouched, `popka` bones never animated. |
@@ -72,6 +72,7 @@ Model A:
 - 24,742 triangles, 16,134 vertices, 7 skinned meshes: `Bow_Scifi Metal Plate_0`, `Bow_Glossy Black Plastic_0`, `Stockings_Glossy Black Plastic_0`, `Stockings_Material_0`, `boykisser_Material_0` (white body, 13,994 triangles), `boykisser_fur 2_0` (pink, 5,606), `boykisser_Glossy Black Plastic_0` (black, 1,254).
 - 4 materials, all `KHR_materials_unlit`, double-sided, no textures. Linear base colours: `Material` 0.8 (white), `fur_2` (0.45, 0.16, 0.15) (dusty pink), `Glossy_Black_Plastic` 0, `Scifi_Metal_Plate` 0.37.
 - One skin with 134 joints (including `_end` leaves). No animations, no morph targets.
+  The shipped `cat.glb` adds three tail joints (`smooth-tail`, see `assets/models/README.md`), 137 in all.
 - Node chain: `Sketchfab_model` (−90° about X) → fbx node (scale 0.01) → `RootNode` → `Armature` (scale ≈ 39.05 with an axis swap) → `Object_4` → `_rootJoint`. Node names carry numeric suffixes (`Head_017`, `Tail.001_05`).
 - Skin weights:
   - Pupils: 64 black vertices on each of `LeftEye` and `RightEye`. The eye bones move the pupils only; there are no eyelids.
@@ -96,14 +97,14 @@ Modes (decided on the client; the server always renders `static`):
 | Step | full | lite | static |
 |---|---|---|---|
 | Load | Server HTML paints the header, hero copy (h1 `profile.name`, `profile.role`, `profile.tagline`) and the loader veil: 2D face, "Building the room…", real progress. The page is scrollable at once. | Same. | Veil hidden by CSS; night poster, hero copy and the 2D face button (meows, counts). |
-| Scene ready | Veil fades and the live room replaces the poster: the cat breathes, the tail sways over the screen, the head lazily follows the cursor, gibberish appears on the monitor (which shows the real first section). The "Enable sound" chip appears. Click on the cat: stretch, meow, hearts, counter. | Same room, portrait-aware framing, the monitor shows a fake screen (flat glow and text bars). Tap on the cat works. | No scene. |
-| Dive | The hero stage pins for 2.2 viewport heights. Hero copy scrolls away and fades. The camera flies to the monitor; the tail flicks off the screen; the screen fills the viewport and docks at identity. | No pin. While the hero scrolls out, the camera pushes in about a third of the path and the canvas fades to transparent, revealing the next section. | Normal scroll. |
+| Scene ready | Veil fades and the live room replaces the poster: the cat breathes, the tail sways over the screen, the head lazily follows the cursor, gibberish appears on the monitor (which shows the real first section). The "Enable sound" chip appears. Click on the cat: a face reaction (head tilt, ears flat, mouth open; the paws and the tail stay put, Gate 2 round 2), meow, hearts, counter. | Same room from the portrait camera (the desk high in the frame, the whole room height, the name over the floor on its own scrim); the monitor shows the first section painted on a page column in the viewport's aspect. Tap on the cat works. | No scene. |
+| Dive | The hero stage pins for 2.2 viewport heights. Hero copy scrolls away and fades. The camera flies to the monitor; the tail flicks off the screen; the screen fills the viewport and docks at identity. | No pin, the same 2.2 viewport heights: the hero copy scrolls out and fades, the first section sticks to the top of the viewport under the opaque room, the camera flies to the painted page, which lands on the viewport exactly, and over the last 10 % the room crossfades to the real section in the same place. | Normal scroll. |
 | Statement | `profile.statement` in giant uppercase. Corner captions: `profile.handle`, `profile.location`, `profile.languages`. A mono line receives `asdfghjkl`. | Same, static typing line. | Same, static line. |
 | About | `profile.about` large; facts list: handle, location, languages, `profile.now`. | Same. | Same. |
 | Stack | Table: skill and status. `profile.skills` are "In use", `profile.learning` are "Learning". Note: "Learning rows move up with the first live demo." | Same. | Same. |
 | Contact | "Looking for": `profile.lookingFor`; giant links from `profile.links`; `profile.now`. | Same, plus a 2D face button. | Same, plus a 2D face button. |
 | Edge intrusions | Ears and eyes peek from the bottom edge; a paw swats near the cursor; the tail sweeps on section change; rarely the face against the glass; `asdfgh` typed in a small line. Clicking an empty page area (or "Feed the cat" in the header) drops a fish and a paw snatches it. Clicking the head meows. | None. | None. |
-| Finale | The finale stage pins for 1.8 viewport heights. The page (showing `profile.footerStatement`) undocks and shrinks into the monitor as the camera pulls back; dawn light warms; the cat sleeps. Credits roll in at the end. Click on the cat: sleepy stretch and meow. | No pin. The canvas fades in over the finale spacer showing the dawn room; credits overlaid. | Footer statement, dawn poster, credits, face button. |
+| Finale | The finale stage pins for 1.8 viewport heights. The page (showing `profile.footerStatement`) undocks and shrinks into the monitor as the camera pulls back; dawn light warms; the cat sits as in the hero and follows the pointer. Credits roll in at the end. Click on the cat: the face reaction and meow. | No pin, the same 1.8 viewport heights: the footer statement sticks under the room, which fades in over it showing the same statement painted on the monitor, then pulls back to the dawn room framed with the cat high in the frame; the credits follow in the flow and roll in under the cat. Tap on the cat works. | Footer statement, dawn poster, credits, face button. |
 
 ## 3. Technical design
 
@@ -145,12 +146,12 @@ Rules:
 
 | Phase | When | Camera | Room | Cat | Loop |
 |---|---|---|---|---|---|
-| `room` | full: `dive < 0.985` and hero stage on screen; lite: hero on screen | Perspective, dive track | Night | Lounge plus idle layers | Every frame |
+| `room` | full: `dive < 0.985` and hero stage on screen; lite: hero on screen | Perspective, dive track | Night | Sit plus idle layers | Every frame |
 | `inside` | full only, between the two stages | Orthographic overlay in CSS px | Hidden | Gag poses | Only while a gag or fish is active |
-| `finale` | full: `finale > 0.015`; lite: finale spacer on screen | Perspective, finale track | Dawn | Sleep plus breathing | Every frame |
+| `finale` | full: `finale > 0.015`; lite: finale spacer on screen | Perspective, finale track | Dawn | Sit plus idle layers | Every frame |
 | `off` | static, hidden tab, nothing on screen | none | none | none | Stopped |
 
-- `model/timeline.ts`: a plain mutable object (`dive`, `finale`, `layerOpacity`, `pointer`, `viewport`). ScrollTriggers write it and the director reads it. It is never React state.
+- `model/timeline.ts`: a plain mutable object (`dive`, `finale`, `pointer`, `viewport`, the stages in view). ScrollTriggers write it and the director reads it. It is never React state.
 - `model/director.ts` is the only per-frame owner. `tick(time, deltaMs)`:
   1. Resolve the phase.
   2. `cameraAt(track, p, aspect)`.
@@ -200,22 +201,32 @@ ScrollTrigger.create({
 
 - No `scrub` smoothing: Lenis already smooths on fine pointers.
 - Dive progress map: 0–0.08 hold; 0.08–0.90 camera travel (`easeInOutCubic`); 0.55–0.80 tail flick off the screen; 0.90–1.00 dock; the phase becomes `inside` at 0.985.
-- Finale progress map: 0–0.10 undock; 0.10–0.85 pull back; dawn factor `0.55 + 0.45 * smoothstep(0.1, 0.9, p)`; credits become visible over the last 30%.
+- Finale progress map: 0–0.10 undock (the docking lerp of §3.5 run backwards, `finaleUndock`); 0.10–0.85 pull back; dawn factor `0.55 + 0.45 * smoothstep(0.1, 0.9, p)`. The credits block is absolutely positioned at the footer's bottom edge in full mode, so it rolls in from the bottom over the last stretch of the pin (about the last 30% for its height) and sits fully in view exactly at p = 1, the end of the document; a left column, so the cat on the right stays uncovered.
 - Hero copy fades with a scrubbed tween over the first 0.45 viewport heights.
-- Set `history.scrollRestoration = 'manual'`. After the first refresh, scroll to `location.hash` if present.
+- Scroll restoration is the layer's, once per page load, in both modes (see the lite list below).
 
-Lite mode has no pins:
-- Hero: trigger `top top` to `bottom top` writes `timeline.dive = 0.35 * progress` and `layerOpacity = 1 - smoothstep(0.15, 0.75, progress)`.
-- Finale spacer: `top bottom` to `bottom bottom` writes `layerOpacity = smoothstep(0.25, 0.85, progress)`.
+Lite mode has no pins (Gate 2, round 5; the mobile URL bar and touch momentum make pins jump), and the same two tracks on the same progress maps:
+- Each stage keeps the stacked static layout and grows a spacer (`120svh` after the hero's portal, `80svh` after the finale's slot), and its portal is `position: sticky; top: 0`. The stage is thus taller than its portal by the track's scroll length (2.2 and 1.8 viewport heights in all): the portal sticks to the top of the viewport for exactly that stretch, under the canvas, which is opaque in lite (`html[data-room-mode="lite"] [data-room-layer]` has the page's ink as background). The stage's trigger runs `top top` to `+= stage.offsetHeight - portal.offsetHeight` and writes `timeline[track] = progress`. Everything is in `svh` and document pixels, so the URL bar's resize (ignored by ScrollTrigger, see below) moves nothing, and sticky needs no JS to hold through a flick.
+- Cameras (`lib/camera-path.ts`): `liteDiveCamera(p, aspect)` flies from `liteHeroCamera(aspect)` to `liteEndCamera()` (`endCamera(1)`, the exact fit with no overshoot) on the dive's map; `liteFinaleCamera(p, aspect)` pulls back from the exact fit to `liteDawnCamera(aspect)` on the finale's map, with `dawnFactor` as in full mode.
+- The monitor shows the page painted (`lib/page-snapshot.ts`): the portal section's text measured glyph by glyph from the DOM (`Range` rects, computed fonts and colours) and drawn into a 2D canvas at the layer's size, every glyph at its own measured position, so kerning, letter-spacing and balancing come from the DOM and nothing depends on the canvas engine (WebKit lacks `letterSpacing` on contexts); the typing line's caret is a real `[data-caret]` element painted as a box. One canvas per track, drawn once the scene exists and again on resize, never while the typing line is mid-way (`[data-busy]`: the paint waits). Glyphs are graphemes (`Intl.Segmenter`, code points without it), `capitalize` decided from the word starts of the source text. The typing line itself (`ui/typing-line.tsx`) waits in lite for the dive to have landed (`landed` in the room store, set by the director when the room leaves the first section) and holds whenever the room is back over it: under the opaque room it would type unseen, and while covered it shows the whole text, as painted, so the crossfade matches. The scene (`lib/scene/room/monitor.ts`) maps it onto a centred column of the screen in the viewport's own aspect (`columnCorners`), over the page's ink merged into the bezel mesh; the bars stay for the posters and the lab. At `liteEndCamera` that column projects onto the viewport exactly (unit-tested for aspects 0.46–1.78), so the painted page and the stuck DOM section coincide.
+- The crossfade (`liteFade`): the director writes the layer's opacity, `1 - smoothstep(0.9, 1, dive)` on the dive (the camera has arrived at 0.9) and `smoothstep(0, 0.1, finale)` on the finale (the camera leaves at 0.1). The phase is `room` while the hero stage is in view and `dive < 1`, `finale` while the finale stage is in view and `finale > 0`, otherwise `off`: between the stages nothing is drawn behind the sections.
+- The hero copy fades over the first 0.45 viewport heights as in full mode, with a scrim of its own in lite (the slot's gradient lies under the canvas).
+- The credits follow the finale stage in the flow and roll in over the dawn room; the lite dawn camera frames the desk high (`LITE_FRAMING.deskShare.dawn`), so at the end of the page the cat sits above them, pettable, on viewports from about 740 px tall; on shorter ones (320×640) the credits reach the cat's lower body.
+- Before the scene exists the stuck section simply stays for the spacer's length (readable; the load is a second or two); static mode drops the spacers and the stickiness with the mode's CSS.
+- Scroll restoration (`lib/scroll-restore.ts`), once per page load: the layer's effect after the first non-static layout (the stages' pins are measured in their layout effects, so they exist by then) turns the browser's restoration off and restores by hand, because what the browser did happened before the pins and spacers existed. A reload or a back/forward navigation (Navigation Timing `type`) returns to the place saved on `pagehide` and on the tab going hidden (a landmark selector and its viewport offset in `sessionStorage`, which survive the late layout where pixels would not); any other navigation goes to the hash target. A reader who had already scrolled before hydration (away from the fragment the browser landed on, or 40 px from the top) gets no restore and, through `holdScrollPlace` at mount, keeps their place across the first mode's layout. Never again on a later mode change: a reader who clicked a nav link and read on must not jump back to it on a rotation. Back and Forward between the nav's pushed hashes, which the browser no longer scrolls for, go to the target on `hashchange` (skipped when the target already sits at its scroll margin, as after the nav's own hash write). A mode change after the first (full ↔ lite on a resize, lite → static on the 15 s timeout or a context loss) adds or removes about two screens of height above the reader: `lib/scroll-anchor.ts` follows the landmark the reader is in (`main section[id]`, the footer, the credits: the last one starting in the upper third of the viewport or above it, so a section reflowing below does not drag the one being read; a landmark nested in it and showing, the credits over the footer, wins) on every scroll, a frame behind, and holds that last place from the event that will change the mode (by then a resize has already moved the `svh`-based layout, which the browser's own scroll anchoring would hide on Chromium and WebKit would not) (`model/room-mode.ts` watches the full and reduced-motion queries from module load: MediaQueryLists fire in creation order and React flushes its re-render in the microtask checkpoint after each listener, so a list made after React's would hear of the change only after the commit; `failRoom` holds it), ahead of React's commit, since the pins are killed in the layout-destroy phase before anything new is measured; the place is put back on the frame after the commit (ScrollTrigger's refreshes during the commit restore a position recorded before the change, clamped by the browser meanwhile, so nothing synchronous is final), and the correction goes through `@/shared/lib/gsap/scroll-jump`: a running Lenis re-measures the page (its old height would clamp the jump) and jumps at once, ending whatever it was animating, where a native `scrollBy` would be undone on its next frame. `history.scrollRestoration = 'manual'` is set through `ScrollTrigger.clearScrollMemory`, since ScrollTrigger re-applies the value it knows on every refresh. The query watch in `room-mode.ts` is a per-page singleton (a `Symbol.for` flag on `window`), so a re-evaluated module in development adds no listeners. The director's `dispose` and the layer's cleanup leave the layer hidden and unfaded, so the next mode's director never inherits lite's opaque ink over the page; the layer's resize goes through `director.resize()`, applied before a frame or while hidden, never under a drawn one.
+- The finale's "in view" is the footer's, not the stage's: in lite the credits follow the stage in the flow and can be taller than a landscape phone's viewport, and the dawn room must stay under them to the end of the page.
 - Add `ScrollTrigger.config({ ignoreMobileResize: true })` in `src/shared/lib/gsap/register.ts`.
 
-Stage markup (the static layout is the default; `room-full:` is `@custom-variant room-full (&:where([data-room-mode="full"] *));`):
+Gate 2 round 6, pending the owner's choice: three candidate phone presentations live behind `?phone=a|b|c` (read on the client, kept in `sessionStorage`; `config/phone-variant.ts` is the one switch, the layer writes `data-phone-variant` on `<html>` in lite mode only and the `phone-a|b|c:` CSS variants, `camera-path.ts` and the director branch on it). Without the parameter lite is the round-5 behaviour above. All three replace the pulled-back portrait cameras with close ones composed for the frame (`PHONE_CAMERAS`), blended to the stock cameras on landscape viewports, and keep every scroll-driven beat within one viewport height. `a`, the still: the camera never moves; the layer is transparent and sits under `main` and the footer (z-index 0), so the room is a backdrop the first section slides over (the slot's height, no spacer, the portal in the flow) and the footer statement lifts off (the dawn room shows through the slot, the credits roll over it). `b`, the short dive: the slot and the stuck portal overlap in the stage's grid cell, the spacer is 100svh, the monitor is a hole (`fakeScreen: false`, no painted page) showing the real section warped onto the page column (`projectColumn`) as in full mode, the camera pushes straight in on the dive map and the phase turns `off` at the end; the finale is the same backwards over 80svh. `c`, the card: the monitor is a 9:16 vertical panel (`screenAspectFloor`), the name sits at the top of the shot, and the page is a card that lerps from the screen to the viewport over 60svh while the camera holds (`phoneCardProgress`), a screen-space hole on the near plane (`scene/overlay/card-hole.ts`, `frame.hole`) following it; the finale shrinks the card back over 50svh. A lite portal's warp is aimed from its stuck box (`stuckTop` in the director), since the credits push the finale's stage up once its track is done. The losers go with the switch; the winner's branch becomes the lite behaviour.
+
+Stage markup (the static layout is the default; `room-full:` is `@custom-variant room-full (&:where([data-room-mode="full"] *));`, `room-lite:` the same for `lite`):
 
 ```html
 <section id="top" class="relative">               <!-- no stacking context -->
   <div data-stage class="grid room-full:h-lvh room-full:overflow-clip">
     <div data-slot class="relative h-svh room-full:col-start-1 room-full:row-start-1 room-full:h-lvh">poster + veil</div>
-    <div data-portal class="z-10 room-full:col-start-1 room-full:row-start-1 room-full:h-lvh">first section</div>
+    <div data-portal class="z-10 room-full:col-start-1 room-full:row-start-1 room-full:h-lvh room-lite:sticky room-lite:top-0">first section</div>
+    <div data-stage-spacer class="hidden room-lite:block room-lite:h-[120svh]"></div>
   </div>
   <div data-hero-copy class="pointer-events-none absolute inset-x-0 top-0 z-[45] h-svh">h1, role, tagline</div>
 </section>
@@ -234,8 +245,8 @@ World (metres, +Y up, camera looks toward −Z). Starting values in `config/room
 | Hero camera | Position `[0.95, 1.36, 0.55]`, target `[0.20, 1.00, -1.20]`, fov 32 (vertical), near 0.05, far 30 |
 | Dive | Position: quadratic Bézier from hero through `[0.55, 1.26, -0.05]` to the end position; target: lerp to the screen centre, complete at t = 0.7 |
 | End camera | On the screen normal at distance `0.34 / (2 * tan(fov / 2)) * 0.985` (0.593 m at fov 32 before the 1.5% overshoot that hides the bezel) |
-| Lite | Hero position scaled away from the target by `max(1, 1.35 / aspect)` |
-| Dawn camera | Position `[-0.35, 1.48, 0.95]`, target `[0.05, 1.02, -1.25]`, fov 34 |
+| Lite | Landscape viewports keep the stock hero and dawn cameras. Portrait ones (`liteStageCamera`) back the camera off along its line of sight by `max(1, 1.0 / aspect)`, so the desk fits the width, and aim it lower so the desk top sits at a share of the frame (`LITE_FRAMING.deskShare`: hero 0.42, leaving the bottom to the name; dawn 0.36, leaving it to the credits), blended back to the stock aim between aspects 0.8 and 1.0. The dive ends at `endCamera(1)`: the page column (`columnWidth = min(screen width, 0.34 · aspect)`) fills the viewport exactly |
+| Dawn camera | Position `[-0.15, 1.46, 1.0]`, target `[0.4, 1.0, -1.22]`, fov 34 (re-aimed at Gate 2 round 3 to frame the monitor and the cat sitting to its right; the pull-back control point moved to `[0, 1.3, 0.1]`) |
 
 With these values the screen quad at 1440×900 is about 400×270 px at rest and exactly `[0,0]–[1440,900]` at the end.
 
@@ -291,9 +302,9 @@ Application (`lib/portal.ts`):
 The screen in 3D:
 - A quad with a `ShaderMaterial` that writes `vec4(0.0)` with `blending: NoBlending` and `depthWrite: true` (a hole in a premultiplied-alpha canvas). The cat's tail in front of it still draws.
 - The bezel colour equals `--ink`, so any sub-pixel seam is invisible.
-- In lite mode and in posters the same quad uses an opaque "fake screen" material: flat glow plus a few bar quads.
+- In posters and in the lab the same quad uses an opaque "fake screen": flat glow plus a few bar quads. In lite mode on the page the screen is the page's ink with the portal section painted on a centred column in the viewport's aspect (§3.4), one `CanvasTexture` per track.
 
-Dive tunnel rule: at `p >= 0.9` no part of the cat may be inside the pyramid from the end camera to the screen. At the cat's depth this is y from 1.04 to 1.22 around x = 0.25. The lounge pose keeps the head outside it and the tail flick clears the tail.
+Dive tunnel rule: at `p >= 0.9` no part of the cat may be inside the pyramid from the end camera to the screen. At the cat's depth this is y from 1.04 to 1.22 around x = 0.25. The sitting pose keeps the whole cat to the right of it, at the front edge of the desk.
 
 Resize: the observer updates `timeline.viewport`, the renderer size and the monitor aspect; ScrollTrigger refreshes itself; the matrix is recomputed every tick.
 
@@ -330,7 +341,7 @@ Resize: the observer updates `timeline.viewport`, the renderer size and the moni
 Pose format (`config/poses.ts`, three-free data):
 
 ```ts
-export type BonePose = { rot?: Vec3; aim?: Vec3; twist?: number }
+export type BonePose = { rot?: Vec3; aim?: Vec3; aimWorld?: Vec3; twist?: number; post?: Vec3 }
 export type Pose = {
 	root?: { position: Vec3; rotation: Vec3 } // metres, degrees
 	hips?: Vec3
@@ -339,10 +350,10 @@ export type Pose = {
 ```
 
 - `rot`: local Euler XYZ offset in degrees on top of rest.
-- `aim`: desired direction of the bone in character space (+Y up, +Z forward), resolved parent-first by shortest arc, then `twist` degrees about the bone axis.
+- `aim`: desired direction of the bone in character space (+Y up, +Z forward), resolved parent-first by shortest arc, then `twist` degrees about the bone axis; `aimWorld` is the same in the placed cat's world; `post` is a local Euler offset applied last, the same thing the lab's overrides do (Gate 2, round 1).
 - `cat/rig.ts` compiles each pose once into local quaternions.
 - `cat/pose-mixer.ts` slerps between compiled poses with eased weights. An optional stepped clock (`floor(t * 12) / 12`) is a lab toggle for Gate 1.
-- Poses: `rest`, `lounge`, `stretch`, `sleep`, `peek`, `reach`, `tail-up`.
+- Poses: `rest`, `sit`, `sit-boop` (the face-only pet reaction, masked), `stretch` (lab only), `peek`, `peek-boop`, `reach`, `tail-up`. The `sleep` and `sleep-stretch` poses and the eyelid machinery were removed at Gate 2 round 3.
 
 Procedural layers, applied after the mixer in this order:
 1. Breathing: chest pitch ±1° at 0.28 Hz.
@@ -352,7 +363,7 @@ Procedural layers, applied after the mixer in this order:
 5. Spring chains for tail, ears and hair (`cat/chains.ts`): verlet tip follow at fixed 1/120 s sub-steps, at most 4 per frame; hair chains auto-detected from keys starting with `hair`.
 6. Two-bone IK (`lib/ik.ts`, pure; `cat/limb-ik.ts` applies it) for `arm → elbow → wrist`, with clamped reach and a pole hint.
 
-There are no eyelids and no morph targets, so the cat cannot blink; the sleep pose hides the face in the crook of the arm.
+There are no eyelids and no morph targets, so the cat cannot blink; it stays awake on every stage.
 
 Shading variants for Gate 1:
 - A: authored unlit.
@@ -379,8 +390,8 @@ Query parameters:
 - `--sequence dive|finale`: production build, p = 0, 0.1, …, 1.
 - `--compare-source`: rest pose of the source GLB against the optimised GLB with a pixel diff.
 
-Staging rules for `lounge`:
-- The classic cat in front of the screen: side-lying along the desk, facing the camera, bored expression; knees loosely bent and stacked; one forearm propping the cheek; the other paw on the keys.
+Staging rules for `sit` (Gate 1 decision; the side-lying `lounge` was rejected):
+- Seated on the front edge of the desk between the mouse and the lamp, facing the camera, bored expression; thighs on the desk, shins dangling over the edge; the left paw propped beside the hip, the right paw resting on the mouse; tail curled on the desk round the left hip.
 - The hero camera never frames hips or stockings as the focal point.
 - No arched back and no hip-forward line.
 - Prepare alternative B as a backup: sprawled on the belly across the keyboard, chin on forearms.
@@ -401,17 +412,19 @@ Overlay camera: orthographic in CSS px (`left 0, right W, top H, bottom 0`); the
 | `peek` | Section entry | Body below the bottom edge, ears and eyes rise, look-at follows the cursor; pointer-only proxy button over the head | Must |
 | `fish` | Tap on an empty area of `main` (travel ≤ 6 px, not on `a, button, input, [data-no-fish]`, no selection) or header "Feed the cat" | Low-poly fish falls with gravity 2400 px/s²; an IK paw reaches, attaches, retracts; chomp SFX | Must |
 | `typing` | After a peek, at random | `ui/typing-line.tsx` types and erases `asdfgh` in a fixed mono line (`aria-hidden`) | Must |
-| `tail-sweep` | Section change while scrolling | `tail-up` pose plus spring, moves across 35% of the width | Nice |
-| `swat` | Pointer idle 600 ms within 220 px of an edge | The IK target is the cursor, three quick swats | Nice |
-| `glass` | Once per visit | Head close to the camera at a bottom corner, tilted, paw pads visible | Nice |
+| `tail-sweep` | Section change while scrolling | `tail-up` pose plus spring, moves across 35% of the width | Nice (not built in M6; for after Gate 2) |
+| `swat` | Pointer idle 600 ms within 220 px of an edge | The IK target is the cursor, three quick swats | Nice (not built in M6) |
+| `glass` | Once per visit | Head close to the camera at a bottom corner, tilted, paw pads visible | Nice (not built in M6) |
+
+M6 notes: the scheduler counts "entry" per IntersectionObserver event of a section crossing the middle 20% of the viewport, so a section re-entered later may gag again, subject to the gap; the first entry inside the monitor always peeks, so the e2e is deterministic. The fish falls and the paw reaches with the two-bone IK; the fish waits on the catch line (0.3 m above the edge) until the paw is up, then rides in the paw while the cat sinks. Gag timing runs on wall time, so idle stretches do not stall the gaps.
 
 ### 3.11 Loader, stand-in, fallbacks
 
 - `ui/loader-veil.tsx` is server-rendered inside the hero slot: `CatFaceButton`, label, `role='progressbar'`. It is `pointer-events:none` except the face button.
 - CSS hides the veil under `prefers-reduced-motion: reduce`, under `<noscript>`, when `data-room-mode='static'`, and through a failsafe animation after 20 s.
-- Progress: 0.05 start; 0.30 chunk loaded; 0.30–0.80 GLB bytes (`lib/fetch-with-progress.ts` against the byte size in `cat-rig.gen.ts`); 0.90 scene built; 1.0 first frame. Loading is abandoned after 15 s, giving `static`.
+- Progress: 0.05 start; 0.30 chunk loaded; 0.30–0.90 model bytes (the loader's progress events in `lib/scene/cat/load-cat.ts`); 0.90 scene built; 1.0 as soon as the scene exists, whether or not a stage is on screen. Loading is abandoned after 15 s, giving `static`. The veil and the posters make way on the first drawn frame.
 - Until the first frame the 2D face button stays live and the hero proxy stays disabled. After it, the face button is removed and `ui/pet-proxy.tsx` (a real button, "Pet the cat") tracks `scene.measure().cat`.
-- If the visitor scrolls before the scene is ready, the pin and DOM warp already work; the veil stays over the stage with opacity `1 - smoothstep(0.6, 0.9, dive)`.
+- If the visitor scrolls before the scene is ready, the pin and DOM warp already work; the veil stays over the stage with opacity `1 - smoothstep(0.6, 0.9, dive)`. In lite mode the first section sticks for the spacer's length with nothing over it until the first frame.
 - Scene load timing: on idle after hydration in `full`; in `lite` only once the hero or finale has been within 120 px of the viewport (`useInView`, Appendix A.4).
 - `ui/scene-error-boundary.tsx` (Appendix A.5) wraps the layer.
 
@@ -420,28 +433,34 @@ Overlay camera: orthographic in CSS px (`left 0, right W, top H, bottom 0`); the
 - `src/shared/lib/sound/audio-context.ts`: the shared context, extracted from `cat-sound.ts`.
 - `sound-enabled.ts` gains `getSoundOptIn()` (the stored value is exactly `'true'`) and `hasSoundChoice()`.
 - SFX and the meow keep today's default (on unless muted). Ambient plays only after an explicit opt-in and a user gesture.
+- The meow plays on the click with no wait (the owner heard it late): `cat-sound.ts` fetches and decodes it ahead of the first boop, at an idle moment after hydration while sound is on (`usePrefetchMeow`, called by every `CatFaceButton`), in an `OfflineAudioContext` so no context exists before a gesture, and starts it past the file's leading silence (from the first sample within −34 dB of the peak, less 10 ms). The click only resumes the context and starts a source; a boop that beats the prefetch plays the meow on arrival only within 250 ms. It is not tied to the jaw's `jawDelay`.
 - `features/toggle-sound/ui/sound-prompt.tsx`: an "Enable sound" chip shown while no choice is stored; clicking calls `setSoundEnabled(true)`.
 - `ui/ambient-sound.tsx` renders nothing and starts or stops the engine.
-- `ambient.ts` exposes `createAmbientGraph(ctx: BaseAudioContext, out: AudioNode)` and `setAmbientMood(dawn)`:
+- `ambient.ts` exposes `createAmbientGraph(ctx: BaseAudioContext, out: AudioNode, seed?)` (the graph: `setMood`, `schedule`, `fadeTo`, `dispose`) and imports nothing, so the e2e can load it as is; `ambient-engine.ts` holds the page-level `startAmbient`, `stopAmbient`, `setAmbientMood(dawn)`, schedules 2.5 s ahead every second and, once a stop's fade-out is over on the context's clock, releases the graph: the sources and the master are disconnected and the rest is left to the collector, while the generated buffers (about 1.8 MB at 48 kHz) stay cached per context for a quick return, so a muted page costs no audio processing; the context is never closed or suspended. The first ambient (room tone, PC hum, pentatonic plucks, sine chirps) felt strange at Gate 2; the owner asked for slow, warm sleep music tied to the room. The shipped recipe is a calm night in the room, without rain (the owner had it removed after listening) and without a purr (the gains are tuned to the loudness window below):
 
 | Element | Recipe |
 |---|---|
-| Room tone | Looped brown noise, lowpass 320 Hz, gain 0.035 |
-| PC hum | Sines at 55 and 110.5 Hz, gains 0.010 and 0.004, 0.13 Hz tremolo |
-| Sparse plucks | Every 5–11 s, A-minor pentatonic sine, 2.4 s decay, gain 0.04, through a 0.38 s feedback delay |
-| Dawn (mood > 0.5) | Short chirps (2.4 to 3.2 kHz sweeps); hum halves |
-| Master | 0.5 with 1.2 s fades |
+| Pads | Two oscillators per chord note (partials 1, 0.35, 0.12, 0.05, 0.02), 0.12 Hz apart at levels 1 and 0.5 on opposite sides so each note breathes once every few seconds without ever cancelling (the stronger side alternates from note to note and from chord to chord, and the bass is one centred oscillator, so neither side leads and nothing cancels in mono), under a 0.37 Hz ±4 cent tape wow; a gentle tanh stage; lowpass 1100 Hz at night, 2600 Hz at dawn, drifting ±180 Hz at 0.023 Hz. One chord every 14–22 s (12–18 at dawn): 4 s linear attack, 6 s linear release plus a 2 s exponential tail; 3 s both ways when the set flips |
+| Harmony | Night, A minor: Am9 → Fmaj9 / Dm9 / Cmaj9 / Em7 as a weighted walk. Dawn, A major voiced higher: Amaj9 → Dmaj9 / Bm(add9) / E(add9) / F#m7. A mood flip goes through the new set's tonic at the next chord change, pulled in to no earlier than 3 s after the flip and never inside the sounding chord's attack (up to about 8 s on the page; sooner when a change was due anyway) |
+| Felt piano | Phrases of 1–3 notes from the chord under them (C4–A5 at night, G4–E6 at dawn), 0.9–1.9 s apart, every 7–16 s, opening high and tending to step down: a sine with a 4 s decay, an overtone body gone in 0.6 s, a 50 ms brown-noise thump, lowpass 2.6 kHz |
+| Room tone | Looped brown noise (4 s, seam cross-faded), highpass 45 Hz, lowpass 220 Hz; 70 % at dawn |
+| Birds (dawn only) | Phrases of 2–4 syllables (70–130 ms arches and slides, 160–240 ms trills) at 2.4–3.6 kHz every 12–26 s, raised-cosine envelopes, 85 % to the reverb |
+| Reverb | One convolver with a generated 2.6 s stereo impulse (20 ms pre-delay, a lowpass falling from 3.4 kHz as the tail dies), wet 0.35; sends 0.6 pads, 0.8 keys, 0.85 birds |
+| Master | 0.39 with 1.2 s fades; the textures move between the moods over 8 s |
 
-- `sfx.ts`: key tick, plop, chomp.
-- The sandbox has no audio output: loudness is asserted by rendering 10 s through `OfflineAudioContext` (RMS between −34 and −26 dBFS, peak at most −9 dBFS). The owner listens at Gate 2.
+- Every draw is mulberry32 on the seed with one stream per concern (buffers, chords, keys, birds), and `schedule` dispatches chords, phrases and birds in time order, so the sequence is the same whether the page looks 2.5 s ahead or the e2e schedules 40 s at once, as long as no mood change is in flight. A mood flip brings the new set's tonic at the next chord change, no earlier than 3 s after the flip and never inside the sounding chord's attack (so up to about 8 s on the page, or sooner when a change was due anyway), cuts the tail before last by the tonic's start so never more than two chords sound (at most 30 live sources over hundreds of flips at page cadence), and takes back the phrase notes decided for the old chord, so a note never starts over a chord it was not drawn from; a flip back before the pulled tonic is built leaves the walk as it was. A `schedule` call that comes late (a stalled main thread) draws but does not build the notes and birds it has passed, and starts an overdue chord at the clock with its full attack, so the harmony never stalls and never clumps. `ambient.test.ts` checks all of it on a fake context.
+
+- `sfx.ts`: key tick (the typing line), plop (the fish drop), chomp (the catch). Only the plop, always a gesture, may create the context; the others play on an existing one.
+- The sandbox has no audio output: loudness is asserted by rendering 40 s of stereo at the page's seed through `OfflineAudioContext` (each channel's RMS between −34 and −26 dBFS, the peak over both channels at most −9 dBFS) in `e2e/sound.spec.ts`, which strips the module's types with `node:module` and imports it from a blob URL, in three cases: night, dawn, and night flipping to dawn at 15 s the way the page does it (scheduled up to the flip, then from it). Measured (seed 7, left / right): night −30.3 / −30.1 dBFS RMS, peak −16.2; dawn −30.8 / −30.4, peak −16.3; the flip −30.1 / −30.4, peak −16.2; seeds 1, 3, 11 and 42 stay within −29.3…−31.0. Cost: 24 static nodes, at most 30 live sources (two chords through a flip), about 100 source starts a minute, one convolver; the graph builds in about 25 ms on a desktop. The owner listens at Gate 2.
+- The prompt is a fixed chip hanging under the header (top 7.5rem, z 50): at the left on phones, at the right under the header's Sound toggle from 640 px up. It is mounted by `widgets/cat-stage` once the room is ready, rather than a header item, because the header has no room for it at 320 px. It sits below the first section's corner captions and clear of the bottom band, where the gags play and the credits end; on phones the left side also keeps it off the finale cat's head (Gate 2 round 5: it used to sit in the bottom-right corner, where the paw catches the fish).
 
 ### 3.13 Performance budget
 
 | Item | Budget |
 |---|---|
 | Triangles | Cat 24.7k, room ≤ 6k, total ≤ 32k |
-| Draw calls | Room phases ≤ 12 (≤ 19 with outlines); `inside` ≤ 9 |
-| Textures | One (the sticker; downscale the 1024² source to 512² if needed) |
+| Draw calls | Room phases ≤ 13 (≤ 19 with outlines; the owner accepted 13 at Gate 2 round 5 rather than merging the cat's authored materials); `inside` ≤ 9 |
+| Textures | One (the sticker; downscale the 1024² source to 512² if needed); lite adds the two painted pages, the layer's size at the lite DPR cap, longer side ≤ 2048 |
 | `public/models/cat.glb` | ≤ 400 kB |
 | Scene chunk | ≤ 200 kB gzipped, never in the initial route JS |
 | Director tick excluding render | ≤ 2 ms |
@@ -454,7 +473,7 @@ Overlay camera: orthographic in CSS px (`left 0, right W, top H, bottom 0`); the
 - Gag proxies are pointer-only (`tabindex='-1'`, `aria-hidden`). The canvas, typing lines and posters are decorative (`aria-hidden`, empty `alt`).
 - Reduced motion gives `static`: no pins, no canvas, no gags, no CSS entrances.
 - Each automatic motion lasts under 5 s; audio never starts without opt-in and can always be stopped.
-- Contrast: hero copy and credits sit on a scrim (`linear-gradient` from `--ink` at 85%), text in `--snow` or `--muted-foreground`.
+- Contrast: hero copy and credits sit on a scrim (`linear-gradient` from `--ink` at 85%; in lite the hero copy carries its own, the canvas being above the slot's), text in `--snow` or `--muted-foreground`.
 - The counter is a polite live region only after a pet during this visit.
 
 ### 3.15 SEO and LCP
@@ -472,11 +491,11 @@ Shared:
 - `src/shared/config/credits.ts`: typed credit entries with the exact strings of §1.2.
 - `src/shared/lib/math/vec3.ts`, `projection.ts`, `homography.ts`, `ease.ts`, `spring.ts`: tuple maths, no three.
 - `src/shared/lib/sound/audio-context.ts`, `ambient.ts`, `sfx.ts`.
-- `src/shared/ui/cat-face/cat-face.tsx` and `cat-face.module.css`: an original 2D face SVG drawn after the avatar's face, with CSS ear twitch.
+- The 2D face is `public/stickers/cat-sticker.png` wherever the plan says "2D face" (owner decision at Gate 1: no new drawing). No `cat-face` SVG component exists.
 - `src/shared/ui/statement.tsx`, `meta-caption.tsx`, `room-poster.tsx`.
 
 `src/features/boop-cat`:
-- `ui/cat-face-button.tsx`: a labelled button around `CatFace`; calls `boop()` and `stampHearts`.
+- `ui/cat-face-button.tsx`: a labelled button around the sticker image (`public/stickers/cat-sticker.png`); calls `boop()` and `stampHearts`.
 
 `src/features/toggle-sound`:
 - `ui/sound-prompt.tsx`, `ui/ambient-sound.tsx`.
@@ -485,11 +504,11 @@ Shared:
 - `config/room-layout.ts`, `camera-tracks.ts`, `tuning.ts`, `poses.ts`, `cat-rig.gen.ts` (generated).
 - `model/room-store.ts`, `room-mode.ts`, `phase.ts`, `timeline.ts`, `director.ts`.
 - `lib/render-mode.ts`, `scene-time.ts`, `tap-gesture.ts`, `use-in-view.ts` (Appendix).
-- `lib/camera-path.ts`, `screen-quad.ts`, `portal.ts`, `dpr-governor.ts`, `gags.ts`, `ik.ts`, `bone-names.ts`, `fetch-with-progress.ts`, `load-room-scene.ts`.
+- `lib/camera-path.ts`, `screen-quad.ts`, `portal.ts`, `dpr-governor.ts`, `gags.ts`, `ik.ts`, `bone-names.ts`, `load-room-scene.ts`.
 - `lib/scene/create-room-scene.ts`, `renderer.ts`, `materials.ts`.
 - `lib/scene/room/kit.ts`, `build-room.ts`, `monitor.ts`.
 - `lib/scene/cat/load-cat.ts`, `rig.ts`, `pose-mixer.ts`, `layers.ts`, `chains.ts`, `limb-ik.ts`.
-- `lib/scene/overlay/intrusions.ts`, `fish.ts`.
+- `lib/overlay.ts`, `lib/fish.ts`, `lib/scene/overlay/fish.ts`.
 - `ui/room-layer.tsx`, `portal-stage.tsx`, `loader-veil.tsx`, `pet-proxy.tsx`, `typing-line.tsx`, `scene-error-boundary.tsx`.
 
 Widgets (a widget never imports another widget; the page passes portal content as `children`):
@@ -506,7 +525,7 @@ Pages and app:
 Scripts, assets and docs:
 - `scripts/inspect-model.mjs`, `check-assets.mjs`, `shots.mjs`, `capture-posters.mjs`, `lib/browser.mjs`, `lib/dev-server.mjs`, `lib/glb.mjs`.
 - `CREDITS.md`, `docs/lookdev/gate-1/`.
-- `public/models/cat.glb`, `public/posters/room-{night,dawn}{,-portrait}.png`. (`public/stickers/cat-sticker.png` already exists.)
+- `public/models/cat.glb`, `public/posters/room-{night,dawn}{,-portrait}.jpg`. (`public/stickers/cat-sticker.png` already exists.)
 
 ### 4.2 Change
 
@@ -516,7 +535,7 @@ Scripts, assets and docs:
 - `vitest.setup.ts`: a quiet `HTMLCanvasElement.prototype.getContext` stub returning `null`.
 - `.gitignore` (`/artifacts/`), `.dockerignore` (`/artifacts`), `.github/workflows/ci.yml` (asset guard step).
 - `assets/models/README.md`: add the inspect output.
-- `app/layout.tsx`, `app/globals.css`, `app/not-found.tsx` (adds `CatFace`; texts unchanged).
+- `app/layout.tsx`, `app/globals.css`, `app/not-found.tsx` (adds the sticker image; texts unchanged).
 - `src/pages/home/ui/home-page.tsx`: the composition is `SmoothScroll`, `SiteHeader`, `CatStage`, `main` (`Hero` with `Manifesto` as children, `About`, `Stack`, `Contact`), then `Finale` with the footer statement as children.
 - `src/widgets/about/ui/about.tsx`, `stack/ui/stack.tsx`, `contact/ui/contact.tsx`: rewritten as flat typographic sections.
 - `src/shared/config/profile.ts`, `motion.ts`.
@@ -561,7 +580,7 @@ Never run `optimize`, `join`, `flatten`, `simplify`, `palette` or `weld` on the 
 |---|---|
 | `pnpm assets:inspect` | `scripts/inspect-model.mjs`, a dependency-free reader of the GLB JSON chunk (`scripts/lib/glb.mjs`). Prints triangles, meshes, materials, attributes (is `NORMAL` present?), skin joints with parents and bounding boxes for the source model and for `public/models/cat.glb`. Paste the result into `assets/models/README.md` and compare it with §1.3. With `--write-rig` it writes `src/features/cat-room/config/cat-rig.gen.ts` (bone keys and parents in skin order, byte size, SHA-256 prefix) from `public/models/cat.glb` and formats that file with Biome. |
 | `pnpm assets:shots` | Lab screenshots (§3.9). The source model is injected with `page.route('**/__lab/*.glb', …)` from `assets/models/source/`; the app never serves it. |
-| `pnpm assets:posters` | Renders the night and dawn rooms with the fake screen at 1920×1200 and 1080×1920 into `public/posters/`; `app/apple-icon.png` from the face SVG. |
+| `pnpm assets:posters` | Renders the night and dawn rooms with the fake screen at 1920×1200 and, from the lite cameras, 1080×2340 (a phone's aspect) into `public/posters/`; `app/apple-icon.png` from the sticker PNG. |
 | `pnpm assets:check` | Fails if any `.glb`, `.gltf` or `.bin` exists under `public/` other than `models/cat.glb`; if any file under `public/` has the SHA-256 of a source model; if `cat-rig.gen.ts` does not match the committed GLB. |
 
 Fallbacks:
@@ -579,7 +598,7 @@ Fallbacks:
   - `projects` stays in the type and stays empty.
   - The owner confirms the wording at Gate 2.
 - `app/layout.tsx`: `lang='en'`, font subsets `['latin']`.
-- Labels: "Sound", "Sections", "Pet the cat", "Pet the sleeping cat", "Feed the cat", "Enable sound", "Building the room…", counter "boops: N", skip link "Skip to content".
+- Labels: "Sound", "Sections", "Pet the cat" (the same name on every stage), "Feed the cat", "Enable sound", "Building the room…", counter "boops: N", skip link "Skip to content".
 - Remove the heart label text in `stamp-hearts.ts`; translate the warning in `cat-sound.ts`.
 - Micro-copy:
   - Captions "(01) Role", "(02) About", "(03) Stack", "(04) Contact".
@@ -596,8 +615,8 @@ Run `pnpm verify` and `pnpm build` after every milestone; `pnpm test:e2e` from M
 | # | Scope | Acceptance | Effort budget and fallback |
 |---|---|---|---|
 | M0 | Dependencies, the model build, inspect and check scripts, guard in `verify` and CI, Playwright arguments, model facts recorded. Verify the sandbox network: registry, Playwright browser, Google Fonts during `next build`. | `cat.glb` ≤ 400 kB; the guard fails when a source is copied into `public/` (unit-tested); headless WebGL confirmed with a one-page smoke run. | 0.5 d |
-| M1 | Look-dev in the lab only: renderer, room, rig, poses `lounge`, `stretch`, `sleep`, idle layers, shading variants, face SVG, sticker placement. The home page is untouched. | Gate package in `docs/lookdev/gate-1/`: hero night 1920×1200 and 390×844; cat close-up, side, top; stretch; finale dawn; sleep close-up; shading A and B; face SVG next to the 3D face; sticker; dive tunnel at p = 0.95; a README listing what to approve. | 3 d. If the side-lying pose still collapses or interpenetrates after 1.5 d, also deliver alternative B. Hair springs are optional. |
-| **Gate 1** | **Stop. The owner approves the pose, room, night and dawn palettes, shading variant, face SVG, sticker, sock placement and whether the film grain stays.** Nothing in M3–M8 starts before approval. | | |
+| M1 | Look-dev in the lab only: renderer, room, rig, poses `sit`, `stretch`, `sleep`, idle layers, shading variants, sticker placement. The home page is untouched. | Gate package in `docs/lookdev/gate-1/`: hero night 1920×1200 and 390×844; cat close-up, side, top; stretch; finale dawn; sleep close-up; shading A and B; sticker; dive tunnel at p = 0.95; a README listing what to approve. | 3 d. If the pose still collapses or interpenetrates after 1.5 d, also deliver alternative B. Hair springs are optional. |
+| **Gate 1** | **Stop. The owner approves the pose, room, night and dawn palettes, shading variant, sticker, sock placement and whether the film grain stays.** (Gate 1 feedback: the 2D face is the sticker PNG, no new drawing.) Nothing in M3–M8 starts before approval. | | |
 | M2 | English content pass and the whole static page (all new widgets, `CatFaceButton`, placeholder poster, credits). Independent of the look; may run while Gate 1 is pending. | No-JS and reduced-motion e2e green; no Russian text left; overflow tests at 320, 360 and 390 px. | 1.5 d |
 | M3 | Posters captured; modes, store, director, `RoomLayer`, veil with real progress, all fallbacks, hero `room` phase, pet proxy. | `data-room-mode='full'` and `data-scene-ready='true'` under SwiftShader; every fallback e2e green; three absent from initial chunks. | 1.5 d |
 | M4 | Dive: pin, camera path, portal, docking, tail flick, typing line. | At dive end the portal's computed transform is `none` and the phase is `inside`; mid-dive alignment error ≤ 2 px (§8); `--sequence dive` reviewed. | 2 d. Fallback: draw the first section's statement into a `CanvasTexture` on the screen and crossfade the canvas to the un-warped DOM section over p 0.85–1. |
@@ -629,7 +648,7 @@ Unit (Vitest, no three):
 - `gags` (seeded: gaps, caps, exclusions).
 - `bone-names` (name table).
 - `poses` integrity: keys exist in `cat-rig.gen.ts`, none is `popka*` or `shoulder_*`, values finite.
-- `room-store`, `fetch-with-progress`.
+- `room-store`.
 - `sound-enabled` opt-in; `ambient` graph on a fake context.
 - The asset guard function.
 - The three import boundary.
@@ -650,7 +669,7 @@ E2E (Playwright; move the existing helpers `gotoHydrated`, `collectProblems`, `w
 8. Pet: a proxy click and Enter/Space increment `boop-count` and start the meow (spy on `AudioBufferSourceNode.prototype.start`); the counter survives reload.
 9. Feed: a tap on an empty area and the header button increment `data-fish-count`; a click on a link does not.
 10. Sound: the prompt is visible without a choice; after the click the context is running and sources started; toggle off is silent and persists; offline loudness in range.
-11. Lite at 390×844 and 360×740, plus 320×640: no horizontal overflow through the whole scroll, no pin spacer.
+11. Lite at 390×844 and 360×740, plus 320×640: no horizontal overflow through the whole scroll, no pin spacer. `scroll-place.spec.ts`, with `html{overflow-anchor:none}` injected so Chromium behaves like WebKit: a full→lite resize at the credits keeps them in view and ignores the nav's hash; a full↔lite resize mid-page keeps the section under the reader within 6 px both ways; Back between two nav-pushed hashes moves the page; and in a touch context (no Lenis) a `/#about` deep link lands on About, a reload mid-page comes back to the same section rather than the stale hash, and a context loss under the reader (lite → static) keeps their section within 4 px. At 390×844: the first section sticks at the top under the opaque room mid-dive, the layer crossfades over the last 10 % and is hidden at the end with the statement in the viewport; the finale's statement sticks, the room fades in over it, and at the end of the page the cat's upper half sits above the credits and takes a pet.
 12. Licence: the only `.glb` response is `/models/cat.glb`.
 13. `/lab` is 404 in the production build; the 404 page texts are unchanged.
 14. Tab order never lands inside `aria-hidden`; the focus ring is visible; `lang='en'`.

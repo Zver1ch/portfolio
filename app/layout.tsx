@@ -6,19 +6,19 @@ import { Toaster } from '@/shared/ui/sonner'
 import './globals.css'
 
 const unbounded = Unbounded({
-	subsets: ['cyrillic', 'latin'],
+	subsets: ['latin'],
 	variable: '--font-unbounded',
 	display: 'swap',
 })
 
 const onest = Onest({
-	subsets: ['cyrillic', 'latin'],
+	subsets: ['latin'],
 	variable: '--font-onest',
 	display: 'swap',
 })
 
 const jetbrainsMono = JetBrains_Mono({
-	subsets: ['cyrillic', 'latin'],
+	subsets: ['latin'],
 	variable: '--font-jetbrains-mono',
 	display: 'swap',
 })
@@ -28,13 +28,13 @@ export const metadata: Metadata = {
 		default: `${profile.name} — ${profile.role}`,
 		template: `%s | ${profile.name}`,
 	},
-	description: profile.about,
+	description: profile.tagline,
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
 	return (
 		<html
-			lang='ru'
+			lang='en'
 			className={`${unbounded.variable} ${onest.variable} ${jetbrainsMono.variable}`}
 		>
 			<body className='bg-background font-sans text-foreground antialiased'>

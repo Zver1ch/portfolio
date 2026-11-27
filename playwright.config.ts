@@ -13,7 +13,20 @@ export default defineConfig({
 	projects: [
 		{
 			name: 'chromium',
-			use: { ...devices['Desktop Chrome'] },
+			use: {
+				...devices['Desktop Chrome'],
+				launchOptions: {
+					// Software WebGL, so the 3D scene is exercised on runners
+					// without a GPU (the same flags as scripts/lib/browser.mjs).
+					args: [
+						'--use-angle=swiftshader',
+						'--enable-unsafe-swiftshader',
+					],
+					// Sandboxes with a pre-installed Chromium and no browser
+					// download: point CHROME_PATH at the binary.
+					executablePath: process.env.CHROME_PATH || undefined,
+				},
+			},
 		},
 	],
 	webServer: {
