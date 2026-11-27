@@ -13,7 +13,7 @@ describe('createPortal', () => {
 	it('warps while diving, keeps the previous matrix on a bad quad and docks at the end', () => {
 		const element = document.createElement('div')
 		const portal = createPortal(element)
-		expect(element.style.transformOrigin).toBe('0 0')
+		expect(element.style.transformOrigin).toBe('0px 0px')
 		expect(element.style.transform).toBe('')
 
 		portal.apply(quad, 0, 1440, 900)

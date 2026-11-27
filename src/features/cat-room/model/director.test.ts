@@ -101,7 +101,7 @@ describe('createDirector', () => {
 		})
 		expect(layer.style.visibility).toBe('visible')
 		expect(proxy.style.display).toBe('block')
-		expect(proxy.style.transform).toBe('translate(10.0px, 20.0px)')
+		expect(proxy.style.transform).toBe('translate(10px, 20px)')
 		expect(divePortal.style.transform).toMatch(/^matrix3d\(/)
 
 		// Mid-dive the cat looks at the pointer and the pose blends, no cut.

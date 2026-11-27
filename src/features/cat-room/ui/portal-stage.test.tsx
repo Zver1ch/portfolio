@@ -38,7 +38,7 @@ describe('PortalStage', () => {
 		const portal = getPortal('dive')
 		expect(portal).toBeDefined()
 		expect(portal?.element).toBe(container.querySelector('[data-portal]'))
-		expect(portal?.element.style.transformOrigin).toBe('0 0')
+		expect(portal?.element.style.transformOrigin).toBe('0px 0px')
 
 		unmount()
 		expect(getPortal('dive')).toBeUndefined()
